@@ -1,0 +1,5 @@
+export { Dashboard } from './dashboard'
+export { MessagingPanel } from './messages'
+export { StructurePanel } from './structure'
+export { ComplaintsPanel } from './complaints'
+export { HistoryPanel } from './history'
