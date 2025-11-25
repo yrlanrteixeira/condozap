@@ -17,7 +17,7 @@ interface StructurePanelProps {
 export function StructurePanel({ residents }: StructurePanelProps) {
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
         Estrutura do Condomínio
       </h2>
       <Card>
@@ -36,11 +36,11 @@ export function StructurePanel({ residents }: StructurePanelProps) {
               {residents.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium whitespace-nowrap">{r.name}</TableCell>
-                  <TableCell className="font-mono text-slate-500 whitespace-nowrap">{r.phone}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground whitespace-nowrap">{r.phone}</TableCell>
                   <TableCell className="whitespace-nowrap">{r.tower}</TableCell>
                   <TableCell className="whitespace-nowrap">{r.unit}</TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <Button variant="link" className="text-blue-600 p-0 h-auto">
+                    <Button variant="link" className="text-primary p-0 h-auto">
                       Editar
                     </Button>
                   </TableCell>
@@ -49,7 +49,7 @@ export function StructurePanel({ residents }: StructurePanelProps) {
             </TableBody>
           </Table>
           <div className="p-4 border-t">
-            <Button variant="ghost" className="text-green-600 font-bold">
+            <Button variant="ghost" className="text-primary font-bold">
               + Adicionar Novo Morador
             </Button>
           </div>

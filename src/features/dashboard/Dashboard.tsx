@@ -22,8 +22,8 @@ function StatCard({ title, value, icon, iconBgColor, iconColor }: StatCardProps)
     <Card>
       <CardContent className="p-6 flex items-center justify-between">
         <div>
-          <h3 className="text-slate-500 text-sm font-medium mb-1">{title}</h3>
-          <p className="text-3xl font-bold text-slate-800">{value}</p>
+          <h3 className="text-muted-foreground text-sm font-medium mb-1">{title}</h3>
+          <p className="text-3xl font-bold text-foreground">{value}</p>
         </div>
         <div className={`p-3 rounded-full ${iconBgColor} ${iconColor}`}>{icon}</div>
       </CardContent>
@@ -95,7 +95,7 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-700">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <PieChart className="text-purple-500" size={20} />
               Tipos de Reclamação
             </CardTitle>
@@ -104,10 +104,10 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
             {complaintsByCategory.map((item) => (
               <div key={item.name}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600 font-medium">{item.name}</span>
-                  <span className="text-slate-900 font-bold">{item.count}</span>
+                  <span className="text-muted-foreground font-medium">{item.name}</span>
+                  <span className="text-foreground font-bold">{item.count}</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                   <div
                     className="bg-purple-500 h-2.5 rounded-full transition-all duration-500"
                     style={{
@@ -122,13 +122,13 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-700">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Building className="text-orange-500" size={20} />
               Ocorrências por Torre
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-4 sm:gap-8 h-48 pb-2 border-b border-slate-100 justify-center overflow-x-auto">
+            <div className="flex items-end gap-4 sm:gap-8 h-48 pb-2 border-b border-border justify-center overflow-x-auto">
               {Object.entries(complaintsByTower).map(([tower, count]) => (
                 <div key={tower} className="flex flex-col items-center gap-2 group flex-shrink-0">
                   <div
@@ -140,16 +140,16 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
                   >
                     <span className="mb-2 font-bold text-orange-700">{count}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-600">Torre {tower}</span>
+                  <span className="text-sm font-bold text-muted-foreground">Torre {tower}</span>
                 </div>
               ))}
               {Object.keys(complaintsByTower).length === 0 && (
-                <div className="text-slate-400 text-sm self-center">
+                <div className="text-muted-foreground text-sm self-center">
                   Sem dados suficientes
                 </div>
               )}
             </div>
-            <p className="text-center text-xs text-slate-400 mt-4">
+            <p className="text-center text-xs text-muted-foreground mt-4">
               Comparativo de volume de chamados entre torres
             </p>
           </CardContent>
@@ -157,7 +157,7 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-700">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <BarChart3 className="text-blue-500" size={20} />
               Notificações por Assunto/Tipo
             </CardTitle>
@@ -167,12 +167,12 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
               {Object.entries(messageSubjects).map(([subject, count]) => (
                 <div
                   key={subject}
-                  className="bg-slate-50 p-4 rounded-lg border border-slate-100 flex items-center justify-between"
+                  className="bg-muted/50 p-4 rounded-lg border border-border flex items-center justify-between"
                 >
-                  <span className="text-sm text-slate-600 font-medium truncate pr-2">
+                  <span className="text-sm text-muted-foreground font-medium truncate pr-2">
                     {subject}
                   </span>
-                  <span className="bg-white px-3 py-1 rounded-full text-blue-600 font-bold shadow-sm text-sm">
+                  <span className="bg-card px-3 py-1 rounded-full text-blue-600 font-bold shadow-sm text-sm">
                     {count}
                   </span>
                 </div>

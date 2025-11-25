@@ -8,11 +8,11 @@ interface HistoryPanelProps {
 export function HistoryPanel({ messageLog }: HistoryPanelProps) {
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Logs de Sistema</h2>
-      <Card className="bg-slate-900">
-        <CardContent className="p-4 sm:p-6 font-mono text-[10px] sm:text-xs text-slate-300 overflow-x-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">Logs de Sistema</h2>
+      <Card className="bg-secondary">
+        <CardContent className="p-4 sm:p-6 font-mono text-[10px] sm:text-xs text-secondary-foreground overflow-x-auto">
           {messageLog.length === 0 && (
-            <p className="text-slate-500">Nenhum registro ainda.</p>
+            <p className="text-muted-foreground">Nenhum registro ainda.</p>
           )}
           {messageLog
             .slice()
@@ -20,7 +20,7 @@ export function HistoryPanel({ messageLog }: HistoryPanelProps) {
             .map((log) => (
               <div
                 key={log.id}
-                className="mb-3 sm:mb-4 border-b border-slate-800 pb-3 sm:pb-4 last:border-0"
+                className="mb-3 sm:mb-4 border-b border-border pb-3 sm:pb-4 last:border-0"
               >
                 <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
                   <span className="text-green-400">
@@ -29,9 +29,9 @@ export function HistoryPanel({ messageLog }: HistoryPanelProps) {
                   <span className="text-blue-400">TO: {log.phone}</span>
                   <span className="text-yellow-400">TYPE: {log.type}</span>
                 </div>
-                <div className="pl-2 sm:pl-4 border-l-2 border-slate-700 mb-2 overflow-x-auto">
-                  <div className="text-white font-bold mb-1 text-xs">API Payload:</div>
-                  <pre className="whitespace-pre-wrap text-slate-400 break-all">
+                <div className="pl-2 sm:pl-4 border-l-2 border-border/50 mb-2 overflow-x-auto">
+                  <div className="text-foreground font-bold mb-1 text-xs">API Payload:</div>
+                  <pre className="whitespace-pre-wrap text-muted-foreground break-all">
                     {JSON.stringify(log.payload, null, 2)}
                   </pre>
                 </div>

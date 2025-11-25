@@ -62,12 +62,12 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Central de Disparo</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">Central de Disparo</h2>
 
       <Card>
         <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               1. Destinatário
             </label>
             <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
@@ -77,12 +77,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
                   variant={scope === option.value ? 'default' : 'outline'}
                   onClick={() => setScope(option.value)}
                   size="sm"
-                  className={cn(
-                    'text-xs sm:text-sm',
-                    scope === option.value
-                      ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
-                      : ''
-                  )}
+                  className="text-xs sm:text-sm"
                 >
                   {option.label}
                 </Button>
@@ -118,8 +113,8 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="border-t border-border pt-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
               2. Tipo de Mensagem
             </label>
             <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
@@ -129,10 +124,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
                   variant={msgType === type ? 'default' : 'outline'}
                   onClick={() => setMsgType(type)}
                   size="sm"
-                  className={cn(
-                    'text-xs sm:text-sm',
-                    msgType === type ? 'bg-green-100 text-green-700 border-green-300' : ''
-                  )}
+                  className="text-xs sm:text-sm"
                 >
                   {type === 'text' && 'Texto Livre'}
                   {type === 'template' && 'Template (Oficial)'}
@@ -189,7 +181,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
           <div className="flex justify-end pt-4">
             <Button
               onClick={handleSend}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Send size={18} className="mr-2" />
               Enviar Mensagem

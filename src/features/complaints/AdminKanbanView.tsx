@@ -47,10 +47,10 @@ export function AdminKanbanView({
     <div className="p-4 sm:p-6 h-full flex flex-col">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
             Gestão de Ocorrências (Kanban)
           </h2>
-          <p className="text-slate-500 text-xs sm:text-sm">
+          <p className="text-muted-foreground text-xs sm:text-sm">
             Arraste os cartões para atualizar o status. O morador será notificado
             automaticamente.
           </p>
@@ -65,13 +65,13 @@ export function AdminKanbanView({
           return (
             <div
               key={col.id}
-              className="flex-1 min-w-[280px] sm:min-w-[300px] bg-slate-100 rounded-xl flex flex-col max-h-full"
+              className="flex-1 min-w-[280px] sm:min-w-[300px] bg-muted/50 rounded-xl flex flex-col max-h-full"
               onDragOver={onDragOver}
               onDrop={(e) => onDrop(e, col.id)}
             >
               <div
                 className={cn(
-                  'p-3 sm:p-4 border-b border-slate-200 flex items-center gap-2 font-bold bg-white rounded-t-xl text-sm sm:text-base',
+                  'p-3 sm:p-4 border-b border-border flex items-center gap-2 font-bold bg-card rounded-t-xl text-sm sm:text-base',
                   col.color
                 )}
               >
@@ -94,23 +94,23 @@ export function AdminKanbanView({
                     >
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <Badge className="text-[10px] bg-slate-400 text-white">
+                          <Badge className="text-[10px] bg-muted text-muted-foreground">
                             {c.category}
                           </Badge>
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-muted-foreground">
                             {new Date(c.timestamp).toLocaleDateString()}
                           </span>
                         </div>
-                        <p className="text-slate-800 text-sm mb-3 font-medium">
+                        <p className="text-foreground text-sm mb-3 font-medium">
                           {c.content}
                         </p>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-muted-foreground">
                           {resident
                             ? `Unid. ${resident.unit} (${resident.tower})`
                             : 'Anônimo'}
                         </div>
 
-                        <div className="text-xs text-slate-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-slate-100">
+                        <div className="text-xs text-muted-foreground flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
                           <ArrowRight size={12} />
                           Arraste para mover
                         </div>
@@ -120,7 +120,7 @@ export function AdminKanbanView({
                 })}
 
                 {columnComplaints.length === 0 && (
-                  <div className="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-lg">
+                  <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed border-border rounded-lg">
                     Vazio
                   </div>
                 )}

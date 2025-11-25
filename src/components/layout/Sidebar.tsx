@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts'
+import { ModeToggle } from '@/components/mode-toggle'
 
 interface SidebarProps {
   openComplaintsCount: number
@@ -42,8 +43,8 @@ function NavItem({ icon, label, viewKey, currentView, onClick, badge }: NavItemP
       className={cn(
         'w-full justify-start gap-3 h-12',
         currentView === viewKey
-          ? 'bg-green-600 text-white hover:bg-green-600 hover:text-white'
-          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
       )}
     >
       {icon}
@@ -63,24 +64,29 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
   return (
     <div
       className={cn(
-        'fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out',
+        'fixed inset-y-0 left-0 z-50 w-64 bg-card text-card-foreground border-r transform transition-transform duration-200 ease-in-out',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
         'md:relative md:translate-x-0'
       )}
     >
-      <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+      <div className="p-6 border-b flex items-center justify-between">
         <div className="flex items-center gap-2 font-bold text-xl">
-          <Smartphone className="text-green-500" />
+          <Smartphone className="text-primary" />
           <span>CondoZap</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMobileMenuOpen(false)}
-          className="md:hidden text-white hover:bg-slate-800"
-        >
-          <X size={24} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <ModeToggle />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden"
+          >
+            <X size={24} />
+          </Button>
+        </div>
       </div>
 
       <nav className="p-4 space-y-2">
@@ -134,12 +140,12 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
         )}
       </nav>
 
-      <div className="absolute bottom-0 w-full p-4 border-t border-slate-700">
-        <div className="text-xs text-slate-400 mb-2 uppercase font-bold">
+      <div className="absolute bottom-0 w-full p-4 border-t">
+        <div className="text-xs text-muted-foreground mb-2 uppercase font-bold">
           Simular Usuário
         </div>
         <Select value={userRole} onValueChange={(value) => setUserRole(value as UserRole)}>
-          <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

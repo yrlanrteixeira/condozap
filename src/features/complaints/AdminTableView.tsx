@@ -57,19 +57,19 @@ export function AdminTableView({
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
           Gestão de Ocorrências (Tabela)
         </h2>
-        <p className="text-slate-500 text-xs sm:text-sm">
+        <p className="text-muted-foreground text-xs sm:text-sm">
           Visualização em tabela. Altere o status para notificar o morador automaticamente.
         </p>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50">
+              <TableRow className="bg-muted/50">
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="font-bold">Categoria</TableHead>
                 <TableHead className="font-bold">Descrição</TableHead>
@@ -81,7 +81,7 @@ export function AdminTableView({
             <TableBody>
               {complaints.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-slate-400">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhuma ocorrência registrada
                   </TableCell>
                 </TableRow>
@@ -91,7 +91,7 @@ export function AdminTableView({
                   const Icon = statusConfig.icon
 
                   return (
-                    <TableRow key={complaint.id} className="hover:bg-slate-50">
+                    <TableRow key={complaint.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div
                           className={cn(
@@ -109,14 +109,14 @@ export function AdminTableView({
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs">
-                        <p className="text-sm text-slate-700 truncate">
+                        <p className="text-sm text-foreground truncate">
                           {complaint.content}
                         </p>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">
+                      <TableCell className="text-sm text-muted-foreground">
                         {getResidentInfo(complaint.residentId)}
                       </TableCell>
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="text-xs text-muted-foreground">
                         {new Date(complaint.timestamp).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>
@@ -160,7 +160,7 @@ export function AdminTableView({
         </div>
       </div>
 
-      <div className="mt-4 text-xs text-slate-400 flex items-center gap-2">
+      <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
         <ChevronRight size={14} />
         Total de {complaints.length} ocorrência(s) registrada(s)
       </div>

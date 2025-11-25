@@ -48,7 +48,7 @@ export function HomePage() {
   const openComplaintsCount = complaints.filter((c) => c.status === 'open').length
 
   return (
-    <div className="flex h-screen bg-slate-100 font-sans text-slate-900">
+    <div className="flex h-screen bg-background font-sans text-foreground">
       <Sidebar openComplaintsCount={openComplaintsCount} />
 
       <div className="flex-1 flex flex-col overflow-hidden w-full md:w-auto">

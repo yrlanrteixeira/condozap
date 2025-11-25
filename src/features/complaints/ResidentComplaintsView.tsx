@@ -58,10 +58,10 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
       <div className="mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
           Central de Denúncias (Anônimo)
         </h2>
-        <p className="text-sm sm:text-base text-slate-500">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Relate problemas com segurança total. Sua identidade é preservada.
         </p>
       </div>
@@ -69,14 +69,14 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
       <Card className="mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />
         <CardContent className="p-4 sm:p-6">
-          <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700 flex items-center gap-2">
-            <AlertTriangle size={20} className="text-green-600" />
+          <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground flex items-center gap-2">
+            <AlertTriangle size={20} className="text-primary" />
             Nova Ocorrência
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
             <div className="sm:col-span-1">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">
+              <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
                 Categoria
               </label>
               <Select value={newCategory} onValueChange={setNewCategory}>
@@ -93,7 +93,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
               </Select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">
+              <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
                 Descrição do Problema
               </label>
               <Input
@@ -107,7 +107,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
           <div className="flex justify-end">
             <Button
               onClick={handleSubmit}
-              className="bg-slate-900 hover:bg-slate-800 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Enviar Denúncia
               <ArrowRight size={16} className="ml-2" />
@@ -117,15 +117,15 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
       </Card>
 
       <div>
-        <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700 flex items-center gap-2">
-          <History size={18} className="sm:w-5 sm:h-5 text-slate-400" />
+        <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground flex items-center gap-2">
+          <History size={18} className="sm:w-5 sm:h-5 text-muted-foreground" />
           Meus Relatos
         </h3>
 
         <div className="space-y-2 sm:space-y-3">
           {myComplaints.length === 0 && (
-            <div className="text-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-              <p className="text-slate-500 italic">Nenhum registro encontrado.</p>
+            <div className="text-center py-10 bg-muted/50 rounded-lg border border-dashed border-border">
+              <p className="text-muted-foreground italic">Nenhum registro encontrado.</p>
             </div>
           )}
 
@@ -139,7 +139,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
                       <Badge variant="secondary" className="text-[10px] uppercase">
                         {c.category}
                       </Badge>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock size={10} />
                         {new Date(c.timestamp).toLocaleDateString()} às{' '}
                         {new Date(c.timestamp).toLocaleTimeString([], {
@@ -148,7 +148,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
                         })}
                       </span>
                     </div>
-                    <p className="text-slate-800 font-medium">{c.content}</p>
+                    <p className="text-foreground font-medium">{c.content}</p>
                   </div>
 
                   <div
