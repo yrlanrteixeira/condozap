@@ -8,7 +8,7 @@ import {
   X,
   ListChecks,
 } from 'lucide-react'
-import type { View, UserRole, Complaint } from '@/types'
+import type { View, UserRole } from '@/types'
 import {
   Select,
   SelectContent,
@@ -19,14 +19,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useApp } from '@/contexts'
 
 interface SidebarProps {
-  view: View
-  setView: (view: View) => void
-  userRole: UserRole
-  setUserRole: (role: UserRole) => void
-  mobileMenuOpen: boolean
-  setMobileMenuOpen: (open: boolean) => void
   openComplaintsCount: number
 }
 
@@ -62,15 +57,9 @@ function NavItem({ icon, label, viewKey, currentView, onClick, badge }: NavItemP
   )
 }
 
-export function Sidebar({
-  view,
-  setView,
-  userRole,
-  setUserRole,
-  mobileMenuOpen,
-  setMobileMenuOpen,
-  openComplaintsCount,
-}: SidebarProps) {
+export function Sidebar({ openComplaintsCount }: SidebarProps) {
+  const { view, setView, userRole, setUserRole, mobileMenuOpen, setMobileMenuOpen } = useApp()
+
   return (
     <div
       className={cn(

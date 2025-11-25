@@ -1,7 +1,7 @@
 import { Users, MessageSquare, AlertTriangle, PieChart, Building, BarChart3 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Resident, Message, Complaint } from '@/types'
-import { COMPLAINT_CATEGORIES, TEMPLATES } from '@/data/mock'
+import { COMPLAINT_CATEGORIES, TEMPLATES } from '@/data/mockData'
 
 interface DashboardProps {
   residents: Resident[]
@@ -67,8 +67,8 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
   )
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           title="Total Moradores"
           value={residents.length}
@@ -92,7 +92,7 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-700">
@@ -128,11 +128,11 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-8 h-48 pb-2 border-b border-slate-100 justify-center">
+            <div className="flex items-end gap-4 sm:gap-8 h-48 pb-2 border-b border-slate-100 justify-center overflow-x-auto">
               {Object.entries(complaintsByTower).map(([tower, count]) => (
-                <div key={tower} className="flex flex-col items-center gap-2 group">
+                <div key={tower} className="flex flex-col items-center gap-2 group flex-shrink-0">
                   <div
-                    className="relative w-16 bg-orange-100 rounded-t-lg transition-all duration-500 group-hover:bg-orange-200 flex items-end justify-center"
+                    className="relative w-12 sm:w-16 bg-orange-100 rounded-t-lg transition-all duration-500 group-hover:bg-orange-200 flex items-end justify-center"
                     style={{
                       height: `${(count / totalComplaints) * 100}%`,
                       minHeight: '20px',
@@ -163,7 +163,7 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {Object.entries(messageSubjects).map(([subject, count]) => (
                 <div
                   key={subject}

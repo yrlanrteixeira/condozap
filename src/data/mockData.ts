@@ -1,4 +1,5 @@
 import type { Resident, Message, Complaint, Template } from '@/types'
+import { ONE_DAY_MS, TWO_DAYS_MS } from '@/utils/constants'
 
 export const INITIAL_RESIDENTS: Resident[] = [
   {
@@ -56,7 +57,7 @@ export const INITIAL_MESSAGES: Message[] = [
   },
   {
     id: 2,
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    timestamp: new Date(Date.now() - ONE_DAY_MS).toISOString(),
     type: 'text',
     scope: 'Torre',
     target: 'A',
@@ -65,7 +66,7 @@ export const INITIAL_MESSAGES: Message[] = [
   },
   {
     id: 3,
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
+    timestamp: new Date(Date.now() - TWO_DAYS_MS).toISOString(),
     type: 'template',
     templateName: 'boleto_condominio',
     scope: 'Todos',
@@ -90,7 +91,7 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     category: 'Manutenção',
     content: 'Lâmpada do corredor queimada.',
     status: 'in_progress',
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    timestamp: new Date(Date.now() - ONE_DAY_MS).toISOString(),
   },
   {
     id: 3,
@@ -98,7 +99,7 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     category: 'Segurança',
     content: 'Portão da garagem demorando para fechar.',
     status: 'resolved',
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
+    timestamp: new Date(Date.now() - TWO_DAYS_MS).toISOString(),
   },
   {
     id: 4,
@@ -114,7 +115,7 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     category: 'Limpeza',
     content: 'Lixo deixado no hall.',
     status: 'resolved',
-    timestamp: new Date(Date.now() - 200000000).toISOString(),
+    timestamp: new Date(Date.now() - TWO_DAYS_MS * 1.16).toISOString(),
   },
 ]
 
@@ -126,22 +127,18 @@ export const COMPLAINT_CATEGORIES = [
   'Outros',
 ] as const
 
-export const TEMPLATES: Template[] = [
+export const TEMPLATES: readonly Template[] = [
   {
     name: 'aviso_encomenda',
     label: 'Chegada de Encomenda',
     language: 'pt_BR',
-    components: [
-      { type: 'body', parameters: [{ type: 'text', text: '{{nome}}' }] },
-    ],
+    components: [{ type: 'body', parameters: [{ type: 'text', text: '{{nome}}' }] }],
   },
   {
     name: 'status_reclamacao',
     label: 'Atualização de Chamado',
     language: 'pt_BR',
-    components: [
-      { type: 'body', parameters: [{ type: 'text', text: '{{status}}' }] },
-    ],
+    components: [{ type: 'body', parameters: [{ type: 'text', text: '{{status}}' }] }],
   },
   {
     name: 'boleto_condominio',
@@ -166,3 +163,10 @@ export const TEMPLATES: Template[] = [
     ],
   },
 ]
+
+// Em-memory data store (simula banco de dados)
+export const dataStore = {
+  residents: [...INITIAL_RESIDENTS],
+  messages: [...INITIAL_MESSAGES],
+  complaints: [...INITIAL_COMPLAINTS],
+}

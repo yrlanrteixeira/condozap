@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { TargetData, MessageContent, Message } from '@/types'
-import { TEMPLATES } from '@/data/mock'
+import { TEMPLATES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
 interface MessagingPanelProps {
@@ -61,22 +61,24 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">Central de Disparo</h2>
+    <div className="p-4 sm:p-6 max-w-4xl">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Central de Disparo</h2>
 
       <Card>
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               1. Destinatário
             </label>
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
               {SCOPE_OPTIONS.map((option) => (
                 <Button
                   key={option.value}
                   variant={scope === option.value ? 'default' : 'outline'}
                   onClick={() => setScope(option.value)}
+                  size="sm"
                   className={cn(
+                    'text-xs sm:text-sm',
                     scope === option.value
                       ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200'
                       : ''
@@ -87,7 +89,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {(scope === 'unit' || scope === 'floor' || scope === 'tower') && (
                 <Select value={selectedTower} onValueChange={setSelectedTower}>
                   <SelectTrigger>
@@ -120,13 +122,15 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               2. Tipo de Mensagem
             </label>
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
               {(['text', 'template', 'image'] as MsgType[]).map((type) => (
                 <Button
                   key={type}
                   variant={msgType === type ? 'default' : 'outline'}
                   onClick={() => setMsgType(type)}
+                  size="sm"
                   className={cn(
+                    'text-xs sm:text-sm',
                     msgType === type ? 'bg-green-100 text-green-700 border-green-300' : ''
                   )}
                 >

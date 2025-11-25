@@ -1,3 +1,8 @@
+// ============================================
+// TYPES SIMPLES - SEM CLASSES, SEM VALIDATORS
+// ============================================
+
+// Resident
 export interface Resident {
   id: string
   name: string
@@ -7,28 +12,36 @@ export interface Resident {
   unit: string
 }
 
-export interface Message {
-  id: number
-  timestamp: string
-  type: 'template' | 'text' | 'image'
-  templateName?: string | null
-  scope: string
-  target: string
-  phone?: string
-  content: string
-  payload?: WhatsAppPayload
-  status: 'sent' | 'delivered' | 'read' | 'failed'
-}
+// Complaint
+export type ComplaintStatus = 'open' | 'in_progress' | 'resolved'
 
 export interface Complaint {
   id: number
   residentId: string
   category: string
   content: string
-  status: 'open' | 'in_progress' | 'resolved'
+  status: ComplaintStatus
   timestamp: string
 }
 
+// Message
+export type MessageType = 'text' | 'template' | 'image'
+export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed'
+
+export interface Message {
+  id: number
+  timestamp: string
+  type: MessageType
+  templateName?: string | null
+  scope: string
+  target: string
+  phone?: string
+  content: string
+  payload?: WhatsAppPayload
+  status: MessageStatus
+}
+
+// Template
 export interface Template {
   name: string
   label: string
@@ -48,6 +61,7 @@ export interface TemplateParameter {
   date_time?: string
 }
 
+// WhatsApp
 export interface WhatsAppPayload {
   messaging_product: string
   recipient_type: string
@@ -62,8 +76,11 @@ export interface WhatsAppPayload {
   image?: { link: string; caption: string }
 }
 
+// Target
+export type MessageScope = 'all' | 'tower' | 'floor' | 'unit'
+
 export interface TargetData {
-  scope: 'all' | 'tower' | 'floor' | 'unit'
+  scope: MessageScope
   tower?: string
   floor?: string
   unit?: string
@@ -77,18 +94,31 @@ export interface MessageContent {
   caption?: string
 }
 
+// Notification
 export interface Notification {
-  msg: string
+  message: string
   type: 'success' | 'error'
 }
 
-export type UserRole = 'admin' | 'syndic' | 'resident'
-export type View = 'dashboard' | 'messages' | 'structure' | 'complaints' | 'history'
-
+// Kanban
 export interface KanbanColumn {
-  id: Complaint['status']
+  id: ComplaintStatus
   title: string
-  icon: React.ComponentType<{ size?: number }>
   color: string
   bg: string
 }
+
+// User
+export type UserRole = 'admin' | 'syndic' | 'resident'
+export type View = 'dashboard' | 'messages' | 'structure' | 'complaints' | 'history'
+
+// Constants
+export const COMPLAINT_CATEGORIES = [
+  'Barulho',
+  'Manutenção',
+  'Segurança',
+  'Limpeza',
+  'Outros',
+] as const
+
+export type ComplaintCategory = (typeof COMPLAINT_CATEGORIES)[number]

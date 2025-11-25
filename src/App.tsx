@@ -1,5 +1,10 @@
 import { HomePage } from '@/pages'
+import { AppProvider } from '@/contexts'
 
 export default function App() {
-  return <HomePage />
+  return (
+    <AppProvider>
+      <HomePage />
+    </AppProvider>
+  )
 }

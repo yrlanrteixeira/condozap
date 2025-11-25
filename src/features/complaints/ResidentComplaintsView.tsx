@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import type { Complaint } from '@/types'
-import { COMPLAINT_CATEGORIES } from '@/data/mock'
+import { COMPLAINT_CATEGORIES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 
 interface ResidentComplaintsViewProps {
@@ -56,26 +56,26 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">
+    <div className="p-4 sm:p-6 max-w-4xl">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
           Central de Denúncias (Anônimo)
         </h2>
-        <p className="text-slate-500">
+        <p className="text-sm sm:text-base text-slate-500">
           Relate problemas com segurança total. Sua identidade é preservada.
         </p>
       </div>
 
-      <Card className="mb-8 relative overflow-hidden">
+      <Card className="mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />
-        <CardContent className="p-6">
-          <h3 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2">
+        <CardContent className="p-4 sm:p-6">
+          <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700 flex items-center gap-2">
             <AlertTriangle size={20} className="text-green-600" />
             Nova Ocorrência
           </h3>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div className="md:col-span-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+            <div className="sm:col-span-1">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">
                 Categoria
               </label>
@@ -92,7 +92,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">
                 Descrição do Problema
               </label>
@@ -117,12 +117,12 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
       </Card>
 
       <div>
-        <h3 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2">
-          <History size={20} className="text-slate-400" />
+        <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700 flex items-center gap-2">
+          <History size={18} className="sm:w-5 sm:h-5 text-slate-400" />
           Meus Relatos
         </h3>
 
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {myComplaints.length === 0 && (
             <div className="text-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-300">
               <p className="text-slate-500 italic">Nenhum registro encontrado.</p>
@@ -133,7 +133,7 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
             const statusConfig = getStatusConfig(c.status)
             return (
               <Card key={c.id} className="hover:shadow-md transition">
-                <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="secondary" className="text-[10px] uppercase">

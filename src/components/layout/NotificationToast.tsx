@@ -1,11 +1,9 @@
-import type { Notification } from '@/types'
 import { cn } from '@/lib/utils'
+import { useApp } from '@/contexts'
 
-interface NotificationToastProps {
-  notification: Notification | null
-}
+export function NotificationToast() {
+  const { notification } = useApp()
 
-export function NotificationToast({ notification }: NotificationToastProps) {
   if (!notification) return null
 
   return (
@@ -15,7 +13,7 @@ export function NotificationToast({ notification }: NotificationToastProps) {
         notification.type === 'error' ? 'bg-red-500' : 'bg-green-600'
       )}
     >
-      {notification.msg}
+      {notification.message}
     </div>
   )
 }
