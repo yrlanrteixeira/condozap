@@ -60,6 +60,10 @@ export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
     [draggedComplaint]
   )
 
+  const refreshComplaints = useCallback(() => {
+    setComplaints(getAllComplaints())
+  }, [])
+
   return {
     complaints,
     draggedComplaint,
@@ -67,5 +71,6 @@ export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
     onDragStart,
     onDragOver,
     onDrop,
+    refreshComplaints,
   }
 }

@@ -34,15 +34,14 @@ export function HomePage() {
     onDragStart,
     onDragOver,
     onDrop,
+    refreshComplaints,
   } = useComplaints({
     onSuccess: (message) => showNotification(message),
   })
 
   useEffect(() => {
-    if (userRole === 'resident') {
+    if (userRole === 'resident' && view !== 'complaints') {
       setView('complaints')
-    } else if (view === 'complaints' && userRole !== 'resident') {
-      setView('dashboard')
     }
   }, [userRole, view, setView])
 
@@ -76,6 +75,7 @@ export function HomePage() {
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDrop={onDrop}
+              onComplaintsUpdate={refreshComplaints}
             />
           )}
           {view === 'history' && <HistoryPanel messageLog={messageLog} />}
