@@ -1,28 +1,31 @@
-import { useState, useCallback } from 'react'
-import type { Complaint, Resident, TargetData, MessageContent, Message } from '@/types'
-import { INITIAL_COMPLAINTS } from '@/data/mock'
+import { useState, useCallback, useEffect } from 'react'
+import type { Complaint } from '@/types'
+import {
+  getAllComplaints,
+  createComplaint,
+  updateComplaintStatus,
+} from '@/services/complaintService'
 
 interface UseComplaintsProps {
-  residents: Resident[]
-  sendMessage: (targetData: TargetData, messageType: Message['type'], content: MessageContent) => void
   onSuccess?: (message: string) => void
 }
 
-export function useComplaints({ residents, sendMessage, onSuccess }: UseComplaintsProps) {
-  const [complaints, setComplaints] = useState<Complaint[]>(INITIAL_COMPLAINTS)
+export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
+  const [complaints, setComplaints] = useState<Complaint[]>([])
   const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(null)
+
+  useEffect(() => {
+    setComplaints(getAllComplaints())
+  }, [])
 
   const handleComplaintSubmit = useCallback(
     (data: { category: string; content: string }) => {
-      const newComplaint: Complaint = {
-        id: Date.now(),
+      const newComplaint = createComplaint({
         residentId: '1',
         category: data.category,
         content: data.content,
-        status: 'open',
-        timestamp: new Date().toISOString(),
-      }
-      setComplaints((prev) => [newComplaint, ...prev])
+      })
+      setComplaints(getAllComplaints())
       onSuccess?.('Denúncia registrada anonimamente. Aguarde atualizações.')
     },
     [onSuccess]
@@ -46,34 +49,20 @@ export function useComplaints({ residents, sendMessage, onSuccess }: UseComplain
       if (!draggedComplaint) return
       if (draggedComplaint.status === newStatus) return
 
-      setComplaints((prev) =>
-        prev.map((c) =>
-          c.id === draggedComplaint.id ? { ...c, status: newStatus } : c
-        )
-      )
-
-      const resident = residents.find((r) => r.id === draggedComplaint.residentId)
-      if (resident) {
-        let messageText = ''
-        if (newStatus === 'in_progress') {
-          messageText = `Olá. Sua denúncia sobre "${draggedComplaint.category}" foi recebida e já está em análise pelo síndico/ronda.`
-        } else if (newStatus === 'resolved') {
-          messageText = `Olá. Boas notícias! A denúncia sobre "${draggedComplaint.category}" foi finalizada/resolvida.`
-        }
-
-        if (messageText) {
-          sendMessage(
-            { scope: 'unit', unit: resident.unit, tower: resident.tower },
-            'text',
-            { text: messageText }
-          )
-        }
+      try {
+        updateComplaintStatus(draggedComplaint.id, newStatus)
+        setComplaints(getAllComplaints())
+        setDraggedComplaint(null)
+      } catch (error) {
+        console.error('Failed to update complaint status:', error)
       }
-
-      setDraggedComplaint(null)
     },
-    [draggedComplaint, residents, sendMessage]
+    [draggedComplaint]
   )
+
+  const refreshComplaints = useCallback(() => {
+    setComplaints(getAllComplaints())
+  }, [])
 
   return {
     complaints,
@@ -82,5 +71,6 @@ export function useComplaints({ residents, sendMessage, onSuccess }: UseComplain
     onDragStart,
     onDragOver,
     onDrop,
+    refreshComplaints,
   }
 }
