@@ -83,19 +83,10 @@ export function HomePage() {
   const openComplaintsCount = currentComplaints.filter((c) => c.status === 'open').length
 
   return (
-    <div className="flex h-screen bg-background font-sans text-foreground">
-      {/* Overlay for mobile menu */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
+    <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
       <Sidebar openComplaintsCount={openComplaintsCount} />
 
-      <div className="flex-1 flex flex-col overflow-hidden w-full md:w-auto">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <MobileHeader />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
