@@ -90,7 +90,10 @@ export function AdminKanbanView({
                       key={c.id}
                       draggable
                       onDragStart={(e) => onDragStart(e, c)}
-                      className="cursor-grab active:cursor-grabbing hover:shadow-md transition group"
+                      className="cursor-grab active:cursor-grabbing hover:shadow-md transition group touch-manipulation"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Ocorrência: ${c.content}. Arraste para alterar status.`}
                     >
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-2">

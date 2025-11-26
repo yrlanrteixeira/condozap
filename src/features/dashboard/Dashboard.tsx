@@ -1,7 +1,10 @@
-import { Users, MessageSquare, AlertTriangle, PieChart, Building, BarChart3 } from 'lucide-react'
+import { useState } from 'react'
+import { Users, MessageSquare, AlertTriangle, PieChart, Building, BarChart3, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import type { Resident, Message, Complaint } from '@/types'
 import { COMPLAINT_CATEGORIES, TEMPLATES } from '@/data/mockData'
+import { cn } from '@/lib/utils'
 
 interface DashboardProps {
   residents: Resident[]
@@ -31,16 +34,33 @@ function StatCard({ title, value, icon, iconBgColor, iconColor }: StatCardProps)
   )
 }
 
+type Period = '7d' | '30d' | 'all'
+
 export function Dashboard({ residents, messageLog, complaints }: DashboardProps) {
-  const totalComplaints = complaints.length
+  const [period, setPeriod] = useState<Period>('30d')
+
+  const filterByPeriod = <T extends { timestamp: string }>(items: T[]): T[] => {
+    if (period === 'all') return items
+
+    const now = new Date()
+    const daysAgo = period === '7d' ? 7 : 30
+    const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
+
+    return items.filter(item => new Date(item.timestamp) >= cutoffDate)
+  }
+
+  const filteredComplaints = filterByPeriod(complaints)
+  const filteredMessages = filterByPeriod(messageLog)
+
+  const totalComplaints = filteredComplaints.length
   const complaintsByCategory = COMPLAINT_CATEGORIES.map((cat) => ({
     name: cat,
-    count: complaints.filter((c) => c.category === cat).length,
+    count: filteredComplaints.filter((c) => c.category === cat).length,
   })).sort((a, b) => b.count - a.count)
 
   const complaintsByTower = residents.reduce(
     (acc, resident) => {
-      const residentComplaints = complaints.filter(
+      const residentComplaints = filteredComplaints.filter(
         (c) => c.residentId === resident.id
       ).length
       if (!acc[resident.tower]) acc[resident.tower] = 0
@@ -50,7 +70,7 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
     {} as Record<string, number>
   )
 
-  const messageSubjects = messageLog.reduce(
+  const messageSubjects = filteredMessages.reduce(
     (acc, msg) => {
       const subject =
         msg.type === 'text'
@@ -66,8 +86,40 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
     {} as Record<string, number>
   )
 
+  const periodLabels: Record<Period, string> = {
+    '7d': 'Últimos 7 dias',
+    '30d': 'Últimos 30 dias',
+    'all': 'Todo período'
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+          <p className="text-sm text-muted-foreground">Visão geral do condomínio</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar size={16} className="text-muted-foreground" />
+          <div className="flex gap-1">
+            {(['7d', '30d', 'all'] as Period[]).map((p) => (
+              <Button
+                key={p}
+                variant={period === p ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod(p)}
+                className={cn(
+                  'text-xs',
+                  period === p && 'bg-primary text-primary-foreground'
+                )}
+              >
+                {periodLabels[p]}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           title="Total Moradores"
@@ -78,14 +130,14 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
         />
         <StatCard
           title="Mensagens Enviadas"
-          value={messageLog.length}
+          value={filteredMessages.length}
           icon={<MessageSquare size={24} />}
           iconBgColor="bg-green-50"
           iconColor="text-green-600"
         />
         <StatCard
           title="Ocorrências Abertas"
-          value={complaints.filter((c) => c.status === 'open').length}
+          value={filteredComplaints.filter((c) => c.status === 'open').length}
           icon={<AlertTriangle size={24} />}
           iconBgColor="bg-red-50"
           iconColor="text-red-600"

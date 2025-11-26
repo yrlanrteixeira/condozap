@@ -1,3 +1,4 @@
+import { useState, useMemo, useEffect } from 'react'
 import { Clock, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react'
 import {
   Table,
@@ -15,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PaginationTable } from '@/components/ui/pagination-table'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Complaint, Resident, ComplaintStatus } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -47,12 +50,49 @@ export function AdminTableView({
   residents,
   onStatusChange,
 }: AdminTableViewProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [pendingChange, setPendingChange] = useState<{
+    complaintId: number
+    newStatus: ComplaintStatus
+  } | null>(null)
+
+  // Calcular itens paginados
+  const paginatedComplaints = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return complaints.slice(startIndex, endIndex)
+  }, [complaints, currentPage])
+
+  const totalPages = Math.ceil(complaints.length / itemsPerPage)
+
+  // Resetar para primeira página quando os complaints mudarem
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1)
+    }
+  }, [complaints.length, currentPage, totalPages])
+
   const getResidentInfo = (residentId: string) => {
     const resident = residents.find((r) => r.id === residentId)
     return resident ? `${resident.unit} - Torre ${resident.tower}` : 'Anônimo'
   }
 
   const getStatusConfig = (status: ComplaintStatus) => STATUS_CONFIG[status]
+
+  const handleStatusChangeRequest = (complaintId: number, newStatus: ComplaintStatus) => {
+    setPendingChange({ complaintId, newStatus })
+    setConfirmDialogOpen(true)
+  }
+
+  const handleConfirmStatusChange = () => {
+    if (pendingChange) {
+      onStatusChange(pendingChange.complaintId, pendingChange.newStatus)
+      setPendingChange(null)
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6">
@@ -86,7 +126,7 @@ export function AdminTableView({
                   </TableCell>
                 </TableRow>
               ) : (
-                complaints.map((complaint) => {
+                paginatedComplaints.map((complaint) => {
                   const statusConfig = getStatusConfig(complaint.status)
                   const Icon = statusConfig.icon
 
@@ -123,7 +163,7 @@ export function AdminTableView({
                         <Select
                           value={complaint.status}
                           onValueChange={(value) =>
-                            onStatusChange(complaint.id, value as ComplaintStatus)
+                            handleStatusChangeRequest(complaint.id, value as ComplaintStatus)
                           }
                         >
                           <SelectTrigger className="h-9 text-xs">
@@ -158,12 +198,28 @@ export function AdminTableView({
             </TableBody>
           </Table>
         </div>
+        {complaints.length > 0 && (
+          <div className="p-4 border-t border-border">
+            <PaginationTable
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={complaints.length}
+              showInfo={true}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
-        <ChevronRight size={14} />
-        Total de {complaints.length} ocorrência(s) registrada(s)
-      </div>
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Confirmar Alteração de Status"
+        description="O morador será notificado automaticamente sobre esta alteração. Deseja continuar?"
+        confirmText="Sim, alterar status"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmStatusChange}
+      />
     </div>
   )
 }
