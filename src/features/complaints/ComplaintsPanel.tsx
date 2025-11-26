@@ -50,7 +50,7 @@ export function ComplaintsPanel({
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 sm:p-6 pb-0">
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg w-fit">
+        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
           <Button
             variant={viewMode === 'kanban' ? 'default' : 'ghost'}
             size="sm"
