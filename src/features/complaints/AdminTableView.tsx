@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Clock, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react'
 import {
   Table,
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Complaint, Resident, ComplaintStatus } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -47,12 +49,30 @@ export function AdminTableView({
   residents,
   onStatusChange,
 }: AdminTableViewProps) {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [pendingChange, setPendingChange] = useState<{
+    complaintId: number
+    newStatus: ComplaintStatus
+  } | null>(null)
+
   const getResidentInfo = (residentId: string) => {
     const resident = residents.find((r) => r.id === residentId)
     return resident ? `${resident.unit} - Torre ${resident.tower}` : 'Anônimo'
   }
 
   const getStatusConfig = (status: ComplaintStatus) => STATUS_CONFIG[status]
+
+  const handleStatusChangeRequest = (complaintId: number, newStatus: ComplaintStatus) => {
+    setPendingChange({ complaintId, newStatus })
+    setConfirmDialogOpen(true)
+  }
+
+  const handleConfirmStatusChange = () => {
+    if (pendingChange) {
+      onStatusChange(pendingChange.complaintId, pendingChange.newStatus)
+      setPendingChange(null)
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6">
@@ -123,7 +143,7 @@ export function AdminTableView({
                         <Select
                           value={complaint.status}
                           onValueChange={(value) =>
-                            onStatusChange(complaint.id, value as ComplaintStatus)
+                            handleStatusChangeRequest(complaint.id, value as ComplaintStatus)
                           }
                         >
                           <SelectTrigger className="h-9 text-xs">
@@ -164,6 +184,16 @@ export function AdminTableView({
         <ChevronRight size={14} />
         Total de {complaints.length} ocorrência(s) registrada(s)
       </div>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Confirmar Alteração de Status"
+        description="O morador será notificado automaticamente sobre esta alteração. Deseja continuar?"
+        confirmText="Sim, alterar status"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmStatusChange}
+      />
     </div>
   )
 }

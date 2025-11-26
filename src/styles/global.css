@@ -1,56 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142.1 76.2% 36.3%;
-    --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* --- TEMA LIGHT (Baseado no seu pedido) --- */
+    --background: 317 64% 98%;
+    --foreground: 0 0% 11%;
+
+    --card: 317 28% 95%;
+    --card-foreground: 0 0% 4%;
+
+    --popover: 283 23% 94%;
+    --popover-foreground: 273 14% 30%;
+
+    --primary: 253 63% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 12% 41%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 317 28% 95%;
+    --muted-foreground: 0 0% 4%;
+
+    --accent: 264 78% 93%;
+    --accent-foreground: 0 0% 4%;
+
+    --destructive: 1 94% 45%;
+    --destructive-foreground: 0 0% 98%; /* Ajustado para branco para contraste */
+
+    --border: 270 13% 80%;
+    --input: 272 5% 48%;
+    --ring: 256 34% 48%;
+
+    --radius: 1rem; /* Raio arredondado do seu pedido original */
+
+    /* Gráficos */
+    --chart-1: 242 96% 70%;
+    --chart-2: 151 54% 49%;
+    --chart-3: 295 49% 61%;
+    --chart-4: 85 56% 61%;
+    --chart-5: 216 100% 66%;
+
+    /* Sidebar (Novo padrão Shadcn) */
+    --sidebar: 0 0% 99%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 194 100% 33%;
+    --sidebar-primary-foreground: 0 0% 97%;
+    --sidebar-accent: 0 0% 93%;
+    --sidebar-accent-foreground: 0 0% 13%;
+    --sidebar-border: 0 0% 87%;
+    --sidebar-ring: 194 100% 33%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 0 0% 95%;
-    --card: 24 9.8% 10%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 142.1 70.6% 45.3%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    /* --- TEMA DARK (Baseado no seu pedido) --- */
+    --background: 285 17% 5%;
+    --foreground: 291 23% 94%;
+
+    --card: 293 14% 11%;
+    --card-foreground: 291 23% 94%;
+
+    --popover: 293 14% 11%;
+    --popover-foreground: 291 23% 94%;
+
+    --primary: 243 99% 70%;
+    --primary-foreground: 291 64% 98%;
+
+    --secondary: 253 10% 36%;
+    --secondary-foreground: 291 23% 94%;
+
+    --muted: 288 9% 11%;
+    --muted-foreground: 290 3% 62%;
+
+    --accent: 261 25% 27%;
+    --accent-foreground: 291 23% 94%;
+
+    --destructive: 1 94% 45%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+    --border: 273 8% 15%;
+    --input: 273 8% 15%;
+    --ring: 259 39% 49%;
+
+    /* Gráficos Dark */
+    --chart-1: 243 83% 58%;
+    --chart-2: 141 61% 37%;
+    --chart-3: 276 74% 65%;
+    --chart-4: 86 100% 29%;
+    --chart-5: 209 100% 48%;
+
+    /* Sidebar Dark */
+    --sidebar: 285 9% 9%;
+    --sidebar-foreground: 291 23% 94%;
+    --sidebar-primary: 194 85% 37%;
+    --sidebar-primary-foreground: 291 23% 94%;
+    --sidebar-accent: 288 5% 18%;
+    --sidebar-accent-foreground: 291 23% 94%;
+    --sidebar-border: 288 4% 12%;
+    --sidebar-ring: 194 85% 37%;
+  }
+
+  /* Focus visível para acessibilidade */
+  *:focus-visible {
+    outline: none;
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="menuitem"]:focus-visible {
+    outline: none;
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }

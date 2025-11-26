@@ -1,6 +1,6 @@
 import { Menu, PanelLeftClose, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./ThemeToggle";
+import { ModeToggle } from "@/components/mode-toggle";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -51,7 +51,7 @@ export const Header = ({
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-2">
-        <ThemeToggle />
+        <ModeToggle />
       </div>
     </header>
   );

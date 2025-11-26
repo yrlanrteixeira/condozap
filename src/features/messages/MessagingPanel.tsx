@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Send } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Send, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { TargetData, MessageContent, Message } from '@/types'
-import { TEMPLATES } from '@/data/mockData'
+import { TEMPLATES, dataStore } from '@/data/mockData'
+import { filterResidentsByTarget } from '@/utils/helpers'
 import { cn } from '@/lib/utils'
 
 interface MessagingPanelProps {
@@ -37,8 +38,21 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
   const [selectedUnit, setSelectedUnit] = useState('')
   const [textContent, setTextContent] = useState('')
   const [templateId, setTemplateId] = useState(TEMPLATES[0].name)
+  const [isSending, setIsSending] = useState(false)
 
-  const handleSend = () => {
+  const recipientCount = useMemo(() => {
+    const targetData: TargetData = {
+      scope,
+      tower: selectedTower,
+      floor: selectedFloor,
+      unit: selectedUnit,
+    }
+    return filterResidentsByTarget(dataStore.residents, targetData).length
+  }, [scope, selectedTower, selectedFloor, selectedUnit])
+
+  const handleSend = async () => {
+    setIsSending(true)
+
     let content: MessageContent = {}
     if (msgType === 'text') content = { text: textContent }
     if (msgType === 'template') content = { templateName: templateId, components: [] }
@@ -47,6 +61,9 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
         mediaUrl: 'http://exemplo.com/img.jpg',
         caption: textContent,
       }
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     sendMessage(
       {
@@ -58,6 +75,9 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
       msgType,
       content
     )
+
+    setIsSending(false)
+    setTextContent('')
   }
 
   return (
@@ -67,7 +87,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
       <Card>
         <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="scope-select" className="block text-sm font-medium text-foreground mb-2">
               1. Destinatário
             </label>
             <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
@@ -114,7 +134,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
           </div>
 
           <div className="border-t border-border pt-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="message-type" className="block text-sm font-medium text-foreground mb-2">
               2. Tipo de Mensagem
             </label>
             <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
@@ -135,10 +155,12 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
 
             {msgType === 'text' && (
               <Textarea
+                id="message-text"
                 className="min-h-[100px]"
                 placeholder="Digite sua mensagem aqui..."
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
+                aria-label="Conteúdo da mensagem"
               />
             )}
 
@@ -178,13 +200,35 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
             )}
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-border">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users size={16} />
+              <span>
+                {recipientCount > 0 ? (
+                  <>
+                    <strong className="text-foreground">{recipientCount}</strong> {recipientCount === 1 ? 'morador receberá' : 'moradores receberão'} esta mensagem
+                  </>
+                ) : (
+                  <span className="text-destructive">Nenhum destinatário encontrado</span>
+                )}
+              </span>
+            </div>
             <Button
               onClick={handleSend}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              disabled={isSending || recipientCount === 0 || (msgType === 'text' && !textContent.trim())}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
             >
-              <Send size={18} className="mr-2" />
-              Enviar Mensagem
+              {isSending ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send size={18} className="mr-2" />
+                  Enviar Mensagem
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
