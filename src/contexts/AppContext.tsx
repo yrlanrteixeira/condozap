@@ -17,6 +17,8 @@ interface AppContextType {
   setUserRole: (role: UserRole) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   notification: Notification | null;
   showNotification: (message: string, type?: "success" | "error") => void;
   // Multi-condo support
@@ -35,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<View>("dashboard");
   const [userRole, setUserRole] = useState<UserRole>("admin");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
 
   // Multi-condo state
@@ -76,6 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setUserRole,
         mobileMenuOpen,
         setMobileMenuOpen,
+        sidebarCollapsed,
+        setSidebarCollapsed,
         notification,
         showNotification,
         currentUser,

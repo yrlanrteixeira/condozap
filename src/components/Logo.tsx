@@ -47,7 +47,7 @@ export function Logo({ className = "", size = "lg" }: LogoProps) {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 500.000000 500.000000"
       preserveAspectRatio="xMidYMid meet"
-      className={cn(sizeClasses[size], "w-auto", className)}
+      className={cn(sizeClasses[size], "w-auto mb-0", className)}
       aria-label="CondoTalk"
     >
       <g

@@ -1,40 +1,40 @@
-import { AlertTriangle, Clock, CheckSquare, ArrowRight } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import type { Complaint, Resident, KanbanColumn } from '@/types'
-import { cn } from '@/lib/utils'
+import { AlertTriangle, Clock, CheckSquare, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { Complaint, Resident, KanbanColumn } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface AdminKanbanViewProps {
-  complaints: Complaint[]
-  residents: Resident[]
-  onDragStart: (e: React.DragEvent, complaint: Complaint) => void
-  onDragOver: (e: React.DragEvent) => void
-  onDrop: (e: React.DragEvent, newStatus: Complaint['status']) => void
+  complaints: Complaint[];
+  residents: Resident[];
+  onDragStart: (e: React.DragEvent, complaint: Complaint) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, newStatus: Complaint["status"]) => void;
 }
 
 const COLUMNS: KanbanColumn[] = [
   {
-    id: 'open',
-    title: 'Aguardando (Fila)',
+    id: "open",
+    title: "Aguardando (Fila)",
     icon: AlertTriangle,
-    color: 'text-red-500',
-    bg: 'bg-red-50',
+    color: "text-red-500",
+    bg: "bg-red-50",
   },
   {
-    id: 'in_progress',
-    title: 'Em Análise / Ronda',
+    id: "in_progress",
+    title: "Em Análise / Ronda",
     icon: Clock,
-    color: 'text-yellow-500',
-    bg: 'bg-yellow-50',
+    color: "text-yellow-500",
+    bg: "bg-yellow-50",
   },
   {
-    id: 'resolved',
-    title: 'Finalizado',
+    id: "resolved",
+    title: "Finalizado / Notificado",
     icon: CheckSquare,
-    color: 'text-green-500',
-    bg: 'bg-green-50',
+    color: "text-green-500",
+    bg: "bg-green-50",
   },
-]
+];
 
 export function AdminKanbanView({
   complaints,
@@ -51,16 +51,18 @@ export function AdminKanbanView({
             Gestão de Ocorrências (Kanban)
           </h2>
           <p className="text-muted-foreground text-xs sm:text-sm">
-            Arraste os cartões para atualizar o status. O morador será notificado
-            automaticamente.
+            Arraste os cartões para atualizar o status. O morador será
+            notificado automaticamente.
           </p>
         </div>
       </div>
 
       <div className="flex-1 flex gap-3 sm:gap-6 overflow-x-auto pb-4">
         {COLUMNS.map((col) => {
-          const Icon = col.icon
-          const columnComplaints = complaints.filter((c) => c.status === col.id)
+          const Icon = col.icon;
+          const columnComplaints = complaints.filter(
+            (c) => c.status === col.id
+          );
 
           return (
             <div
@@ -71,7 +73,7 @@ export function AdminKanbanView({
             >
               <div
                 className={cn(
-                  'p-3 sm:p-4 border-b border-border flex items-center gap-2 font-bold bg-card rounded-t-xl text-sm sm:text-base',
+                  "p-3 sm:p-4 border-b border-border flex items-center gap-2 font-bold bg-card rounded-t-xl text-sm sm:text-base",
                   col.color
                 )}
               >
@@ -84,7 +86,7 @@ export function AdminKanbanView({
 
               <div className="p-2 sm:p-3 space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                 {columnComplaints.map((c) => {
-                  const resident = residents.find((r) => r.id === c.residentId)
+                  const resident = residents.find((r) => r.id === c.residentId);
                   return (
                     <Card
                       key={c.id}
@@ -110,7 +112,7 @@ export function AdminKanbanView({
                         <div className="text-xs text-muted-foreground">
                           {resident
                             ? `Unid. ${resident.unit} (${resident.tower})`
-                            : 'Anônimo'}
+                            : "Anônimo"}
                         </div>
 
                         <div className="text-xs text-muted-foreground flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
@@ -119,7 +121,7 @@ export function AdminKanbanView({
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })}
 
                 {columnComplaints.length === 0 && (
@@ -129,9 +131,9 @@ export function AdminKanbanView({
                 )}
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
