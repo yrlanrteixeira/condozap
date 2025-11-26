@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Clock, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react'
 import {
   Table,
@@ -69,7 +69,7 @@ export function AdminTableView({
   const totalPages = Math.ceil(complaints.length / itemsPerPage)
 
   // Resetar para primeira página quando os complaints mudarem
-  useMemo(() => {
+  useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1)
     }
@@ -126,7 +126,7 @@ export function AdminTableView({
                   </TableCell>
                 </TableRow>
               ) : (
-                complaints.map((complaint) => {
+                paginatedComplaints.map((complaint) => {
                   const statusConfig = getStatusConfig(complaint.status)
                   const Icon = statusConfig.icon
 
@@ -198,11 +198,17 @@ export function AdminTableView({
             </TableBody>
           </Table>
         </div>
-      </div>
-
-      <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
-        <ChevronRight size={14} />
-        Total de {complaints.length} ocorrência(s) registrada(s)
+        {complaints.length > 0 && (
+          <div className="p-4 border-t border-border">
+            <PaginationTable
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={complaints.length}
+              showInfo={true}
+            />
+          </div>
+        )}
       </div>
 
       <ConfirmDialog
