@@ -88,12 +88,13 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
   return (
     <div
       className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-card text-card-foreground border-r transform transition-transform duration-200 ease-in-out",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-card text-card-foreground border-r transform transition-transform duration-200 ease-in-out flex flex-col overflow-hidden",
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
         "md:relative md:translate-x-0"
       )}
     >
-      <div className="p-6 border-b">
+      {/* Header - Logo */}
+      <div className="flex-shrink-0 p-6 border-b">
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center justify-end w-full">
             <Button
@@ -111,7 +112,7 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
 
       {/* Context Switcher - só aparece para Síndico Profissional */}
       {isProfessionalSyndic() && (
-        <div className="p-4 border-b">
+        <div className="flex-shrink-0 p-4 border-b">
           <CondoSwitcher />
           {currentCondo && (
             <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -123,7 +124,7 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
 
       {/* Info do condomínio atual (para admin local) */}
       {!isProfessionalSyndic() && currentCondo && (
-        <div className="p-4 border-b bg-muted/30">
+        <div className="flex-shrink-0 p-4 border-b bg-muted/30">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <div className="flex-1 min-w-0">
@@ -134,7 +135,8 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
         </div>
       )}
 
-      <nav className="p-4 space-y-2">
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
         {userRole !== "resident" ? (
           <>
             <NavItem
@@ -185,8 +187,9 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
         )}
       </nav>
 
-      <div className="absolute bottom-0 w-full p-4 border-t space-y-3">
-        <div className="flex items-center justify-center mb-2">
+      {/* Footer - Fixed at bottom */}
+      <div className="flex-shrink-0 p-4 border-t space-y-3 bg-card">
+        <div className="flex items-center justify-center">
           <ModeToggle />
         </div>
         <div>
