@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Send,
   Building,
-  History,
   AlertTriangle,
   X,
   ListChecks,
@@ -159,13 +158,6 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
               viewKey="structure"
               currentView={view}
               onClick={() => setView("structure")}
-            />
-            <NavItem
-              icon={<History size={20} />}
-              label="Logs do Sistema"
-              viewKey="history"
-              currentView={view}
-              onClick={() => setView("history")}
             />
             <NavItem
               icon={<AlertTriangle size={20} />}
