@@ -1,10 +1,10 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   Send,
   Building,
   History,
   AlertTriangle,
-  Smartphone,
   X,
   ListChecks,
   Building2,
@@ -24,6 +24,7 @@ import { useApp } from "@/contexts";
 import { ModeToggle } from "@/components/mode-toggle";
 import { CondoSwitcher } from "./CondoSwitcher";
 import { USERS } from "@/data/multiCondoMockData";
+import { Logo } from "@/components/Logo";
 
 interface SidebarProps {
   openComplaintsCount: number;
@@ -81,9 +82,9 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
     isProfessionalSyndic,
     getCurrentCondominium,
   } = useApp();
-
+  
   const currentCondo = getCurrentCondominium();
-
+  
   return (
     <div
       className={cn(
@@ -92,23 +93,19 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
         "md:relative md:translate-x-0"
       )}
     >
-      <div className="p-6 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2 font-bold text-xl">
-          <Smartphone className="text-primary" />
-          <span>CondoTalk</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden md:block">
-            <ModeToggle />
+      <div className="p-6 border-b">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center justify-end w-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(false)}
+              className="md:hidden"
+            >
+              <X size={24} />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden"
-          >
-            <X size={24} />
-          </Button>
+          <Logo size="lg" />
         </div>
       </div>
 
@@ -189,6 +186,9 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
       </nav>
 
       <div className="absolute bottom-0 w-full p-4 border-t space-y-3">
+        <div className="flex items-center justify-center mb-2">
+          <ModeToggle />
+        </div>
         <div>
           <div className="text-xs text-muted-foreground mb-2 uppercase font-bold">
             Simular Usuário
