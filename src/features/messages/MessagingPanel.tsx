@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { TargetData, MessageContent, Message } from '@/types'
-import { TEMPLATES, dataStore } from '@/data/mockData'
+import type { TargetData, MessageContent, Message, Resident } from '@/types'
+import { TEMPLATES } from '@/data/mockData'
 import { filterResidentsByTarget } from '@/utils/helpers'
 import { cn } from '@/lib/utils'
 
 interface MessagingPanelProps {
   sendMessage: (targetData: TargetData, messageType: Message['type'], content: MessageContent) => void
+  residents: Resident[]
 }
 
 type Scope = 'unit' | 'floor' | 'tower' | 'all'
@@ -30,7 +31,7 @@ const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
   { value: 'all', label: 'Todo o Condomínio' },
 ]
 
-export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
+export function MessagingPanel({ sendMessage, residents }: MessagingPanelProps) {
   const [scope, setScope] = useState<Scope>('unit')
   const [msgType, setMsgType] = useState<MsgType>('text')
   const [selectedTower, setSelectedTower] = useState('A')
@@ -47,7 +48,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
       floor: selectedFloor,
       unit: selectedUnit,
     }
-    return filterResidentsByTarget(dataStore.residents, targetData).length
+    return filterResidentsByTarget(residents, targetData).length
   }, [scope, selectedTower, selectedFloor, selectedUnit])
 
   const handleSend = async () => {
@@ -81,57 +82,65 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl">
-      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">Central de Disparo</h2>
+    <div className="flex-1 flex items-start justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-3xl">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+            Enviar Mensagens
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Envie mensagens para moradores do condomínio
+          </p>
+        </div>
 
-      <Card>
-        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div>
-            <label htmlFor="scope-select" className="block text-sm font-medium text-foreground mb-2">
-              1. Destinatário
-            </label>
-            <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
-              {SCOPE_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={scope === option.value ? 'default' : 'outline'}
-                  onClick={() => setScope(option.value)}
-                  size="sm"
-                  className="text-xs sm:text-sm"
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+        <Card className="shadow-lg">
+          <CardContent className="p-6 sm:p-8 space-y-6 sm:space-y-8">
+            <div>
+              <label htmlFor="scope-select" className="block text-sm font-medium text-foreground mb-2">
+                1. Destinatário
+              </label>
+              <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
+                {SCOPE_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={scope === option.value ? 'default' : 'outline'}
+                    onClick={() => setScope(option.value)}
+                    size="sm"
+                    className="text-xs sm:text-sm"
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {(scope === 'unit' || scope === 'floor' || scope === 'tower') && (
-                <Select value={selectedTower} onValueChange={setSelectedTower}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione Torre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">Torre A</SelectItem>
-                    <SelectItem value="B">Torre B</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              {(scope === 'unit' || scope === 'floor') && (
-                <Input
-                  placeholder="Andar (ex: 1)"
-                  value={selectedFloor}
-                  onChange={(e) => setSelectedFloor(e.target.value)}
-                />
-              )}
-              {scope === 'unit' && (
-                <Input
-                  placeholder="Unidade (ex: 101)"
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                />
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {(scope === 'unit' || scope === 'floor' || scope === 'tower') && (
+                  <Select value={selectedTower} onValueChange={setSelectedTower}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione Torre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">Torre A</SelectItem>
+                      <SelectItem value="B">Torre B</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                {(scope === 'unit' || scope === 'floor') && (
+                  <Input
+                    placeholder="Andar (ex: 1)"
+                    value={selectedFloor}
+                    onChange={(e) => setSelectedFloor(e.target.value)}
+                  />
+                )}
+                {scope === 'unit' && (
+                  <Input
+                    placeholder="Unidade (ex: 101)"
+                    value={selectedUnit}
+                    onChange={(e) => setSelectedUnit(e.target.value)}
+                  />
+                )}
+              </div>
             </div>
-          </div>
 
           <div className="border-t border-border pt-4">
             <label htmlFor="message-type" className="block text-sm font-medium text-foreground mb-2">
@@ -178,7 +187,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="bg-yellow-50 p-3 rounded text-sm text-yellow-800 border border-yellow-200">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded text-sm text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
                   Templates precisam ser pré-aprovados pela Meta. Esta é uma simulação.
                 </div>
               </div>
@@ -233,6 +242,7 @@ export function MessagingPanel({ sendMessage }: MessagingPanelProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   )
 }

@@ -8,27 +8,31 @@ import {
 
 interface UseComplaintsProps {
   onSuccess?: (message: string) => void
+  initialComplaints?: Complaint[]
+  currentCondominiumId?: string
 }
 
-export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
-  const [complaints, setComplaints] = useState<Complaint[]>([])
+export function useComplaints({ onSuccess, initialComplaints = [], currentCondominiumId }: UseComplaintsProps = {}) {
+  const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints)
   const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(null)
 
   useEffect(() => {
-    setComplaints(getAllComplaints())
-  }, [])
+    setComplaints(initialComplaints)
+  }, [initialComplaints])
 
   const handleComplaintSubmit = useCallback(
-    (data: { category: string; content: string }) => {
+    (data: { category: string; content: string; residentId?: string }) => {
       const newComplaint = createComplaint({
-        residentId: '1',
+        condominiumId: currentCondominiumId || 'condo-1',
+        residentId: data.residentId || '1',
         category: data.category,
         content: data.content,
       })
-      setComplaints(getAllComplaints())
-      onSuccess?.('Denúncia registrada anonimamente. Aguarde atualizações.')
+      // Atualizar lista de complaints com o novo
+      setComplaints(prev => [...prev, newComplaint])
+      onSuccess?.('Ocorrência registrada com sucesso. Aguarde atualizações.')
     },
-    [onSuccess]
+    [onSuccess, currentCondominiumId]
   )
 
   const onDragStart = useCallback(
@@ -51,7 +55,10 @@ export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
 
       try {
         updateComplaintStatus(draggedComplaint.id, newStatus)
-        setComplaints(getAllComplaints())
+        // Atualizar localmente ao invés de recarregar tudo
+        setComplaints(prev =>
+          prev.map(c => c.id === draggedComplaint.id ? { ...c, status: newStatus } : c)
+        )
         setDraggedComplaint(null)
       } catch (error) {
         console.error('Failed to update complaint status:', error)
@@ -61,8 +68,8 @@ export function useComplaints({ onSuccess }: UseComplaintsProps = {}) {
   )
 
   const refreshComplaints = useCallback(() => {
-    setComplaints(getAllComplaints())
-  }, [])
+    setComplaints(initialComplaints)
+  }, [initialComplaints])
 
   return {
     complaints,

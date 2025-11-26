@@ -5,6 +5,7 @@
 // Resident
 export interface Resident {
   id: string
+  condominiumId: string
   name: string
   phone: string
   tower: string
@@ -14,13 +15,16 @@ export interface Resident {
 
 // Complaint
 export type ComplaintStatus = 'open' | 'in_progress' | 'resolved'
+export type ComplaintPriority = 'critical' | 'high' | 'medium' | 'low'
 
 export interface Complaint {
   id: number
+  condominiumId: string
   residentId: string
   category: string
   content: string
   status: ComplaintStatus
+  priority?: ComplaintPriority
   timestamp: string
 }
 
@@ -30,6 +34,7 @@ export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed'
 
 export interface Message {
   id: number
+  condominiumId?: string
   timestamp: string
   type: MessageType
   templateName?: string | null
@@ -108,9 +113,43 @@ export interface KanbanColumn {
   bg: string
 }
 
-// User
-export type UserRole = 'admin' | 'syndic' | 'resident'
-export type View = 'dashboard' | 'messages' | 'structure' | 'complaints' | 'history'
+// Condominium
+export interface Condominium {
+  id: string
+  name: string
+  cnpj: string
+  address: string
+  towers: string[]
+}
+
+// User with permissions
+export type UserRole = 'professional_syndic' | 'admin' | 'syndic' | 'resident'
+export type PermissionScope = 'global' | 'local'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  permissionScope: PermissionScope
+  condominiumIds: string[] // Array of condos the user has access to
+  residentId?: string // Link to Resident for role 'resident'
+}
+
+export type View = 'unified_dashboard' | 'dashboard' | 'messages' | 'structure' | 'complaints' | 'history'
+
+// Urgent Feed Item
+export interface UrgentFeedItem {
+  id: number
+  condominiumId: string
+  condominiumName: string
+  type: 'complaint' | 'message'
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  title: string
+  description: string
+  timestamp: string
+  isRead: boolean
+}
 
 // Constants
 export const COMPLAINT_CATEGORIES = [

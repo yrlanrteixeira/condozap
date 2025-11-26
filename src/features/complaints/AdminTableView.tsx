@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Clock, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react'
 import {
   Table,
@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PaginationTable } from '@/components/ui/pagination-table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Complaint, Resident, ComplaintStatus } from '@/types'
 import { cn } from '@/lib/utils'
@@ -49,11 +50,30 @@ export function AdminTableView({
   residents,
   onStatusChange,
 }: AdminTableViewProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [pendingChange, setPendingChange] = useState<{
     complaintId: number
     newStatus: ComplaintStatus
   } | null>(null)
+
+  // Calcular itens paginados
+  const paginatedComplaints = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return complaints.slice(startIndex, endIndex)
+  }, [complaints, currentPage])
+
+  const totalPages = Math.ceil(complaints.length / itemsPerPage)
+
+  // Resetar para primeira página quando os complaints mudarem
+  useMemo(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1)
+    }
+  }, [complaints.length, currentPage, totalPages])
 
   const getResidentInfo = (residentId: string) => {
     const resident = residents.find((r) => r.id === residentId)

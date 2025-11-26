@@ -5,14 +5,15 @@ import { getAllMessages, sendBulkMessage } from '@/services/messageService'
 interface UseMessagesProps {
   onSuccess?: (count: number) => void
   onError?: (message: string) => void
+  initialMessages?: Message[]
 }
 
-export function useMessages({ onSuccess, onError }: UseMessagesProps = {}) {
-  const [messageLog, setMessageLog] = useState<Message[]>([])
+export function useMessages({ onSuccess, onError, initialMessages = [] }: UseMessagesProps = {}) {
+  const [messageLog, setMessageLog] = useState<Message[]>(initialMessages)
 
   useEffect(() => {
-    setMessageLog(getAllMessages())
-  }, [])
+    setMessageLog(initialMessages)
+  }, [initialMessages])
 
   const sendMessage = useCallback(
     (targetData: TargetData, messageType: Message['type'], content: MessageContent) => {
