@@ -1,0 +1,252 @@
+// Prisma Schema for CondoZap
+// Multi-tenant condominium management platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// Enums
+// =====================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  PROFESSIONAL_SYNDIC
+  ADMIN
+  SYNDIC
+  RESIDENT
+}
+
+enum PermissionScope {
+  GLOBAL
+  LOCAL
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ComplaintPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ResidentType {
+  OWNER
+  TENANT
+}
+
+enum CondominiumStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+}
+
+enum MessageType {
+  TEXT
+  TEMPLATE
+  IMAGE
+}
+
+enum MessageScope {
+  ALL
+  TOWER
+  FLOOR
+  UNIT
+}
+
+enum WhatsAppStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+// =====================================================
+// Models
+// =====================================================
+
+model Condominium {
+  id        String             @id @default(cuid())
+  name      String
+  cnpj      String             @unique
+  status    CondominiumStatus  @default(TRIAL)
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  // WhatsApp configuration
+  whatsappPhone      String? @map("whatsapp_phone")
+  whatsappBusinessId String? @map("whatsapp_business_id")
+
+  // Relations
+  users              UserCondominium[]
+  residents          Resident[]
+  complaints         Complaint[]
+  messages           Message[]
+
+  @@index([cnpj])
+  @@map("condominiums")
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  password        String
+  name            String
+  role            UserRole        @default(RESIDENT)
+  permissionScope PermissionScope @default(LOCAL) @map("permission_scope")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // MFA
+  mfaEnabled Boolean @default(false) @map("mfa_enabled")
+  mfaSecret  String? @map("mfa_secret")
+
+  // Relations
+  condominiums UserCondominium[]
+  resident     Resident?
+
+  @@index([email])
+  @@map("users")
+}
+
+model UserCondominium {
+  id             String      @id @default(cuid())
+  userId         String      @map("user_id")
+  condominiumId  String      @map("condominium_id")
+  role           UserRole
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condominium    Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, condominiumId])
+  @@index([userId])
+  @@index([condominiumId])
+  @@map("user_condominiums")
+}
+
+model Resident {
+  id             String       @id @default(cuid())
+  condominiumId  String       @map("condominium_id")
+  userId         String?      @unique @map("user_id")
+  name           String
+  phone          String
+  tower          String
+  floor          String
+  unit           String
+  type           ResidentType @default(OWNER)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // LGPD Compliance
+  consentWhatsapp        Boolean @default(false) @map("consent_whatsapp")
+  consentDataProcessing  Boolean @default(false) @map("consent_data_processing")
+
+  // Relations
+  condominium  Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  user         User?       @relation(fields: [userId], references: [id])
+  complaints   Complaint[]
+
+  @@unique([condominiumId, tower, floor, unit])
+  @@index([condominiumId, phone])
+  @@map("residents")
+}
+
+model Complaint {
+  id            Int               @id @default(autoincrement())
+  condominiumId String            @map("condominium_id")
+  residentId    String            @map("resident_id")
+  category      String
+  content       String            @db.Text
+  status        ComplaintStatus   @default(OPEN)
+  priority      ComplaintPriority @default(MEDIUM)
+  isAnonymous   Boolean           @default(false) @map("is_anonymous")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  resolvedAt    DateTime?         @map("resolved_at")
+  resolvedBy    String?           @map("resolved_by")
+
+  // Relations
+  condominium      Condominium               @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  resident         Resident                  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  attachments      ComplaintAttachment[]
+  statusHistory    ComplaintStatusHistory[]
+
+  @@index([condominiumId, status])
+  @@index([condominiumId, priority])
+  @@map("complaints")
+}
+
+model ComplaintAttachment {
+  id          String   @id @default(cuid())
+  complaintId Int      @map("complaint_id")
+  fileUrl     String   @map("file_url")
+  fileName    String   @map("file_name")
+  fileType    String   @map("file_type")
+  fileSize    Int      @map("file_size")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@map("complaint_attachments")
+}
+
+model ComplaintStatusHistory {
+  id          String          @id @default(cuid())
+  complaintId Int             @map("complaint_id")
+  fromStatus  ComplaintStatus @map("from_status")
+  toStatus    ComplaintStatus @map("to_status")
+  changedBy   String          @map("changed_by")
+  notes       String?         @db.Text
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@map("complaint_status_history")
+}
+
+model Message {
+  id                 String         @id @default(cuid())
+  condominiumId      String         @map("condominium_id")
+  type               MessageType
+  scope              MessageScope
+  targetTower        String?        @map("target_tower")
+  targetFloor        String?        @map("target_floor")
+  targetUnit         String?        @map("target_unit")
+  content            String         @db.Text
+  whatsappMessageId  String?        @map("whatsapp_message_id")
+  whatsappStatus     WhatsAppStatus @default(SENT) @map("whatsapp_status")
+  batchId            String?        @map("batch_id")
+  recipientCount     Int            @default(0) @map("recipient_count")
+  sentBy             String         @map("sent_by")
+  sentAt             DateTime       @default(now()) @map("sent_at")
+
+  @@index([condominiumId, sentAt])
+  @@map("messages")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  resource  String
+  metadata  Json?
+  ipAddress String   @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([resource])
+  @@map("audit_logs")
+}

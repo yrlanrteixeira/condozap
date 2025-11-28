@@ -1,16 +1,12 @@
 import { useState } from 'react'
-import { Users, MessageSquare, AlertTriangle, PieChart, Building, BarChart3, Calendar } from 'lucide-react'
+import { Users, MessageSquare, AlertTriangle, PieChart, Building, BarChart3, Calendar, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import type { Resident, Message, Complaint } from '@/types'
-import { COMPLAINT_CATEGORIES, TEMPLATES } from '@/data/mockData'
 import { cn } from '@/lib/utils'
-
-interface DashboardProps {
-  residents: Resident[]
-  messageLog: Message[]
-  complaints: Complaint[]
-}
+import { useAppSelector } from '@/hooks'
+import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice'
+import { useDashboardMetrics } from '@/hooks/api'
+import { COMPLAINT_CATEGORIES } from '@/data/mockData'
 
 interface StatCardProps {
   title: string
@@ -36,55 +32,41 @@ function StatCard({ title, value, icon, iconBgColor, iconColor }: StatCardProps)
 
 type Period = '7d' | '30d' | 'all'
 
-export function Dashboard({ residents, messageLog, complaints }: DashboardProps) {
+export function Dashboard() {
   const [period, setPeriod] = useState<Period>('30d')
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId)
 
-  const filterByPeriod = <T extends { timestamp: string }>(items: T[]): T[] => {
-    if (period === 'all') return items
+  // Fetch dashboard metrics via React Query
+  const { data: metrics, isLoading, isError } = useDashboardMetrics(currentCondominiumId || '')
 
-    const now = new Date()
-    const daysAgo = period === '7d' ? 7 : 30
-    const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
-
-    return items.filter(item => new Date(item.timestamp) >= cutoffDate)
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  const filteredComplaints = filterByPeriod(complaints)
-  const filteredMessages = filterByPeriod(messageLog)
+  if (isError || !metrics) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-6">
+          <CardContent>
+            <p className="text-muted-foreground">Erro ao carregar métricas do dashboard</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-  const totalComplaints = filteredComplaints.length
+  const totalComplaints = metrics.complaints.total
   const complaintsByCategory = COMPLAINT_CATEGORIES.map((cat) => ({
     name: cat,
-    count: filteredComplaints.filter((c) => c.category === cat).length,
+    count: metrics.complaints.byCategory[cat] || 0,
   })).sort((a, b) => b.count - a.count)
 
-  const complaintsByTower = residents.reduce(
-    (acc, resident) => {
-      const residentComplaints = filteredComplaints.filter(
-        (c) => c.residentId === resident.id
-      ).length
-      if (!acc[resident.tower]) acc[resident.tower] = 0
-      acc[resident.tower] += residentComplaints
-      return acc
-    },
-    {} as Record<string, number>
-  )
-
-  const messageSubjects = filteredMessages.reduce(
-    (acc, msg) => {
-      const subject =
-        msg.type === 'text'
-          ? 'Texto Livre / Aviso Rápido'
-          : msg.type === 'image'
-            ? 'Mídia'
-            : TEMPLATES.find((t) => t.name === msg.templateName)?.label || msg.templateName
-
-      if (!acc[subject as string]) acc[subject as string] = 0
-      acc[subject as string]++
-      return acc
-    },
-    {} as Record<string, number>
-  )
+  const complaintsByTower = metrics.residents.byTower
 
   const periodLabels: Record<Period, string> = {
     '7d': 'Últimos 7 dias',
@@ -123,21 +105,21 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           title="Total Moradores"
-          value={residents.length}
+          value={metrics.residents.total}
           icon={<Users size={24} />}
           iconBgColor="bg-blue-50"
           iconColor="text-blue-600"
         />
         <StatCard
           title="Mensagens Enviadas"
-          value={filteredMessages.length}
+          value={metrics.messages.totalSent}
           icon={<MessageSquare size={24} />}
           iconBgColor="bg-green-50"
           iconColor="text-green-600"
         />
         <StatCard
           title="Ocorrências Abertas"
-          value={filteredComplaints.filter((c) => c.status === 'open').length}
+          value={metrics.complaints.open}
           icon={<AlertTriangle size={24} />}
           iconBgColor="bg-red-50"
           iconColor="text-red-600"
@@ -211,24 +193,23 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <BarChart3 className="text-blue-500" size={20} />
-              Notificações por Assunto/Tipo
+              Estatísticas de Mensagens
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {Object.entries(messageSubjects).map(([subject, count]) => (
-                <div
-                  key={subject}
-                  className="bg-muted/50 p-4 rounded-lg border border-border flex items-center justify-between"
-                >
-                  <span className="text-sm text-muted-foreground font-medium truncate pr-2">
-                    {subject}
-                  </span>
-                  <span className="bg-card px-3 py-1 rounded-full text-blue-600 font-bold shadow-sm text-sm">
-                    {count}
-                  </span>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-1">Total de Destinatários</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.messages.totalRecipients}</p>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-1">Taxa de Entrega</p>
+                <p className="text-2xl font-bold text-green-600">{metrics.messages.deliveryRate.toFixed(1)}%</p>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-1">Últimos 7 Dias</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.messages.last7Days}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
