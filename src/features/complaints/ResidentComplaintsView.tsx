@@ -1,5 +1,6 @@
-import { useState } from 'react'
 import { AlertTriangle, History, Clock, CheckCircle, ArrowRight } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,8 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import type { Complaint } from '@/types'
-import { COMPLAINT_CATEGORIES } from '@/data/mockData'
+import { COMPLAINT_CATEGORIES } from '@/types'
+import { ComplaintSchema, type ComplaintFormData } from '@/schemas'
 import { cn } from '@/lib/utils'
 
 interface ResidentComplaintsViewProps {
@@ -21,15 +23,28 @@ interface ResidentComplaintsViewProps {
 }
 
 export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplaintsViewProps) {
-  const [newComplaint, setNewComplaint] = useState('')
-  const [newCategory, setNewCategory] = useState(COMPLAINT_CATEGORIES[0])
-
   const myComplaints = complaints.filter((c) => c.residentId === '1')
 
-  const handleSubmit = () => {
-    if (!newComplaint) return
-    onSubmit({ content: newComplaint, category: newCategory })
-    setNewComplaint('')
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ComplaintFormData>({
+    resolver: zodResolver(ComplaintSchema),
+    defaultValues: {
+      category: COMPLAINT_CATEGORIES[0],
+      content: '',
+    },
+  })
+
+  const category = watch('category')
+
+  const handleSubmit = (data: ComplaintFormData) => {
+    onSubmit({ content: data.content, category: data.category })
+    reset()
   }
 
   const getStatusConfig = (status: Complaint['status']) => {
@@ -74,45 +89,57 @@ export function ResidentComplaintsView({ complaints, onSubmit }: ResidentComplai
             Nova Ocorrência
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
-            <div className="sm:col-span-1">
-              <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
-                Categoria
-              </label>
-              <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMPLAINT_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleFormSubmit(handleSubmit)}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
+                  Categoria
+                </label>
+                <Select
+                  value={category}
+                  onValueChange={(value) => setValue('category', value as typeof COMPLAINT_CATEGORIES[number])}
+                >
+                  <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPLAINT_CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.category && (
+                  <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
+                  Descrição do Problema
+                </label>
+                <Input
+                  placeholder="Ex: Som alto no andar de cima..."
+                  {...register('content')}
+                  className={errors.content ? 'border-red-500' : ''}
+                />
+                {errors.content && (
+                  <p className="text-xs text-red-500 mt-1">{errors.content.message}</p>
+                )}
+              </div>
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-muted-foreground mb-1 uppercase">
-                Descrição do Problema
-              </label>
-              <Input
-                placeholder="Ex: Som alto no andar de cima..."
-                value={newComplaint}
-                onChange={(e) => setNewComplaint(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Enviar Denúncia
-              <ArrowRight size={16} className="ml-2" />
-            </Button>
-          </div>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar Denúncia'}
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

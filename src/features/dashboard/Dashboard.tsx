@@ -236,3 +236,5 @@ export function Dashboard({ residents, messageLog, complaints }: DashboardProps)
     </div>
   )
 }
+
+export default Dashboard

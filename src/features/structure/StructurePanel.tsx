@@ -367,3 +367,5 @@ export function StructurePanel({
     </div>
   );
 }
+
+export default StructurePanel

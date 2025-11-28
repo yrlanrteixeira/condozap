@@ -1,14 +1,36 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from "react";
-import type { View, UserRole, Notification, User, Condominium } from "@/types";
+import type { View, UserRole, User, Condominium } from "@/types";
 import { NOTIFICATION_DURATION_MS } from "@/utils/constants";
-import { USERS, CONDOMINIUMS } from "@/data/multiCondoMockData";
+import { useAppDispatch, useAppSelector } from "@/hooks";
+import {
+  setView as setViewAction,
+  setMobileMenuOpen as setMobileMenuOpenAction,
+  setSidebarCollapsed as setSidebarCollapsedAction,
+  showNotification as showNotificationAction,
+  clearNotification,
+  selectView,
+  selectMobileMenuOpen,
+  selectSidebarCollapsed,
+  selectNotification,
+} from "@/store/slices/uiSlice";
+import {
+  setCurrentUser as setCurrentUserAction,
+  setUserRole as setUserRoleAction,
+  selectCurrentUser,
+  selectUserRole,
+  selectIsProfessionalSyndic,
+} from "@/store/slices/userSlice";
+import {
+  setCurrentCondominiumId as setCurrentCondominiumIdAction,
+  selectCurrentCondominiumId,
+  selectCurrentCondominium,
+  selectAccessibleCondominiums,
+} from "@/store/slices/condominiumSlice";
 
 interface AppContextType {
   view: View;
@@ -19,7 +41,7 @@ interface AppContextType {
   setMobileMenuOpen: (open: boolean) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  notification: Notification | null;
+  notification: ReturnType<typeof selectNotification>;
   showNotification: (message: string, type?: "success" | "error") => void;
   // Multi-condo support
   currentUser: User;
@@ -34,41 +56,64 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<View>("dashboard");
-  const [userRole, setUserRole] = useState<UserRole>("admin");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [notification, setNotification] = useState<Notification | null>(null);
+  const dispatch = useAppDispatch();
 
-  // Multi-condo state
-  const [currentUser, setCurrentUser] = useState<User>(USERS[0]); // Síndico Profissional por padrão
-  const [currentCondominiumId, setCurrentCondominiumId] = useState<string | null>('condo-1');
+  // Selectors
+  const view = useAppSelector(selectView);
+  const userRole = useAppSelector(selectUserRole);
+  const mobileMenuOpen = useAppSelector(selectMobileMenuOpen);
+  const sidebarCollapsed = useAppSelector(selectSidebarCollapsed);
+  const notification = useAppSelector(selectNotification);
+  const currentUser = useAppSelector(selectCurrentUser);
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const currentCondominium = useAppSelector(selectCurrentCondominium);
+  const accessibleCondominiums = useAppSelector(selectAccessibleCondominiums);
+  const isProfessionalSyndicFlag = useAppSelector(selectIsProfessionalSyndic);
+
+  // Actions wrapped
+  const setView = useCallback((view: View) => {
+    dispatch(setViewAction(view));
+  }, [dispatch]);
+
+  const setUserRole = useCallback((role: UserRole) => {
+    dispatch(setUserRoleAction(role));
+  }, [dispatch]);
+
+  const setMobileMenuOpen = useCallback((open: boolean) => {
+    dispatch(setMobileMenuOpenAction(open));
+  }, [dispatch]);
+
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    dispatch(setSidebarCollapsedAction(collapsed));
+  }, [dispatch]);
 
   const showNotification = useCallback(
     (message: string, type: "success" | "error" = "success") => {
-      setNotification({ message, type });
-      setTimeout(() => setNotification(null), NOTIFICATION_DURATION_MS);
+      dispatch(showNotificationAction({ message, type }));
+      setTimeout(() => dispatch(clearNotification()), NOTIFICATION_DURATION_MS);
     },
-    []
+    [dispatch]
   );
 
+  const setCurrentUser = useCallback((user: User) => {
+    dispatch(setCurrentUserAction(user));
+  }, [dispatch]);
+
+  const setCurrentCondominiumId = useCallback((id: string | null) => {
+    dispatch(setCurrentCondominiumIdAction(id));
+  }, [dispatch]);
+
   const getCurrentCondominium = useCallback(() => {
-    if (!currentCondominiumId) return null;
-    return CONDOMINIUMS.find(c => c.id === currentCondominiumId) || null;
-  }, [currentCondominiumId]);
+    return currentCondominium;
+  }, [currentCondominium]);
 
   const getAccessibleCondominiums = useCallback(() => {
-    return CONDOMINIUMS.filter(c => currentUser.condominiumIds.includes(c.id));
-  }, [currentUser]);
+    return accessibleCondominiums;
+  }, [accessibleCondominiums]);
 
   const isProfessionalSyndic = useCallback(() => {
-    return currentUser.role === 'professional_syndic' && currentUser.permissionScope === 'global';
-  }, [currentUser]);
-
-  // Sincronizar userRole com currentUser.role
-  useEffect(() => {
-    setUserRole(currentUser.role);
-  }, [currentUser]);
+    return isProfessionalSyndicFlag;
+  }, [isProfessionalSyndicFlag]);
 
   return (
     <AppContext.Provider

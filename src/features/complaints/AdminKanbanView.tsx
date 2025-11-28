@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { AlertTriangle, Clock, CheckSquare, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +37,7 @@ const COLUMNS: KanbanColumn[] = [
   },
 ];
 
-export function AdminKanbanView({
+export const AdminKanbanView = memo(function AdminKanbanView({
   complaints,
   residents,
   onDragStart,
@@ -136,4 +137,4 @@ export function AdminKanbanView({
       </div>
     </div>
   );
-}
+});

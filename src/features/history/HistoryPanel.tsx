@@ -42,3 +42,5 @@ export function HistoryPanel({ messageLog }: HistoryPanelProps) {
     </div>
   )
 }
+
+export default HistoryPanel

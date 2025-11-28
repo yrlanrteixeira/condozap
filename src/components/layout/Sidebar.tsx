@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import {
   LayoutDashboard,
   Send,
@@ -40,7 +41,7 @@ interface NavItemProps {
   collapsed?: boolean;
 }
 
-function NavItem({
+const NavItem = memo(function NavItem({
   icon,
   label,
   viewKey,
@@ -79,9 +80,9 @@ function NavItem({
       )}
     </Button>
   );
-}
+});
 
-export function Sidebar({ openComplaintsCount }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ openComplaintsCount }: SidebarProps) {
   const {
     view,
     setView,
@@ -298,4 +299,4 @@ export function Sidebar({ openComplaintsCount }: SidebarProps) {
       </aside>
     </>
   );
-}
+});

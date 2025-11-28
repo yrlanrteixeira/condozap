@@ -11,18 +11,24 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage
 import themeReducer from "./slices/themeSlice";
+import userReducer from "./slices/userSlice";
+import condominiumReducer from "./slices/condominiumSlice";
+import uiReducer from "./slices/uiSlice";
 
-// Persist config - persiste apenas theme
+// Persist config - persiste theme, user e condominium
 const persistConfig = {
   key: "condozap-root",
   version: 1,
   storage,
-  whitelist: ["theme"], // Theme usa persistência do root
+  whitelist: ["theme", "user", "condominium"], // Persiste preferências do usuário
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   theme: themeReducer,
+  user: userReducer,
+  condominium: condominiumReducer,
+  ui: uiReducer,
 });
 
 // Create persisted reducer

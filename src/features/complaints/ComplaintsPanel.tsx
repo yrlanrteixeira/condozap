@@ -90,3 +90,5 @@ export function ComplaintsPanel({
     </div>
   )
 }
+
+export default ComplaintsPanel

@@ -246,3 +246,5 @@ export function MessagingPanel({ sendMessage, residents }: MessagingPanelProps) 
     </div>
   )
 }
+
+export default MessagingPanel
