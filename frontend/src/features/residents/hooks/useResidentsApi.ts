@@ -1,0 +1,193 @@
+/**
+ * Residents Feature - API Hooks
+ */
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { queryKeys } from "../utils/queryKeys";
+import { ResidentSchema } from "../schemas";
+import type {
+  Resident,
+  CreateResidentInput,
+  UpdateResidentInput,
+  ImportResidentsInput,
+  UpdateConsentInput,
+  ResidentFilters,
+} from "../types";
+
+// =====================================================
+// Query: Fetch Residents
+// =====================================================
+
+export function useResidents(condominiumId: string, filters?: ResidentFilters) {
+  return useQuery({
+    queryKey: queryKeys.list(condominiumId, filters),
+    queryFn: async () => {
+      const { data } = await api.get("/residents", {
+        params: { condominiumId, ...filters },
+      });
+      return data.map((resident: Resident) => ResidentSchema.parse(resident));
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// =====================================================
+// Query: Fetch Single Resident
+// =====================================================
+
+export function useResident(residentId: string) {
+  return useQuery({
+    queryKey: queryKeys.detail(residentId),
+    queryFn: async () => {
+      const { data } = await api.get(`/residents/${residentId}`);
+      return ResidentSchema.parse(data);
+    },
+  });
+}
+
+// =====================================================
+// Query: Get Towers (Unique)
+// =====================================================
+
+export function useTowers(condominiumId: string) {
+  return useQuery({
+    queryKey: queryKeys.towers(condominiumId),
+    queryFn: async () => {
+      const { data } = await api.get("/residents/towers", {
+        params: { condominiumId },
+      });
+      return data;
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Create Resident
+// =====================================================
+
+export function useCreateResident() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateResidentInput) => {
+      const { data } = await api.post("/residents", input);
+      return ResidentSchema.parse(data);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lists(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.list(variables.condominium_id),
+      });
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Update Resident
+// =====================================================
+
+export function useUpdateResident() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...input }: UpdateResidentInput) => {
+      const { data } = await api.put(`/residents/${id}`, input);
+      return ResidentSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.lists(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.detail(data.id),
+        });
+      }
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Delete Resident
+// =====================================================
+
+export function useDeleteResident() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (residentId: string) => {
+      await api.delete(`/residents/${residentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lists(),
+      });
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Import Residents (Bulk)
+// =====================================================
+
+export function useImportResidents() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: ImportResidentsInput) => {
+      const { data } = await api.post("/residents/import", input);
+      return data.map((resident: Resident) => ResidentSchema.parse(resident));
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.lists(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.list(variables.condominium_id),
+      });
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Update Consent
+// =====================================================
+
+export function useUpdateConsent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      residentId,
+      consentWhatsapp,
+      consentDataProcessing,
+    }: UpdateConsentInput) => {
+      const updates: Record<string, boolean> = {};
+      if (consentWhatsapp !== undefined)
+        updates.consent_whatsapp = consentWhatsapp;
+      if (consentDataProcessing !== undefined)
+        updates.consent_data_processing = consentDataProcessing;
+
+      const { data } = await api.patch(
+        `/residents/${residentId}/consent`,
+        updates
+      );
+      return ResidentSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.lists(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.detail(data.id),
+        });
+      }
+    },
+  });
+}
+
+

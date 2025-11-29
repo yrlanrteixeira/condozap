@@ -12,6 +12,11 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string(),
 
+  // Supabase
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_ANON_KEY: z.string(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+
   // JWT
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
@@ -26,7 +31,7 @@ const envSchema = z.object({
   WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string(),
 
   // File Storage (Optional - can use local storage or S3)
-  STORAGE_TYPE: z.enum(['local', 's3']).default('local'),
+  STORAGE_TYPE: z.enum(['local', 's3', 'supabase']).default('local'),
   STORAGE_PATH: z.string().default('./uploads'),
 
   // S3 (if using S3)

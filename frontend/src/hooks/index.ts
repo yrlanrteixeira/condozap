@@ -1,10 +1,8 @@
-import { useDispatch, useSelector } from 'react-redux'
-import type { AppDispatch, RootState } from '@/store'
+/**
+ * Global Hooks
+ * Redux typed hooks and other global utilities
+ */
 
-// Typed hooks para Redux
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
-export const useAppSelector = useSelector.withTypes<RootState>()
-
-// Custom hooks
-export { useMessages } from './useMessages'
-export { useComplaints } from './useComplaints'
+// Redux Typed Hooks
+export { useAppDispatch } from './useAppDispatch'
+export { useAppSelector } from './useAppSelector'

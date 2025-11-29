@@ -1,1 +1,6 @@
-export { StructurePanel } from './StructurePanel'
+/**
+ * Structure Feature - Public API
+ */
+
+// Pages
+export { StructurePage } from './pages/StructurePage'

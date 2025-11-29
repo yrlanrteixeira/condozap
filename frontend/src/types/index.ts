@@ -3,14 +3,21 @@
 // ============================================
 
 // Resident
+export type ResidentType = 'OWNER' | 'TENANT'
+
 export interface Resident {
   id: string
   condominiumId: string
+  userId?: string | null
   name: string
   phone: string
   tower: string
   floor: string
   unit: string
+  type: ResidentType
+  consentWhatsapp: boolean
+  consentDataProcessing: boolean
+  createdAt: string
 }
 
 // Complaint

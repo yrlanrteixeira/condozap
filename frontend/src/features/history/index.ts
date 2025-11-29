@@ -1,1 +1,9 @@
-export { HistoryPanel } from './HistoryPanel'
+/**
+ * History Feature - Public API
+ */
+
+// Components
+export * from "./components";
+
+// Pages
+export { HistoryPage } from "./pages/HistoryPage";
