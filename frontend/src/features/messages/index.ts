@@ -3,7 +3,7 @@
  */
 
 // Hooks
-export * from "./hooks/useMessagesApi";
+export * from './hooks/useMessagesApi';
 
 // Types
 export type {
@@ -17,13 +17,16 @@ export type {
   MessageFilters,
   MessageStats,
   MessageStatsPeriod,
-} from "./types";
+} from './types';
 
 // Schemas
-export { MessageSchema, SendMessageSchema } from "./schemas";
+export { MessageSchema, SendMessageSchema } from './schemas';
 
 // Utils
-export { queryKeys as messagesQueryKeys } from "./utils/queryKeys";
+export { queryKeys as messagesQueryKeys } from './utils/queryKeys';
+
+// Components
+export * from './components';
 
 // Pages
-export { MessagingPage } from "./pages/MessagingPage";
+export { MessagingPage } from './pages/MessagingPage';
