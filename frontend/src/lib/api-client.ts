@@ -1,16 +1,12 @@
-/**
- * API Client Configuration
- * Single Responsibility: Configure and export axios instance with interceptors
- */
-
 import axios, {
-  AxiosInstance,
   AxiosError,
-  InternalAxiosRequestConfig,
-  AxiosResponse,
+  type InternalAxiosRequestConfig,
+  type AxiosResponse,
 } from "axios";
 import qs from "qs";
-import { config } from "./config";
+
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
 /**
  * Serializa parâmetros de query mantendo + literal para espaços em campos específicos
@@ -24,19 +20,64 @@ export const createParamsSerializer = (
 ): ((params: Record<string, string | number>) => string) => {
   return (params: Record<string, string | number>): string => {
     const parts: string[] = [];
+
     for (const [key, value] of Object.entries(params)) {
       if (value === null || value === undefined) continue;
+
       const encodedKey = encodeURIComponent(key);
       let encodedValue: string;
+
       if (fieldsWithPlus.includes(key) && typeof value === "string") {
         encodedValue = encodeURIComponent(value).replace(/%20/g, "+");
       } else {
         encodedValue = encodeURIComponent(String(value));
       }
+
       parts.push(`${encodedKey}=${encodedValue}`);
     }
+
     return parts.join("&");
   };
+};
+
+/**
+ * Cliente HTTP configurado com Axios
+ * Inclui interceptors para:
+ * - Injeção automática de JWT
+ * - Renovação automática de tokens em 401
+ * - Tratamento de erros centralizado
+ * - Serialização correta de arrays em query params
+ */
+const apiClient = axios.create({
+  baseURL: BASE_URL,
+  timeout: 120000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  // Serializa corretamente arrays nos parâmetros de query
+  // Exemplo: [1, 2, 3] vira "param=1&param=2&param=3" (sem colchetes)
+  paramsSerializer: (params) => {
+    return qs.stringify(params, {
+      arrayFormat: "repeat", // idStatus=1&idStatus=2 (formato que o NestJS espera)
+      skipNulls: true, // Remove parâmetros null/undefined
+      encode: true, // Faz encoding dos valores
+    });
+  },
+});
+
+/**
+ * Store do Redux - será definido após a configuração inicial
+ * Usado para acessar tokens e dispatch de actions
+ */
+let reduxStore: any = null;
+
+/**
+ * Define o store do Redux para uso nos interceptors
+ * Deve ser chamado na inicialização da aplicação
+ */
+export const setReduxStore = (store: any) => {
+  reduxStore = store;
+  console.log("✅ Redux store configurado no apiClient");
 };
 
 /**
@@ -48,64 +89,43 @@ let refreshSubscribers: Array<(token: string) => void> = [];
 /**
  * Adiciona uma função à fila de espera do refresh
  */
-const subscribeTokenRefresh = (callback: (token: string) => void): void => {
+const subscribeTokenRefresh = (callback: (token: string) => void) => {
   refreshSubscribers.push(callback);
 };
 
 /**
  * Executa todas as requisições que estavam esperando o refresh
  */
-const onRefreshed = (token: string): void => {
+const onRefreshed = (token: string) => {
   refreshSubscribers.forEach((callback) => callback(token));
   refreshSubscribers = [];
 };
 
 /**
- * Cliente HTTP configurado com Axios
- * Inclui interceptors para:
- * - Injeção automática de JWT
- * - Renovação automática de tokens em 401
- * - Tratamento de erros centralizado
- * - Serialização correta de arrays em query params
- */
-export const api: AxiosInstance = axios.create({
-  baseURL: config.apiUrl,
-  timeout: 120000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  // Serializa corretamente arrays nos parâmetros de query
-  // Exemplo: [1, 2, 3] vira "param=1&param=2&param=3" (sem colchetes)
-  paramsSerializer: (params) => {
-    return qs.stringify(params, {
-      arrayFormat: "repeat", // idStatus=1&idStatus=2
-      skipNulls: true, // Remove parâmetros null/undefined
-      encode: true, // Faz encoding dos valores
-    });
-  },
-});
-
-/**
  * REQUEST INTERCEPTOR
  * Injeta automaticamente o JWT em todas as requisições
  */
-api.interceptors.request.use(
-  (requestConfig: InternalAxiosRequestConfig) => {
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
     // Pula autenticação para endpoints públicos
     if (
-      requestConfig.url?.includes("/auth/login") ||
-      requestConfig.url?.includes("/auth/refresh")
+      config.url?.includes("/auth/login/admin") ||
+      config.url?.includes("/auth/refresh")
     ) {
-      return requestConfig;
+      return config;
     }
 
-    // Obtém token do localStorage
-    const token = localStorage.getItem("auth_token");
-    if (token && requestConfig.headers) {
-      requestConfig.headers.Authorization = `Bearer ${token}`;
+    // Obtém token do Redux store
+    if (reduxStore) {
+      const state = reduxStore.getState();
+      const token = state.auth?.token;
+
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
-    return requestConfig;
+    return config;
   },
   (error: AxiosError) => {
     console.error("❌ Erro no request interceptor:", error);
@@ -117,7 +137,7 @@ api.interceptors.request.use(
  * RESPONSE INTERCEPTOR
  * Trata erros e renova tokens automaticamente em 401
  */
-api.interceptors.response.use(
+apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
@@ -131,6 +151,17 @@ api.interceptors.response.use(
 
     // Erro 401: Token inválido ou expirado
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Se não tem store configurado, redireciona para login
+      if (!reduxStore) {
+        console.warn(
+          "⚠️ Redux store não configurado, redirecionando para login"
+        );
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
       // Se já está fazendo refresh, adiciona requisição à fila
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -138,7 +169,7 @@ api.interceptors.response.use(
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
-            resolve(api(originalRequest));
+            resolve(apiClient(originalRequest));
           });
         });
       }
@@ -148,34 +179,27 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refresh_token");
+        const state = reduxStore.getState();
+        const refreshToken = state.auth?.refreshToken;
 
         // Se não tem refresh token, faz logout
         if (!refreshToken) {
           console.warn("⚠️ Refresh token não disponível, fazendo logout");
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("refresh_token");
-          if (!window.location.pathname.includes("/auth/login")) {
-            window.location.href = "/auth/login";
+          reduxStore.dispatch({ type: "auth/logout" });
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
           }
           return Promise.reject(error);
         }
 
         // Tenta renovar o token
         console.log("🔄 Tentando renovar token via interceptor...");
-        const response = await axios.post(`${config.apiUrl}/auth/refresh`, {
-          refreshToken,
-        });
+        const { refreshAccessToken } =
+          await import("../store/slices/authSlice");
+        const result = await reduxStore.dispatch(refreshAccessToken()).unwrap();
 
-        const newToken = response.data.token;
-        const newRefreshToken = response.data.refreshToken;
-
-        // Salva novos tokens
-        localStorage.setItem("auth_token", newToken);
-        if (newRefreshToken) {
-          localStorage.setItem("refresh_token", newRefreshToken);
-        }
-
+        // Token renovado com sucesso
+        const newToken = result.token;
         console.log("✅ Token renovado com sucesso via interceptor");
 
         // Atualiza header da requisição original
@@ -188,7 +212,7 @@ api.interceptors.response.use(
         isRefreshing = false;
 
         // Retenta a requisição original
-        return api(originalRequest);
+        return apiClient(originalRequest);
       } catch (refreshError) {
         // Falha ao renovar token - fazer logout
         console.error(
@@ -197,11 +221,13 @@ api.interceptors.response.use(
         );
         isRefreshing = false;
         refreshSubscribers = [];
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("refresh_token");
-        if (!window.location.pathname.includes("/auth/login")) {
-          window.location.href = "/auth/login";
+
+        reduxStore.dispatch({ type: "auth/logout" });
+
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
         }
+
         return Promise.reject(refreshError);
       }
     }
@@ -210,3 +236,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default apiClient;

@@ -14,8 +14,8 @@ import { queryClient } from '@/lib/queryClient'
 
 // Lazy load pages
 const HomePage = lazy(() => import('@/pages/HomePage'))
-const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
+const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
 
 // Loading fallback
 function LoadingFallback() {

@@ -39,7 +39,7 @@ export const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply.send({ success: true })
     } catch (error) {
-      fastify.log.error('Webhook processing error:', error)
+      fastify.log.error({ error }, 'Webhook processing error')
       return reply.status(500).send({ error: 'Internal server error' })
     }
   })

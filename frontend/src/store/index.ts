@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import {
   persistStore,
   persistReducer,
@@ -8,27 +8,34 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-} from "redux-persist";
-import storage from "redux-persist/lib/storage"; // defaults to localStorage
-import themeReducer from "./slices/themeSlice";
-import userReducer from "./slices/userSlice";
-import condominiumReducer from "./slices/condominiumSlice";
-import uiReducer from "./slices/uiSlice";
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage'; // defaults to localStorage
+import authReducer from './slices/authSlice';
+import themeReducer from './slices/themeSlice';
+import { authMiddleware, authLoggingMiddleware } from './middleware/authMiddleware';
 
-// Persist config - persiste theme, user e condominium
+// Persist config - persiste theme e auth configurado separadamente
 const persistConfig = {
-  key: "condozap-root",
+  key: 'ivijur-root',
   version: 1,
   storage,
-  whitelist: ["theme", "user", "condominium"], // Persiste preferências do usuário
+  whitelist: ['theme'], // Theme usa persistência do root
+  blacklist: ['auth'], // Auth tem sua própria config de persistência
+};
+
+// Auth persist config - persiste dados necessários para manter sessão
+const authPersistConfig = {
+  key: 'auth',
+  storage,
+  // Persiste user, isAuthenticated e tokens para manter sessão após refresh
+  whitelist: ['user', 'isAuthenticated', 'token', 'refreshToken', 'tokenExpiresAt'], 
+  blacklist: ['isLoading'],
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
+  auth: persistReducer(authPersistConfig, authReducer),
   theme: themeReducer,
-  user: userReducer,
-  condominium: condominiumReducer,
-  ui: uiReducer,
 });
 
 // Create persisted reducer
@@ -42,7 +49,9 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    })
+    .concat(authMiddleware) // Middleware de renovação automática de tokens
+    .concat(authLoggingMiddleware), // Middleware de logging (apenas dev)
   devTools: import.meta.env.DEV,
 });
 
@@ -52,3 +61,5 @@ export const persistor = persistStore(store);
 // Types
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+
