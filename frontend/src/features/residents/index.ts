@@ -3,7 +3,7 @@
  */
 
 // Hooks
-export * from "./hooks/useResidentsApi";
+export * from './hooks/useResidentsApi';
 
 // Types
 export type {
@@ -14,12 +14,14 @@ export type {
   ImportResidentsInput,
   UpdateConsentInput,
   ResidentFilters,
-} from "./types";
+} from './types';
 
 // Schemas
-export { ResidentSchema, CreateResidentSchema, UpdateResidentSchema } from "./schemas";
+export { ResidentSchema, CreateResidentSchema, UpdateResidentSchema } from './schemas';
 
 // Utils
-export { queryKeys as residentsQueryKeys } from "./utils/queryKeys";
+export { queryKeys as residentsQueryKeys } from './utils/queryKeys';
 
+// Components
+export * from './components';
 
