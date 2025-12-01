@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 import type { Resident } from "../types";
 import { ResidentForm, type ResidentFormData } from "./ResidentForm";
 import { useCreateResident, useUpdateResident } from "../hooks/useResidentsApi";
@@ -37,7 +38,8 @@ export const ResidentDialog = ({
 }: ResidentDialogProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const [formData, setFormData] = useState<ResidentFormData>(initialFormData);
-  
+  const { toast } = useToast();
+
   const createResident = useCreateResident();
   const updateResident = useUpdateResident();
 
@@ -68,19 +70,43 @@ export const ResidentDialog = ({
         await updateResident.mutateAsync({
           id: resident.id,
           ...formData,
-          condominiumId: currentCondominiumId,
+          condominium_id: currentCondominiumId,
+        });
+
+        toast({
+          title: "Morador atualizado!",
+          description: `${formData.name} foi atualizado com sucesso.`,
+          variant: "success",
+          duration: 3000,
         });
       } else {
         // Create new resident
         await createResident.mutateAsync({
           ...formData,
-          condominiumId: currentCondominiumId,
+          condominium_id: currentCondominiumId,
+          type: "OWNER", // Default to OWNER
+        });
+
+        toast({
+          title: "Morador cadastrado!",
+          description: `${formData.name} foi adicionado com sucesso.`,
+          variant: "success",
+          duration: 3000,
         });
       }
-      
+
       handleClose();
     } catch (error) {
       console.error("Failed to save resident:", error);
+
+      toast({
+        title: "Erro ao salvar",
+        description: resident
+          ? "Não foi possível atualizar o morador. Tente novamente."
+          : "Não foi possível cadastrar o morador. Tente novamente.",
+        variant: "error",
+        duration: 5000,
+      });
     }
   };
 
@@ -113,7 +139,11 @@ export const ResidentDialog = ({
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={!isFormValid || isLoading}>
-            {isLoading ? "Salvando..." : resident ? "Salvar Alterações" : "Adicionar Morador"}
+            {isLoading
+              ? "Salvando..."
+              : resident
+                ? "Salvar Alterações"
+                : "Adicionar Morador"}
           </Button>
         </DialogFooter>
       </DialogContent>

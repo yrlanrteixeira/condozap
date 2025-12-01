@@ -10,6 +10,11 @@ const registerSchema = z.object({
   role: z
     .enum(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "RESIDENT"])
     .optional(),
+  // Dados para aprovação (obrigatórios para RESIDENT)
+  requestedCondominiumId: z.string().optional(),
+  requestedTower: z.string().optional(),
+  requestedFloor: z.string().optional(),
+  requestedUnit: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -35,19 +40,31 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
     // Create user
+    const userRole = body.role || "RESIDENT";
     const user = await prisma.user.create({
       data: {
         email: body.email,
         password: hashedPassword,
         name: body.name,
-        role: body.role || "RESIDENT",
+        role: userRole,
+        // Admins/Syndics are auto-approved, Residents need approval
+        status: userRole === "RESIDENT" ? "PENDING" : "APPROVED",
+        // Store requested allocation for residents
+        requestedCondominiumId: body.requestedCondominiumId,
+        requestedTower: body.requestedTower,
+        requestedFloor: body.requestedFloor,
+        requestedUnit: body.requestedUnit,
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        status: true,
         permissionScope: true,
+        requestedTower: true,
+        requestedFloor: true,
+        requestedUnit: true,
         createdAt: true,
       },
     });
@@ -57,11 +74,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      status: user.status,
     });
 
     return reply.send({
       user,
       token,
+      isPending: user.status === "PENDING",
     });
   });
 
@@ -102,6 +121,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      status: user.status,
     });
 
     // Return user without password
@@ -119,6 +139,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         condominiums: userCondominiums,
       },
       token,
+      isPending: user.status === "PENDING",
     });
   });
 

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import type {
   Message,
   TargetData,
@@ -10,6 +11,7 @@ import type { Resident } from "@/features/residents/types";
 import { TEMPLATES } from "@/config/constants";
 import { filterResidentsByTarget } from "@/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
+import { useSendMessage } from "../hooks/useMessagesApi";
 import { useAppSelector } from "@/hooks";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import {
@@ -29,12 +31,17 @@ type MsgType = "text" | "template" | "image";
 export function MessagingPage() {
   // Get current condominium ID
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { toast } = useToast();
   
   // Fetch residents from API
   const { data: residents = [], isLoading, isError } = useResidents(
     currentCondominiumId || "",
     {}
   );
+
+  // Send message mutation
+  const sendMessage = useSendMessage();
+  
   const [scope, setScope] = useState<Scope>("unit");
   const [msgType, setMsgType] = useState<MsgType>("text");
   const [selectedTower, setSelectedTower] = useState("A");
@@ -42,7 +49,7 @@ export function MessagingPage() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [textContent, setTextContent] = useState("");
   const [templateId, setTemplateId] = useState(TEMPLATES[0]?.name || "");
-  const [isSending, setIsSending] = useState(false);
+  const isSending = sendMessage.isPending;
 
   const recipientCount = useMemo(() => {
     if (!residents || residents.length === 0) return 0;
@@ -59,22 +66,44 @@ export function MessagingPage() {
 
   const handleSend = async () => {
     if (!currentCondominiumId) {
-      console.error("No condominium selected");
+      toast({
+        title: "Erro",
+        description: "Nenhum condomínio selecionado.",
+        variant: "error",
+        duration: 3000,
+      });
       return;
     }
 
-    setIsSending(true);
+    // Validation
+    if (msgType === "text" && !textContent.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Digite uma mensagem antes de enviar.",
+        variant: "warning",
+        duration: 3000,
+      });
+      return;
+    }
+
+    if (msgType === "template" && !templateId) {
+      toast({
+        title: "Template não selecionado",
+        description: "Selecione um template antes de enviar.",
+        variant: "warning",
+        duration: 3000,
+      });
+      return;
+    }
 
     try {
       let content: MessageContent = {};
       if (msgType === "text") content = { text: textContent };
-      if (msgType === "template")
-        content = { templateName: templateId };
-      if (msgType === "image")
-        content = {
-          mediaUrl: "http://exemplo.com/img.jpg",
-          caption: textContent,
-        };
+      if (msgType === "template") content = { templateName: templateId };
+      if (msgType === "image") content = {
+        mediaUrl: "http://exemplo.com/img.jpg", // TODO: Implement image upload
+        caption: textContent,
+      };
 
       const targetData: TargetData = {
         scope: scope.toUpperCase() as TargetData["scope"],
@@ -83,24 +112,34 @@ export function MessagingPage() {
         unit: selectedUnit,
       };
 
-      // TODO: Implementar envio via API
-      console.log("Send message:", {
-        condominiumId: currentCondominiumId,
-        targetData,
-        type: msgType.toUpperCase(),
+      await sendMessage.mutateAsync({
+        condominium_id: currentCondominiumId,
+        target: targetData,
+        type: msgType.toUpperCase() as any,
         content,
       });
 
-      // Simula envio
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      toast({
+        title: "Mensagem enviada!",
+        description: `Mensagem enviada para ${recipientCount} morador${recipientCount !== 1 ? 'es' : ''} com sucesso.`,
+        variant: "success",
+        duration: 3000,
+      });
 
+      // Reset form
       setTextContent("");
-      // Mostrar feedback de sucesso
+      if (msgType === "template") {
+        setTemplateId(TEMPLATES[0]?.name || "");
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
-      // Mostrar feedback de erro
-    } finally {
-      setIsSending(false);
+      
+      toast({
+        title: "Erro ao enviar",
+        description: "Não foi possível enviar a mensagem. Tente novamente.",
+        variant: "error",
+        duration: 5000,
+      });
     }
   };
 

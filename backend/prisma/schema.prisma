@@ -71,6 +71,13 @@ enum WhatsAppStatus {
   FAILED
 }
 
+enum UserStatus {
+  PENDING       // Aguardando aprovação
+  APPROVED      // Aprovado e pode usar o sistema
+  REJECTED      // Cadastro rejeitado
+  SUSPENDED     // Suspenso temporariamente
+}
+
 // =====================================================
 // Models
 // =====================================================
@@ -107,6 +114,18 @@ model User {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
+  // Approval System
+  status              UserStatus  @default(PENDING)
+  approvedAt          DateTime?   @map("approved_at")
+  approvedBy          String?     @map("approved_by")
+  rejectionReason     String?     @map("rejection_reason") @db.Text
+  
+  // Pending Allocation (dados informados no cadastro, antes da aprovação)
+  requestedCondominiumId String?  @map("requested_condominium_id")
+  requestedTower         String?  @map("requested_tower")
+  requestedFloor         String?  @map("requested_floor")
+  requestedUnit          String?  @map("requested_unit")
+
   // MFA
   mfaEnabled Boolean @default(false) @map("mfa_enabled")
   mfaSecret  String? @map("mfa_secret")
@@ -116,6 +135,8 @@ model User {
   resident     Resident?
 
   @@index([email])
+  @@index([status])
+  @@index([requestedCondominiumId])
   @@map("users")
 }
 

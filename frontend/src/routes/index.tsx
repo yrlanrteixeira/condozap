@@ -3,6 +3,7 @@ import {
   ProtectedRoute,
   PermissionGuard,
   InitialRedirect,
+  ApprovalGuard,
 } from "@/components/guards";
 import { MainLayout } from "@/components/layout";
 import { Permissions } from "@/config/permissions";
@@ -33,6 +34,9 @@ import { HistoryPage } from "@/features/history/pages/HistoryPage";
 // Settings Page
 import { SettingsPage } from "@/pages/SettingsPage";
 
+// Approval Pages
+import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
+
 // Access Denied Page
 import { AccessDeniedPage } from "@/pages/AccessDenied";
 
@@ -46,6 +50,16 @@ export function AppRoutes() {
         {/* Redirect old /login to /auth/login */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* Pending Approval - Protected but no ApprovalGuard */}
+        <Route
+          path="/pending-approval"
+          element={
+            <ProtectedRoute>
+              <PendingApprovalPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Access Denied */}
         <Route path="/access-denied" element={<AccessDeniedPage />} />
 
@@ -54,7 +68,9 @@ export function AppRoutes() {
           path="/*"
           element={
             <ProtectedRoute>
-              <MainLayout />
+              <ApprovalGuard>
+                <MainLayout />
+              </ApprovalGuard>
             </ProtectedRoute>
           }
         >

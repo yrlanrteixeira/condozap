@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { AppProvider } from "@/contexts";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { store, persistor } from "@/store";
 import { queryClient } from "@/lib/queryClient";
 import { AppRoutes } from "@/routes";
@@ -30,6 +31,7 @@ export default function App() {
               <AuthProvider>
                 <AppProvider>
                   <AppRoutes />
+                  <Toaster />
                 </AppProvider>
               </AuthProvider>
             </BrowserRouter>

@@ -1,11 +1,46 @@
-import { History, FileText } from 'lucide-react';
+import { History, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { HistoryHeader, HistoryLogList } from '../components';
-
-// TODO: Fetch history from API
-const mockLogs: any[] = [];
+import { useHistory } from '../hooks/useHistoryApi';
+import { useAppSelector } from '@/hooks';
+import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
 
 export function HistoryPage() {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+
+  // Fetch history logs from API
+  const { 
+    data: logs = [], 
+    isLoading, 
+    isError 
+  } = useHistory(currentCondominiumId || '');
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Error or no condominium selected
+  if (isError || !currentCondominiumId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="border-border">
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">
+              {!currentCondominiumId
+                ? "Selecione um condomínio para visualizar o histórico."
+                : "Erro ao carregar o histórico de eventos."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -21,8 +56,8 @@ export function HistoryPage() {
         </div>
       </div>
 
-      {mockLogs.length > 0 ? (
-        <HistoryLogList logs={mockLogs} />
+      {logs.length > 0 ? (
+        <HistoryLogList logs={logs} />
       ) : (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center p-12">
