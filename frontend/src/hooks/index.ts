@@ -16,3 +16,5 @@ export {
   useAnyPermission,
   useAllPermissions,
 } from './useRole';
+
+export { usePermissions } from './usePermissions';

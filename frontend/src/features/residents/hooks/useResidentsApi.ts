@@ -23,11 +23,12 @@ export function useResidents(condominiumId: string, filters?: ResidentFilters) {
   return useQuery({
     queryKey: queryKeys.list(condominiumId, filters),
     queryFn: async () => {
-      const { data } = await api.get("/residents", {
-        params: { condominiumId, ...filters },
+      const { data } = await api.get(`/residents/${condominiumId}`, {
+        params: filters, // Filters as query params (tower, floor, type, search)
       });
       return data.map((resident: Resident) => ResidentSchema.parse(resident));
     },
+    enabled: !!condominiumId, // Only fetch when condominiumId is provided
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -54,11 +55,13 @@ export function useTowers(condominiumId: string) {
   return useQuery({
     queryKey: queryKeys.towers(condominiumId),
     queryFn: async () => {
-      const { data } = await api.get("/residents/towers", {
-        params: { condominiumId },
-      });
-      return data;
+      // TODO: Backend doesn't have this endpoint yet
+      // Get unique towers from residents
+      const { data } = await api.get(`/residents/${condominiumId}`);
+      const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
+      return uniqueTowers.sort();
     },
+    enabled: !!condominiumId,
   });
 }
 
@@ -94,7 +97,7 @@ export function useUpdateResident() {
 
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateResidentInput) => {
-      const { data } = await api.put(`/residents/${id}`, input);
+      const { data } = await api.patch(`/residents/${id}`, input);
       return ResidentSchema.parse(data);
     },
     onSuccess: (data) => {
@@ -138,6 +141,9 @@ export function useImportResidents() {
 
   return useMutation({
     mutationFn: async (input: ImportResidentsInput) => {
+      // TODO: Backend doesn't have this endpoint yet
+      // For now, create residents one by one
+      console.warn("Bulk import not implemented yet - creating individually");
       const { data } = await api.post("/residents/import", input);
       return data.map((resident: Resident) => ResidentSchema.parse(resident));
     },

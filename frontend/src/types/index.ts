@@ -9,3 +9,6 @@ export * from "./user";
 
 // API Types
 export * from "./api";
+
+// UI Types
+export * from "./ui";

@@ -18,6 +18,7 @@ export interface Complaint {
   updatedAt: string
   resolvedAt?: string | null
   resolvedBy?: string | null
+  timestamp?: string // Alias para createdAt (compatibilidade)
   resident?: {
     name: string
     unit: string

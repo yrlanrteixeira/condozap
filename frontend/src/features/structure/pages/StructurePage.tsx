@@ -1,159 +1,145 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { Loader2, PlusCircle, Building2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PaginationTable } from "@/components/ui/pagination-table";
-import type { Resident } from "@/types";
-import { createResident, updateResident } from "@/services/residentService";
-import { useApp } from "@/contexts";
+import type { Resident } from "@/features/residents/types";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import {
-  ResidentPageHeader,
-  ResidentTableHeader,
   ResidentTable,
   ResidentDialog,
-  type ResidentFormData,
 } from "@/features/residents";
 
-interface StructurePageProps {
-  residents: Resident[];
-  onResidentsChange?: () => void;
-}
-
-export function StructurePage({
-  residents,
-  onResidentsChange,
-}: StructurePageProps) {
-  const { currentCondominiumId } = useApp();
-  const [localResidents, setLocalResidents] = useState<Resident[]>(residents);
+export function StructurePage() {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    setLocalResidents(residents);
-    setCurrentPage(1);
-  }, [residents]);
+  const {
+    data: residents,
+    isLoading,
+    isError,
+  } = useResidents(currentCondominiumId || "", {});
 
   const paginatedResidents = useMemo(() => {
+    if (!residents) return [];
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return localResidents.slice(startIndex, endIndex);
-  }, [localResidents, currentPage]);
+    return residents.slice(startIndex, endIndex);
+  }, [residents, currentPage]);
 
-  const totalPages = Math.ceil(localResidents.length / itemsPerPage);
+  const totalPages = Math.ceil((residents?.length || 0) / itemsPerPage);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingResident, setEditingResident] = useState<Resident | null>(null);
-  const [formData, setFormData] = useState<ResidentFormData>({
-    name: "",
-    phone: "",
-    tower: "A",
-    floor: "",
-    unit: "",
-  });
-
-  const handleOpenAdd = () => {
-    setEditingResident(null);
-    setFormData({
-      name: "",
-      phone: "",
-      tower: "A",
-      floor: "",
-      unit: "",
-    });
+  const handleAddResident = () => {
+    setSelectedResident(undefined);
     setIsDialogOpen(true);
   };
 
-  const handleOpenEdit = (resident: Resident) => {
-    setEditingResident(resident);
-    setFormData({
-      name: resident.name,
-      phone: resident.phone,
-      tower: resident.tower,
-      floor: resident.floor,
-      unit: resident.unit,
-    });
+  const handleEditResident = (resident: Resident) => {
+    setSelectedResident(resident);
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (
-      !formData.name ||
-      !formData.phone ||
-      !formData.floor ||
-      !formData.unit
-    ) {
-      return;
-    }
-
-    try {
-      if (editingResident) {
-        const updated = updateResident(editingResident.id, {
-          ...formData,
-          condominiumId: editingResident.condominiumId,
-        });
-        setLocalResidents((prev) =>
-          prev.map((r) => (r.id === updated.id ? updated : r))
-        );
-      } else {
-        if (!currentCondominiumId) return;
-        const newResident = createResident({
-          name: formData.name,
-          phone: formData.phone,
-          tower: formData.tower,
-          floor: formData.floor,
-          unit: formData.unit,
-        });
-        const residentWithCondo: Resident = {
-          ...newResident,
-          condominiumId: currentCondominiumId,
-        };
-        setLocalResidents((prev) => {
-          const updated = [...prev, residentWithCondo];
-          const prevTotalPages = Math.ceil(prev.length / itemsPerPage);
-          const newTotalPages = Math.ceil(updated.length / itemsPerPage);
-          if (newTotalPages > prevTotalPages) {
-            setCurrentPage(newTotalPages);
-          }
-          return updated;
-        });
-      }
-      setIsDialogOpen(false);
-      onResidentsChange?.();
-      window.dispatchEvent(new CustomEvent("residents-updated"));
-    } catch (error) {
-      console.error("Erro ao salvar morador:", error);
-    }
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedResident(undefined);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError || !currentCondominiumId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="border-border">
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">
+              {!currentCondominiumId
+                ? "Selecione um condomínio para visualizar a estrutura."
+                : "Erro ao carregar moradores."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 sm:p-6">
-      <ResidentPageHeader />
-
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <ResidentTableHeader onAddNew={handleOpenAdd} />
-
-        <ResidentTable residents={paginatedResidents} onEdit={handleOpenEdit} />
-
-        {localResidents.length > 0 && (
-          <div className="p-4 border-t border-border">
-            <PaginationTable
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              totalItems={localResidents.length}
-              showInfo={true}
-            />
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Building2 className="h-6 w-6 text-primary" />
           </div>
-        )}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Estrutura do Condomínio</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
+              Visualize e gerencie torres, andares e unidades
+            </p>
+          </div>
+        </div>
+        <Button onClick={handleAddResident} className="shrink-0">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Adicionar Unidade
+        </Button>
       </div>
+
+      {residents && residents.length > 0 ? (
+        <Card className="border-border">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto rounded-lg">
+              <ResidentTable residents={paginatedResidents} onEdit={handleEditResident} />
+            </div>
+
+            {residents.length > itemsPerPage && (
+              <div className="p-4 border-t border-border bg-muted/20">
+                <PaginationTable
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={residents.length}
+                  showInfo={true}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-border">
+          <CardContent className="flex flex-col items-center justify-center p-12">
+            <div className="p-4 rounded-full bg-muted/50 mb-4">
+              <Building2 className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-medium text-foreground">Nenhuma unidade cadastrada</p>
+              <p className="text-sm text-muted-foreground mt-2 mb-4">
+                Comece adicionando moradores e suas unidades
+              </p>
+              <Button onClick={handleAddResident} variant="outline">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Primeira Unidade
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <ResidentDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        editingResident={editingResident}
-        formData={formData}
-        onFormChange={setFormData}
-        onSave={handleSave}
+        resident={selectedResident}
+        onClose={handleCloseDialog}
       />
     </div>
   );
 }
-
-export default StructurePage;

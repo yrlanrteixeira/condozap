@@ -71,4 +71,23 @@ export interface MessageStatsPeriod {
   endDate?: string
 }
 
+/**
+ * Dados de segmentação para envio de mensagens
+ */
+export interface TargetData {
+  scope: MessageScope
+  tower?: string
+  floor?: string
+  unit?: string
+}
 
+/**
+ * Conteúdo de mensagem (texto, template ou imagem)
+ */
+export interface MessageContent {
+  text?: string
+  templateName?: string
+  components?: unknown[] // Para templates do WhatsApp
+  mediaUrl?: string
+  caption?: string
+}

@@ -5,6 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import { config } from "./config/env.js";
+import authPlugin from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { complaintsRoutes } from "./routes/complaints.routes.js";
 import { residentsRoutes } from "./routes/residents.routes.js";
@@ -46,6 +47,9 @@ await fastify.register(rateLimit, {
 await fastify.register(jwt, {
   secret: config.JWT_SECRET,
 });
+
+// Register authentication plugin
+await fastify.register(authPlugin);
 
 await fastify.register(multipart, {
   limits: {

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,51 +8,112 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Resident } from "@/types";
+import type { Resident } from "../types";
 import { ResidentForm, type ResidentFormData } from "./ResidentForm";
+import { useCreateResident, useUpdateResident } from "../hooks/useResidentsApi";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 
 interface ResidentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingResident: Resident | null;
-  formData: ResidentFormData;
-  onFormChange: (formData: ResidentFormData) => void;
-  onSave: () => void;
+  resident?: Resident;
+  onClose?: () => void;
 }
+
+const initialFormData: ResidentFormData = {
+  name: "",
+  phone: "",
+  tower: "A",
+  floor: "",
+  unit: "",
+};
 
 export const ResidentDialog = ({
   open,
   onOpenChange,
-  editingResident,
-  formData,
-  onFormChange,
-  onSave,
+  resident,
+  onClose,
 }: ResidentDialogProps) => {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const [formData, setFormData] = useState<ResidentFormData>(initialFormData);
+  
+  const createResident = useCreateResident();
+  const updateResident = useUpdateResident();
+
+  // Reset form when dialog opens/closes or resident changes
+  useEffect(() => {
+    if (open && resident) {
+      setFormData({
+        name: resident.name,
+        phone: resident.phone,
+        tower: resident.tower,
+        floor: resident.floor,
+        unit: resident.unit,
+      });
+    } else if (open && !resident) {
+      setFormData(initialFormData);
+    }
+  }, [open, resident]);
+
   const isFormValid =
     formData.name && formData.phone && formData.floor && formData.unit;
 
+  const handleSave = async () => {
+    if (!currentCondominiumId || !isFormValid) return;
+
+    try {
+      if (resident) {
+        // Update existing resident
+        await updateResident.mutateAsync({
+          id: resident.id,
+          ...formData,
+          condominiumId: currentCondominiumId,
+        });
+      } else {
+        // Create new resident
+        await createResident.mutateAsync({
+          ...formData,
+          condominiumId: currentCondominiumId,
+        });
+      }
+      
+      handleClose();
+    } catch (error) {
+      console.error("Failed to save resident:", error);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData(initialFormData);
+    onOpenChange(false);
+    onClose?.();
+  };
+
+  const isLoading = createResident.isPending || updateResident.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
           <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
-            {editingResident ? "Editar Morador" : "Adicionar Novo Morador"}
+            {resident ? "Editar Morador" : "Adicionar Novo Morador"}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {editingResident
+            {resident
               ? "Atualize as informações do morador"
               : "Preencha os dados para adicionar um novo morador ao condomínio"}
           </DialogDescription>
         </DialogHeader>
 
-        <ResidentForm formData={formData} onChange={onFormChange} />
+        <ResidentForm formData={formData} onChange={setFormData} />
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={onSave} disabled={!isFormValid}>
-            {editingResident ? "Salvar Alterações" : "Adicionar Morador"}
+          <Button onClick={handleSave} disabled={!isFormValid || isLoading}>
+            {isLoading ? "Salvando..." : resident ? "Salvar Alterações" : "Adicionar Morador"}
           </Button>
         </DialogFooter>
       </DialogContent>

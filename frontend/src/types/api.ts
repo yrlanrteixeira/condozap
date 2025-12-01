@@ -61,3 +61,4 @@ export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
  */
 export type QueryKey = readonly (string | number | boolean | null | undefined)[];
 
+

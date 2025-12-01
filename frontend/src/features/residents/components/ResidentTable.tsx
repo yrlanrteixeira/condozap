@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Resident } from "@/types";
+import type { Resident } from "../types";
 import { ResidentTableRow } from "./ResidentTableRow";
 
 interface ResidentTableProps {
@@ -16,16 +16,16 @@ interface ResidentTableProps {
 
 export const ResidentTable = ({ residents, onEdit }: ResidentTableProps) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-bold">Nome</TableHead>
-            <TableHead className="font-bold">Telefone</TableHead>
-            <TableHead className="font-bold">Torre</TableHead>
-            <TableHead className="font-bold">Andar</TableHead>
-            <TableHead className="font-bold">Unidade</TableHead>
-            <TableHead className="font-bold w-[120px]">Ações</TableHead>
+          <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border">
+            <TableHead className="font-bold text-foreground">Nome</TableHead>
+            <TableHead className="font-bold text-foreground">Telefone</TableHead>
+            <TableHead className="font-bold text-foreground">Torre</TableHead>
+            <TableHead className="font-bold text-foreground">Andar</TableHead>
+            <TableHead className="font-bold text-foreground">Unidade</TableHead>
+            <TableHead className="font-bold text-foreground w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

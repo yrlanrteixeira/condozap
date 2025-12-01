@@ -233,6 +233,9 @@ model Message {
   sentBy             String         @map("sent_by")
   sentAt             DateTime       @default(now()) @map("sent_at")
 
+  // Relations
+  condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+
   @@index([condominiumId, sentAt])
   @@map("messages")
 }

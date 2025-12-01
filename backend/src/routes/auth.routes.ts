@@ -75,7 +75,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       include: {
         condominiums: {
           include: {
-            condominium: true,
+            condominium: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -100,10 +105,19 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, condominiums, ...userWithoutPassword } = user;
+
+    // Transform condominiums for response
+    const userCondominiums = condominiums.map((uc) => ({
+      id: uc.condominium.id,
+      name: uc.condominium.name,
+    }));
 
     return reply.send({
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        condominiums: userCondominiums,
+      },
       token,
     });
   });
@@ -122,18 +136,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         include: {
           condominiums: {
             include: {
-              condominium: true,
+              condominium: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          permissionScope: true,
-          condominiums: true,
-          createdAt: true,
         },
       });
 
@@ -141,7 +151,18 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: "User not found" });
       }
 
-      return reply.send(user);
+      // Remove password and transform condominiums
+      const { password: _, condominiums, ...userWithoutPassword } = user;
+
+      const userCondominiums = condominiums.map((uc) => ({
+        id: uc.condominium.id,
+        name: uc.condominium.name,
+      }));
+
+      return reply.send({
+        ...userWithoutPassword,
+        condominiums: userCondominiums,
+      });
     }
   );
 };

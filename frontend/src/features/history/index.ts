@@ -2,6 +2,9 @@
  * History Feature - Public API
  */
 
+// Types
+export * from "./types";
+
 // Components
 export * from "./components";
 

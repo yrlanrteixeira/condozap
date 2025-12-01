@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import {
   ProtectedRoute,
   PermissionGuard,
   InitialRedirect,
 } from "@/components/guards";
+import { MainLayout } from "@/components/layout";
 import { Permissions } from "@/config/permissions";
 
 // Auth Pages
@@ -14,13 +15,30 @@ import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { UnifiedDashboardPage } from "@/features/dashboard/pages/UnifiedDashboardPage";
 
+// Messages Pages
+import { MessagingPage } from "@/features/messages/pages/MessagingPage";
+
+// Residents Pages
+import { ResidentsPage } from "@/features/residents/pages/ResidentsPage";
+
+// Structure Pages
+import { StructurePage } from "@/features/structure/pages/StructurePage";
+
+// Complaints Pages
+import { ComplaintsPage } from "@/features/complaints/pages/ComplaintsPage";
+
+// History Pages
+import { HistoryPage } from "@/features/history/pages/HistoryPage";
+
+// Settings Page
+import { SettingsPage } from "@/pages/SettingsPage";
+
 // Access Denied Page
 import { AccessDeniedPage } from "@/pages/AccessDenied";
 
 export function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <Routes>
         {/* Public Routes */}
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />
@@ -31,44 +49,103 @@ export function AppRoutes() {
         {/* Access Denied */}
         <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes with Layout */}
         <Route
           path="/*"
           element={
             <ProtectedRoute>
-              <Routes>
-                {/* Root - Redirect based on user role */}
-                <Route path="/" element={<InitialRedirect />} />
-
-                {/* Unified Dashboard - Professional Syndics & Super Admins only */}
-                <Route
-                  path="/unified-dashboard"
-                  element={
-                    <PermissionGuard
-                      permission={Permissions.VIEW_UNIFIED_DASHBOARD}
-                    >
-                      <UnifiedDashboardPage />
-                    </PermissionGuard>
-                  }
-                />
-
-                {/* Dashboard - All management levels */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <PermissionGuard permission={Permissions.VIEW_DASHBOARD}>
-                      <DashboardPage />
-                    </PermissionGuard>
-                  }
-                />
-
-                {/* Fallback - Redirect based on user role */}
-                <Route path="*" element={<InitialRedirect />} />
-              </Routes>
+              <MainLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          {/* Root - Redirect based on user role */}
+          <Route index element={<InitialRedirect />} />
+
+          {/* Unified Dashboard - Professional Syndics & Super Admins only */}
+          <Route
+            path="unified-dashboard"
+            element={
+              <PermissionGuard
+                permission={Permissions.VIEW_UNIFIED_DASHBOARD}
+              >
+                <UnifiedDashboardPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Dashboard - All management levels */}
+          <Route
+            path="dashboard"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_DASHBOARD}>
+                <DashboardPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Messages */}
+          <Route
+            path="messages"
+            element={
+              <PermissionGuard permission={Permissions.SEND_MESSAGE}>
+                <MessagingPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Residents */}
+          <Route
+            path="residents"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_RESIDENTS}>
+                <ResidentsPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Structure */}
+          <Route
+            path="structure"
+            element={
+              <PermissionGuard permission={Permissions.MANAGE_STRUCTURE}>
+                <StructurePage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Complaints */}
+          <Route
+            path="complaints"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_COMPLAINTS}>
+                <ComplaintsPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* History */}
+          <Route
+            path="history"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_HISTORY}>
+                <HistoryPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Settings */}
+          <Route
+            path="settings"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
+                <SettingsPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Fallback - Redirect based on user role */}
+          <Route path="*" element={<InitialRedirect />} />
+        </Route>
       </Routes>
-    </BrowserRouter>
   );
 }

@@ -23,7 +23,7 @@ type MessageData = {
 
 export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   // Get dashboard metrics
-  fastify.get('/:condominiumId/metrics', {
+  fastify.get('/metrics/:condominiumId', {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     const { condominiumId } = request.params as { condominiumId: string }
@@ -38,6 +38,11 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           category: true,
           createdAt: true,
           resolvedAt: true,
+          resident: {
+            select: {
+              tower: true,
+            },
+          },
         },
       }),
       prisma.resident.findMany({
@@ -75,6 +80,12 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           acc[c.category] = (acc[c.category] || 0) + 1
           return acc
         }, {} as Record<string, number>),
+        byTower: complaints.reduce((acc: Record<string, number>, c: any) => {
+          const tower = c.resident?.tower || 'Sem Torre'
+          acc[tower] = (acc[tower] || 0) + 1
+          return acc
+        }, {} as Record<string, number>),
+        avgResolutionTime: 0, // TODO: Calculate average resolution time
       },
       residents: {
         total: residents.length,
@@ -91,6 +102,9 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
       messages: {
         totalSent: messages.length,
         totalRecipients: messages.reduce((sum: number, m: MessageData) => sum + (m.recipientCount || 0), 0),
+        delivered: messages.filter((m: MessageData) => m.whatsappStatus === 'DELIVERED' || m.whatsappStatus === 'READ').length,
+        read: messages.filter((m: MessageData) => m.whatsappStatus === 'READ').length,
+        failed: messages.filter((m: MessageData) => m.whatsappStatus === 'FAILED').length,
         deliveryRate: messages.length > 0
           ? (messages.filter((m: MessageData) => m.whatsappStatus === 'DELIVERED' || m.whatsappStatus === 'READ').length / messages.length) * 100
           : 0,

@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Users, MessageSquare, AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2, Users, MessageSquare, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppSelector } from "@/hooks";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useDashboardMetrics } from "../hooks/useDashboardApi";
-import { COMPLAINT_CATEGORIES } from "@/data/mockData";
 import {
   DashboardStatCard,
   DashboardPeriodSelector,
@@ -47,12 +46,13 @@ export function DashboardPage() {
   }
 
   const totalComplaints = metrics.complaints.total;
-  const complaintsByCategory = COMPLAINT_CATEGORIES.map((cat) => ({
-    name: cat,
-    count: metrics.complaints.byCategory[cat] || 0,
-  })).sort((a, b) => b.count - a.count);
+  const complaintsByCategory = Object.entries(
+    metrics.complaints.byCategory || {}
+  )
+    .map(([name, count]) => ({ name, count: count as number }))
+    .sort((a, b) => b.count - a.count);
 
-  const complaintsByTower = metrics.residents.byTower;
+  const complaintsByTower = metrics.complaints.byTower || {};
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -101,7 +101,14 @@ export function DashboardPage() {
           totalComplaints={totalComplaints}
         />
 
-        <DashboardMessageStats stats={metrics.messages} />
+        <DashboardMessageStats
+          stats={{
+            totalSent: metrics.messages.totalSent,
+            delivered: metrics.messages.delivered,
+            read: metrics.messages.read,
+            failed: metrics.messages.failed,
+          }}
+        />
       </div>
     </div>
   );

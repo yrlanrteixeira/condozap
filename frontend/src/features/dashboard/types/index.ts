@@ -12,6 +12,7 @@ export interface DashboardMetrics {
     resolved: number
     byPriority: Record<ComplaintPriority, number>
     byCategory: Record<string, number>
+    byTower: Record<string, number>
     avgResolutionTime: number // in hours
   }
   residents: {
@@ -28,6 +29,9 @@ export interface DashboardMetrics {
     totalRecipients: number
     deliveryRate: number
     last7Days: number
+    delivered: number
+    read: number
+    failed: number
   }
   urgentFeed: Array<{
     id: number

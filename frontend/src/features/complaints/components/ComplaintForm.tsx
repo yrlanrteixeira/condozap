@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { COMPLAINT_CATEGORIES } from '@/types';
+import { COMPLAINT_CATEGORIES } from '@/config/constants';
 import { ComplaintSchema, type ComplaintFormData } from '@/schemas';
 
 interface ComplaintFormProps {

@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TEMPLATES } from '@/data/mockData';
+import { TEMPLATES } from '@/config/constants';
 
 interface MessageTemplateSelectorProps {
   templateId: string;

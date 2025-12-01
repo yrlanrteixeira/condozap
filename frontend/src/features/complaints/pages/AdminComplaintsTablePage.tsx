@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { PaginationTable } from "@/components/ui/pagination-table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import type { Complaint, Resident, ComplaintStatus } from "@/types";
+import type { Complaint, ComplaintStatus } from "@/features/complaints/types";
+import type { Resident } from "@/features/residents/types";
 import { ComplaintStatusBadge } from "../components";
 
 interface AdminComplaintsTablePageProps {
@@ -133,7 +134,7 @@ export function AdminComplaintsTablePage({
                       {getResidentInfo(complaint.residentId)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(complaint.timestamp).toLocaleDateString(
+                      {new Date(complaint.createdAt).toLocaleDateString(
                         "pt-BR"
                       )}
                     </TableCell>

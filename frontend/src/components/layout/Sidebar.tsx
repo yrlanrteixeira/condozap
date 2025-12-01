@@ -1,302 +1,410 @@
-import { memo, useCallback } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Permissions } from "@/config/permissions";
+import { useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard,
   Send,
   Building,
   AlertTriangle,
-  X,
-  ListChecks,
-  Building2,
-  ChevronLeft,
+  Users,
+  History,
+  ChevronDown,
   ChevronRight,
+  LogOut,
+  Settings,
 } from "lucide-react";
-import type { View } from "@/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// Avatar será implementado inline por enquanto
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useApp } from "@/contexts";
-import { ModeToggle } from "@/components/mode-toggle";
-import { CondoSwitcher } from "./CondoSwitcher";
-import { USERS } from "@/data/multiCondoMockData";
 import { Logo } from "@/components/Logo";
 
-interface SidebarProps {
-  openComplaintsCount: number;
+interface SubNavItem {
+  title: string;
+  href: string;
+  permission?: string;
 }
 
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  viewKey: View;
-  currentView: View;
-  onClick: () => void;
+interface NavItem {
+  title: string;
+  href?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permission?: string;
+  subItems?: SubNavItem[];
   badge?: number;
-  collapsed?: boolean;
 }
 
-const NavItem = memo(function NavItem({
-  icon,
-  label,
-  viewKey,
-  currentView,
-  onClick,
-  badge,
+interface SidebarProps {
+  collapsed?: boolean;
+  openComplaintsCount?: number;
+}
+
+export const Sidebar = ({
   collapsed = false,
-}: NavItemProps) {
+  openComplaintsCount = 0,
+}: SidebarProps) => {
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const { isSuperAdmin, isProfessionalSyndic } = useRole();
+  const { can } = usePermissions();
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  const navItems: NavItem[] = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      permission: Permissions.VIEW_DASHBOARD,
+    },
+    {
+      title: "Enviar Mensagens",
+      href: "/messages",
+      icon: Send,
+      permission: Permissions.SEND_MESSAGE,
+    },
+    {
+      title: "Moradores",
+      href: "/residents",
+      icon: Users,
+      permission: Permissions.VIEW_RESIDENTS,
+    },
+    {
+      title: "Estrutura",
+      href: "/structure",
+      icon: Building,
+      permission: Permissions.MANAGE_STRUCTURE,
+    },
+    {
+      title: "Ocorrências",
+      href: "/complaints",
+      icon: AlertTriangle,
+      permission: Permissions.VIEW_COMPLAINTS,
+      badge: openComplaintsCount,
+    },
+    {
+      title: "Histórico",
+      href: "/history",
+      icon: History,
+      permission: Permissions.VIEW_HISTORY,
+    },
+  ];
+
+  // Dashboard Unificado apenas para Síndicos Profissionais e Super Admins
+  if (isProfessionalSyndic || isSuperAdmin) {
+    navItems.unshift({
+      title: "Dashboard Unificado",
+      href: "/unified-dashboard",
+      icon: LayoutDashboard,
+      permission: Permissions.VIEW_UNIFIED_DASHBOARD,
+    });
+  }
+
+  const bottomNavItems: NavItem[] = [
+    {
+      title: "Configurações",
+      href: "/settings",
+      icon: Settings,
+    },
+  ];
+
+  const isActive = useCallback(
+    (path: string) =>
+      location.pathname === path || location.pathname.startsWith(path + "/"),
+    [location.pathname]
+  );
+
+  const toggleMenu = (title: string) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
+  // Inicializar e manter menus expandidos baseado na rota atual
+  useEffect(() => {
+    const initializeOpenMenus = () => {
+      const newOpenMenus: Record<string, boolean> = {};
+      navItems.forEach((item) => {
+        if (item.subItems && item.subItems.length > 0) {
+          // Verificar se algum subitem está ativo
+          const isAnySubItemActive = item.subItems.some((sub) =>
+            isActive(sub.href)
+          );
+          if (isAnySubItemActive) {
+            newOpenMenus[item.title] = true;
+          }
+        }
+      });
+      // Manter os menus já abertos manualmente pelo usuário
+      setOpenMenus((prev) => ({
+        ...newOpenMenus,
+        ...prev,
+      }));
+    };
+
+    initializeOpenMenus();
+  }, [location.pathname, isActive]);
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (!item.permission) return true;
+    return can(item.permission);
+  });
+
+  const filteredBottomNavItems = bottomNavItems.filter((item) => {
+    if (!item.permission) return true;
+    return can(item.permission);
+  });
+
+  const getUserInitials = () => {
+    if (!user?.name) return "U";
+    const names = user.name.split(" ");
+    if (names.length >= 2 && names[0] && names[1]) {
+      return `${names[0][0]?.toUpperCase() || "U"}${names[1][0]?.toUpperCase() || "U"}`;
+    }
+    if (names[0] && names[0][0]) {
+      return names[0][0].toUpperCase();
+    }
+    return "U".toUpperCase();
+  };
+
+  const getRoleLabel = () => {
+    if (!user?.role) return "Usuário";
+    switch (user.role) {
+      case "SUPER_ADMIN":
+        return "Super Admin";
+      case "PROFESSIONAL_SYNDIC":
+        return "Síndico Profissional";
+      case "ADMIN":
+        return "Administrador";
+      case "SYNDIC":
+        return "Síndico";
+      case "RESIDENT":
+        return "Morador";
+      default:
+        return "Usuário";
+    }
+  };
+
   return (
-    <Button
-      variant="ghost"
-      onClick={onClick}
+    <aside
       className={cn(
-        "w-full h-10 px-3 relative",
-        collapsed ? "justify-center" : "justify-start gap-3",
-        currentView === viewKey
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        "relative flex h-screen flex-col border-r bg-card text-card-foreground transition-all duration-300",
+        collapsed ? "w-20" : "w-64"
       )}
-      title={collapsed ? label : undefined}
     >
-      {icon}
-      {!collapsed && <span className="flex-1 text-left">{label}</span>}
-      {!collapsed && badge !== undefined && badge > 0 && (
-        <Badge variant="destructive" className="ml-auto">
-          {badge}
-        </Badge>
-      )}
-      {collapsed && badge !== undefined && badge > 0 && (
-        <Badge
-          variant="destructive"
-          className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-        >
-          {badge}
-        </Badge>
-      )}
-    </Button>
-  );
-});
+      {/* Logo */}
+      <div className="flex h-16 items-center justify-center px-6 border-b">
+        {collapsed ? (
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+            CZ
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Logo className="h-28 w-auto" />
+          </div>
+        )}
+      </div>
 
-export const Sidebar = memo(function Sidebar({ openComplaintsCount }: SidebarProps) {
-  const {
-    view,
-    setView,
-    userRole,
-    mobileMenuOpen,
-    setMobileMenuOpen,
-    sidebarCollapsed,
-    setSidebarCollapsed,
-    currentUser,
-    setCurrentUser,
-    isProfessionalSyndic,
-    getCurrentCondominium,
-  } = useApp();
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        {filteredNavItems.map((item) => {
+          const Icon = item.icon;
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+          const isMenuOpen = openMenus[item.title];
+          const isAnySubItemActive =
+            hasSubItems && item.subItems
+              ? item.subItems.some((sub) => isActive(sub.href))
+              : false;
 
-  const currentCondo = getCurrentCondominium();
+          // Se tem subitens, renderiza o menu expansível
+          if (hasSubItems) {
+            return (
+              <div key={item.title}>
+                <button
+                  onClick={() => toggleMenu(item.title)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    isAnySubItemActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    collapsed && "justify-center"
+                  )}
+                  title={collapsed ? item.title : undefined}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 truncate text-left">
+                        {item.title}
+                      </span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <Badge variant="destructive" className="ml-auto">
+                          {item.badge}
+                        </Badge>
+                      )}
+                      {isMenuOpen ? (
+                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                      )}
+                    </>
+                  )}
+                  {collapsed && item.badge !== undefined && item.badge > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </button>
+                {/* Subitens */}
+                {isMenuOpen && !collapsed && item.subItems && (
+                  <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-3">
+                    {item.subItems.map((subItem) => {
+                      const isSubActive = isActive(subItem.href);
+                      // Verificar permissão do subitem
+                      if (subItem.permission && !can(subItem.permission)) {
+                        return null;
+                      }
+                      return (
+                        <Link
+                          key={subItem.href}
+                          to={subItem.href}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                            isSubActive
+                              ? "bg-primary font-medium text-primary-foreground"
+                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                          )}
+                        >
+                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{subItem.title}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
 
-  return (
-    <>
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && (
+          // Item sem submenu
+          if (!item.href) return null;
+
+          const active = isActive(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                collapsed && "justify-center"
+              )}
+              title={collapsed ? item.title : undefined}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="truncate">{item.title}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <Badge variant="destructive" className="ml-auto">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </>
+              )}
+              {collapsed && item.badge !== undefined && item.badge > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                >
+                  {item.badge}
+                </Badge>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Navigation */}
+      <div className="space-y-1 px-3 py-4">
+        <Separator className="mb-4" />
+        {filteredBottomNavItems.map((item) => {
+          if (!item.href) return null;
+          const Icon = item.icon;
+          const active = isActive(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                collapsed && "justify-center"
+              )}
+              title={collapsed ? item.title : undefined}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {!collapsed && <span className="truncate">{item.title}</span>}
+            </Link>
+          );
+        })}
+      </div>
+
+      <Separator />
+
+      {/* User Profile */}
+      <div className="p-4">
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-card text-card-foreground border-r",
-          "flex flex-col overflow-hidden",
-          "transform transition-all duration-300 ease-in-out",
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-          "md:translate-x-0 md:static md:z-auto",
-          sidebarCollapsed ? "w-16" : "w-64"
-        )}
-      >
-        {/* Header - Logo */}
-        <div className="flex-shrink-0 p-3 border-b">
-          {!sidebarCollapsed ? (
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 flex justify-center">
-                <Logo size="md" />
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="hidden md:flex h-8 w-8 flex-shrink-0"
-                  aria-label="Colapsar menu"
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="md:hidden h-8 w-8 flex-shrink-0"
-                  aria-label="Fechar menu"
-                >
-                  <X size={20} />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <Logo size="sm" />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden md:flex h-8 w-8 flex-shrink-0"
-                aria-label="Expandir menu"
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
+          className={cn(
+            "flex items-center gap-3 rounded-lg bg-accent p-3",
+            collapsed && "flex-col"
           )}
-        </div>
-
-        {/* Context Switcher - só aparece para Síndico Profissional */}
-        {isProfessionalSyndic() && !sidebarCollapsed && (
-          <div className="flex-shrink-0 p-3 border-b">
-            <CondoSwitcher />
-            {currentCondo && (
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                {currentCondo.towers.length}{" "}
-                {currentCondo.towers.length === 1 ? "torre" : "torres"}
-              </p>
-            )}
+        >
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+            {getUserInitials()}
           </div>
-        )}
-
-        {/* Info do condomínio atual (para admin local) */}
-        {!isProfessionalSyndic() && currentCondo && !sidebarCollapsed && (
-          <div className="flex-shrink-0 p-3 border-b bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">
-                  {currentCondo.name}
-                </p>
-                <p className="text-xs text-muted-foreground">Admin Local</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-0.5">
-          {userRole !== "resident" ? (
+          {!collapsed && (
             <>
-              <NavItem
-                icon={<LayoutDashboard size={20} />}
-                label="Visão Geral"
-                viewKey="dashboard"
-                currentView={view}
-                onClick={() => {
-                  setView("dashboard");
-                  setMobileMenuOpen(false);
-                }}
-                collapsed={sidebarCollapsed}
-              />
-              <NavItem
-                icon={<Send size={20} />}
-                label="Enviar Mensagens"
-                viewKey="messages"
-                currentView={view}
-                onClick={() => {
-                  setView("messages");
-                  setMobileMenuOpen(false);
-                }}
-                collapsed={sidebarCollapsed}
-              />
-              <NavItem
-                icon={<Building size={20} />}
-                label="Estrutura"
-                viewKey="structure"
-                currentView={view}
-                onClick={() => {
-                  setView("structure");
-                  setMobileMenuOpen(false);
-                }}
-                collapsed={sidebarCollapsed}
-              />
-              <NavItem
-                icon={<AlertTriangle size={20} />}
-                label="Central de Ocorrências"
-                viewKey="complaints"
-                currentView={view}
-                onClick={() => {
-                  setView("complaints");
-                  setMobileMenuOpen(false);
-                }}
-                badge={openComplaintsCount}
-                collapsed={sidebarCollapsed}
-              />
-            </>
-          ) : (
-            <NavItem
-              icon={<ListChecks size={20} />}
-              label="Minhas Ocorrências"
-              viewKey="complaints"
-              currentView={view}
-              onClick={() => {
-                setView("complaints");
-                setMobileMenuOpen(false);
-              }}
-              collapsed={sidebarCollapsed}
-            />
-          )}
-        </nav>
-
-        {/* Footer - Fixed at bottom */}
-        <div className="flex-shrink-0 p-3 border-t space-y-2 bg-card">
-          <div className="flex items-center justify-center">
-            <ModeToggle />
-          </div>
-          {!sidebarCollapsed && (
-            <div>
-              <div className="text-xs text-muted-foreground mb-2 uppercase font-semibold">
-                Simular Usuário
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-sm font-medium">
+                  {user?.name || "Usuário"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {getRoleLabel()}
+                </p>
               </div>
-              <Select
-                value={currentUser.id}
-                onValueChange={(userId) => {
-                  const user = USERS.find((u) => u.id === userId);
-                  if (user) setCurrentUser(user);
-                }}
+              <button
+                onClick={logout}
+                className="rounded-md p-1.5 transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                title="Sair"
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {USERS.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                {currentUser.permissionScope === "global"
-                  ? "🌐 Acesso Global"
-                  : "🏢 Acesso Local"}
-              </p>
-            </div>
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          {collapsed && (
+            <button
+              onClick={logout}
+              className="w-full rounded-md p-1.5 transition-colors hover:bg-destructive hover:text-destructive-foreground"
+              title="Sair"
+            >
+              <LogOut className="mx-auto h-4 w-4" />
+            </button>
           )}
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
-});
+};

@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import {
   persistStore,
   persistReducer,
@@ -8,34 +8,49 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-} from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage
-import authReducer from './slices/authSlice';
-import themeReducer from './slices/themeSlice';
-import { authMiddleware, authLoggingMiddleware } from './middleware/authMiddleware';
+} from "redux-persist";
+import storage from "redux-persist/lib/storage"; // defaults to localStorage
+import authReducer from "./slices/authSlice";
+import themeReducer from "./slices/themeSlice";
+import uiReducer from "./slices/uiSlice";
+import userReducer from "./slices/userSlice";
+import condominiumReducer from "./slices/condominiumSlice";
+import {
+  authMiddleware,
+  authLoggingMiddleware,
+} from "./middleware/authMiddleware";
 
-// Persist config - persiste theme e auth configurado separadamente
+// Persist config - persiste theme, condominium, ui e user
 const persistConfig = {
-  key: 'ivijur-root',
+  key: "condozap-root", // Changed from ivijur-root
   version: 1,
   storage,
-  whitelist: ['theme'], // Theme usa persistência do root
-  blacklist: ['auth'], // Auth tem sua própria config de persistência
+  whitelist: ["theme", "condominium", "ui", "user"], // Persiste dados não-sensíveis
+  blacklist: ["auth"], // Auth tem sua própria config de persistência
 };
 
 // Auth persist config - persiste dados necessários para manter sessão
 const authPersistConfig = {
-  key: 'auth',
+  key: "auth",
   storage,
   // Persiste user, isAuthenticated e tokens para manter sessão após refresh
-  whitelist: ['user', 'isAuthenticated', 'token', 'refreshToken', 'tokenExpiresAt'], 
-  blacklist: ['isLoading'],
+  whitelist: [
+    "user",
+    "isAuthenticated",
+    "token",
+    "refreshToken",
+    "tokenExpiresAt",
+  ],
+  blacklist: ["isLoading"],
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   theme: themeReducer,
+  ui: uiReducer,
+  user: userReducer,
+  condominium: condominiumReducer,
 });
 
 // Create persisted reducer
@@ -50,8 +65,8 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
-    .concat(authMiddleware) // Middleware de renovação automática de tokens
-    .concat(authLoggingMiddleware), // Middleware de logging (apenas dev)
+      .concat(authMiddleware) // Middleware de renovação automática de tokens
+      .concat(authLoggingMiddleware), // Middleware de logging (apenas dev)
   devTools: import.meta.env.DEV,
 });
 
@@ -61,5 +76,3 @@ export const persistor = persistStore(store);
 // Types
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
-

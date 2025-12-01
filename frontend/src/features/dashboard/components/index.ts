@@ -2,9 +2,12 @@
  * Dashboard Components
  */
 
-export { StatCard as DashboardStatCard } from './DashboardStatCard'
-export { PeriodSelector as DashboardPeriodSelector, type Period } from './DashboardPeriodSelector'
-export { ComplaintsByCategoryChart as ComplaintsCategoryChart } from './ComplaintsCategoryChart'
-export { ComplaintsByTowerChart as ComplaintsTowerChart } from './ComplaintsTowerChart'
-export { MessageStatsCard as DashboardMessageStats } from './DashboardMessageStats'
+export * from './CategoryChart';
+export * from './MessageStats';
+export * from './TowerChart';
+export * from './StatCard';
+export * from './PeriodSelector';
+export * from './ComplaintsCategoryChart';
+export * from './ComplaintsTowerChart';
+export * from './DashboardMessageStats';
 

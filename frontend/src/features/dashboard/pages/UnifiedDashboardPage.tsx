@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/contexts'
-import { MULTI_CONDO_COMPLAINTS, URGENT_FEED, CONDOMINIUMS } from '@/data/multiCondoMockData'
 import type { UrgentFeedItem, ComplaintPriority } from '@/types'
 import { cn } from '@/lib/utils'
+
+// TODO: Buscar dados reais da API
+const MULTI_CONDO_COMPLAINTS: any[] = [];
+const URGENT_FEED: UrgentFeedItem[] = [];
+const CONDOMINIUMS: any[] = [];
 
 const PRIORITY_COLORS: Record<ComplaintPriority, string> = {
   critical: 'bg-red-500 text-white',
