@@ -7,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAppSelector } from '@/hooks';
+import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
+import { useTowers } from '@/features/residents/hooks/useResidentsApi';
 
 type Scope = 'unit' | 'floor' | 'tower' | 'all';
 
@@ -38,6 +41,8 @@ export const MessageRecipientSelector = ({
   selectedUnit,
   onUnitChange,
 }: MessageRecipientSelectorProps) => {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { data: towers = [] } = useTowers(currentCondominiumId || "");
   return (
     <div>
       <label htmlFor="scope-select" className="block text-sm font-medium text-foreground mb-2">
@@ -64,8 +69,18 @@ export const MessageRecipientSelector = ({
               <SelectValue placeholder="Selecione Torre" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="A">Torre A</SelectItem>
-              <SelectItem value="B">Torre B</SelectItem>
+              {towers.length > 0 ? (
+                towers.map((tower) => (
+                  <SelectItem key={tower} value={tower}>
+                    Torre {tower}
+                  </SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="A">Torre A</SelectItem>
+                  <SelectItem value="B">Torre B</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         )}

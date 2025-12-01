@@ -24,16 +24,16 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate],
+    onRequest: [fastify.authenticate],
     },
     async (request, reply) => {
       const { condominiumId } = request.params as { condominiumId: string };
       const { limit = 50 } = request.query as any;
 
-      const messages = await prisma.message.findMany({
-        where: { condominiumId },
+    const messages = await prisma.message.findMany({
+      where: { condominiumId },
         orderBy: { sentAt: "desc" },
-        take: parseInt(limit),
+      take: parseInt(limit),
       });
 
       return reply.send(messages);
@@ -44,62 +44,62 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/send",
     {
-      onRequest: [fastify.authenticate],
+    onRequest: [fastify.authenticate],
     },
     async (request, reply) => {
       const body = sendMessageSchema.parse(request.body);
 
-      // Get targeted residents
-      const residents = await prisma.resident.findMany({
-        where: {
-          condominiumId: body.condominiumId,
-          consentWhatsapp: true,
+    // Get targeted residents
+    const residents = await prisma.resident.findMany({
+      where: {
+        condominiumId: body.condominiumId,
+        consentWhatsapp: true,
           ...(body.scope === "TOWER" && { tower: body.targetTower }),
           ...(body.scope === "FLOOR" && {
-            tower: body.targetTower,
-            floor: body.targetFloor,
-          }),
+          tower: body.targetTower,
+          floor: body.targetFloor,
+        }),
           ...(body.scope === "UNIT" && {
-            tower: body.targetTower,
-            floor: body.targetFloor,
-            unit: body.targetUnit,
-          }),
-        },
+          tower: body.targetTower,
+          floor: body.targetFloor,
+          unit: body.targetUnit,
+        }),
+      },
       });
 
-      if (residents.length === 0) {
+    if (residents.length === 0) {
         return reply.status(400).send({ error: "No recipients found" });
-      }
+    }
 
-      // Send bulk messages
-      const result = await whatsappService.sendBulkMessages({
+    // Send bulk messages
+    const result = await whatsappService.sendBulkMessages({
         recipients: residents.map((r: ResidentData) => ({
           phone: r.phone,
           name: r.name,
         })),
-        message: body.content,
+      message: body.content,
       });
 
-      // Create message log
-      const message = await prisma.message.create({
-        data: {
-          condominiumId: body.condominiumId,
-          type: body.type,
-          scope: body.scope,
-          targetTower: body.targetTower,
-          targetFloor: body.targetFloor,
-          targetUnit: body.targetUnit,
-          content: body.content,
-          recipientCount: result.total,
-          sentBy: body.sentBy,
+    // Create message log
+    const message = await prisma.message.create({
+      data: {
+        condominiumId: body.condominiumId,
+        type: body.type,
+        scope: body.scope,
+        targetTower: body.targetTower,
+        targetFloor: body.targetFloor,
+        targetUnit: body.targetUnit,
+        content: body.content,
+        recipientCount: result.total,
+        sentBy: body.sentBy,
           whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
-        },
+      },
       });
 
-      return reply.send({
-        message,
-        sendResult: result,
+    return reply.send({
+      message,
+      sendResult: result,
       });
-    }
+}
   );
 };

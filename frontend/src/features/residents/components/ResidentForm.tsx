@@ -7,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useTowers } from "../hooks/useResidentsApi";
 
 export interface ResidentFormData {
   name: string;
@@ -22,6 +25,8 @@ interface ResidentFormProps {
 }
 
 export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { data: towers = [] } = useTowers(currentCondominiumId || "");
   return (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
@@ -70,12 +75,22 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
             onValueChange={(value) => onChange({ ...formData, tower: value })}
           >
             <SelectTrigger id="tower">
-              <SelectValue />
+              <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="A">Torre A</SelectItem>
-              <SelectItem value="B">Torre B</SelectItem>
-              <SelectItem value="C">Torre C</SelectItem>
+              {towers.length > 0 ? (
+                towers.map((tower) => (
+                  <SelectItem key={tower} value={tower}>
+                    Torre {tower}
+                  </SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="A">Torre A</SelectItem>
+                  <SelectItem value="B">Torre B</SelectItem>
+                  <SelectItem value="C">Torre C</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

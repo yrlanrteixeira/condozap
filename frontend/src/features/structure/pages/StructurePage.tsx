@@ -1,23 +1,19 @@
 import { useState, useMemo } from "react";
-import { Loader2, PlusCircle, Building2 } from "lucide-react";
+import { Loader2, PlusCircle, Building2, Grid3X3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PaginationTable } from "@/components/ui/pagination-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Resident } from "@/features/residents/types";
 import { useAppSelector } from "@/hooks";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
-import {
-  ResidentTable,
-  ResidentDialog,
-} from "@/features/residents";
+import { ResidentDialog } from "@/features/residents";
+import { TowerCard } from "../components";
 
 export function StructurePage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
-  const itemsPerPage = 10;
 
   const {
     data: residents,
@@ -25,14 +21,21 @@ export function StructurePage() {
     isError,
   } = useResidents(currentCondominiumId || "", {});
 
-  const paginatedResidents = useMemo(() => {
-    if (!residents) return [];
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return residents.slice(startIndex, endIndex);
-  }, [residents, currentPage]);
+  // Group residents by tower
+  const residentsByTower = useMemo(() => {
+    if (!residents) return {};
+    
+    return residents.reduce((acc, resident) => {
+      if (!acc[resident.tower]) {
+        acc[resident.tower] = [];
+      }
+      acc[resident.tower].push(resident);
+      return acc;
+    }, {} as Record<string, Resident[]>);
+  }, [residents]);
 
-  const totalPages = Math.ceil((residents?.length || 0) / itemsPerPage);
+  // Sort towers alphabetically
+  const towers = Object.keys(residentsByTower).sort();
 
   const handleAddResident = () => {
     setSelectedResident(undefined);
@@ -82,38 +85,78 @@ export function StructurePage() {
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Estrutura do Condomínio</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Estrutura do Condomínio
+            </h1>
             <p className="text-muted-foreground text-sm sm:text-base mt-1">
-              Visualize e gerencie torres, andares e unidades
+              Visualização hierárquica de torres, andares e unidades
             </p>
           </div>
         </div>
         <Button onClick={handleAddResident} className="shrink-0">
           <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Unidade
+          Adicionar Morador
         </Button>
       </div>
 
-      {residents && residents.length > 0 ? (
-        <Card className="border-border">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto rounded-lg">
-              <ResidentTable residents={paginatedResidents} onEdit={handleEditResident} />
-            </div>
-
-            {residents.length > itemsPerPage && (
-              <div className="p-4 border-t border-border bg-muted/20">
-                <PaginationTable
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  totalItems={residents.length}
-                  showInfo={true}
-                />
+      {/* Statistics */}
+      {residents && residents.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Building2 className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Torres</p>
+                  <p className="text-2xl font-bold text-foreground">{towers.length}</p>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <Grid3X3 className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Unidades</p>
+                  <p className="text-2xl font-bold text-foreground">{residents.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/10">
+                  <PlusCircle className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Ocupação</p>
+                  <p className="text-2xl font-bold text-foreground">100%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Towers Grid */}
+      {residents && residents.length > 0 ? (
+        <div className="space-y-4">
+          {towers.map((tower) => (
+            <TowerCard
+              key={tower}
+              towerName={tower}
+              residents={residentsByTower[tower]}
+            />
+          ))}
+        </div>
       ) : (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center p-12">
@@ -121,13 +164,15 @@ export function StructurePage() {
               <Building2 className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-medium text-foreground">Nenhuma unidade cadastrada</p>
+              <p className="text-lg font-medium text-foreground">
+                Nenhuma unidade cadastrada
+              </p>
               <p className="text-sm text-muted-foreground mt-2 mb-4">
-                Comece adicionando moradores e suas unidades
+                Comece adicionando moradores e suas unidades para visualizar a estrutura
               </p>
               <Button onClick={handleAddResident} variant="outline">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Primeira Unidade
+                Adicionar Primeiro Morador
               </Button>
             </div>
           </CardContent>
