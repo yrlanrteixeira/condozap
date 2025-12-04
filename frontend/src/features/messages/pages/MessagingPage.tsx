@@ -31,7 +31,8 @@ export function MessagingPage() {
   const { toast } = useToast();
 
   // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  const condoIdToFetch =
+    user?.role === "SUPER_ADMIN" ? "all" : currentCondominiumId || "";
 
   // Fetch residents from API
   const {
@@ -111,12 +112,16 @@ export function MessagingPage() {
       await sendMessage.mutateAsync({
         condominium_id: currentCondominiumId,
         type: msgType.toUpperCase() as any,
-        scope: scope.toUpperCase() as any,
-        target_tower: selectedTower,
-        target_floor: selectedFloor,
-        target_unit: selectedUnit,
-        content: contentString,
-        sent_by: "", // Will be filled by backend from JWT
+        content: {
+          text: contentString,
+        },
+        target: {
+          scope: scope.toUpperCase() as any,
+          tower: selectedTower,
+          floor: selectedFloor,
+          unit: selectedUnit,
+        },
+        sentBy: user?.id || "",
       });
 
       toast({
@@ -160,7 +165,7 @@ export function MessagingPage() {
   }
 
   // Error state - SUPER_ADMIN pode acessar sem condomínio selecionado (vê todos)
-  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
+  if (isError || (!currentCondominiumId && user?.role !== "SUPER_ADMIN")) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-6">
