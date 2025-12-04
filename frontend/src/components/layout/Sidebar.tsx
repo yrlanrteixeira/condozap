@@ -177,12 +177,14 @@ export const Sidebar = ({
 
   const filteredNavItems = navItems.filter((item) => {
     if (!item.permission) return true;
-    
+
     // Special case for Complaints: both VIEW_COMPLAINTS and VIEW_OWN_COMPLAINTS should show it
-    if (item.href === '/complaints') {
-      return can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS);
+    if (item.href === "/complaints") {
+      return (
+        can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS)
+      );
     }
-    
+
     return can(item.permission);
   });
 
