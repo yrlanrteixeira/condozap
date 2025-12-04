@@ -2,18 +2,23 @@ import { History, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { HistoryHeader, HistoryLogList } from '../components';
 import { useHistory } from '../hooks/useHistoryApi';
+import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/hooks';
 import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
 
 export function HistoryPage() {
+  const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
+  // SUPER_ADMIN vê histórico global, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+
   // Fetch history logs from API
-  const { 
-    data: logs = [], 
-    isLoading, 
-    isError 
-  } = useHistory(currentCondominiumId || '');
+  const {
+    data: logs = [],
+    isLoading,
+    isError
+  } = useHistory(condoIdToFetch);
 
   // Loading state
   if (isLoading) {
@@ -24,8 +29,8 @@ export function HistoryPage() {
     );
   }
 
-  // Error or no condominium selected
-  if (isError || !currentCondominiumId) {
+  // Error or no condominium selected (except for SUPER_ADMIN)
+  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="border-border">

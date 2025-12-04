@@ -125,6 +125,11 @@ model User {
   requestedTower         String?  @map("requested_tower")
   requestedFloor         String?  @map("requested_floor")
   requestedUnit          String?  @map("requested_unit")
+  requestedPhone         String?  @map("requested_phone")
+
+  // LGPD Consent (coletado no cadastro, transferido para Resident na aprovação)
+  consentWhatsapp       Boolean @default(false) @map("consent_whatsapp")
+  consentDataProcessing Boolean @default(false) @map("consent_data_processing")
 
   // MFA
   mfaEnabled Boolean @default(false) @map("mfa_enabled")

@@ -22,6 +22,108 @@ type MessageData = {
 }
 
 export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
+  // Get dashboard metrics for ALL condominiums (SUPER_ADMIN only)
+  fastify.get('/metrics/all', {
+    onRequest: [fastify.authenticate],
+  }, async (request, reply) => {
+    const user = request.user as any;
+
+    if (user.role !== 'SUPER_ADMIN') {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Apenas SUPER_ADMIN pode ver métricas globais.',
+      });
+    }
+
+    // Fetch all data (all condominiums)
+    const [complaints, residents, messages] = await Promise.all([
+      prisma.complaint.findMany({
+        select: {
+          status: true,
+          priority: true,
+          category: true,
+          createdAt: true,
+          resolvedAt: true,
+          resident: {
+            select: {
+              tower: true,
+            },
+          },
+        },
+      }),
+      prisma.resident.findMany({
+        select: {
+          tower: true,
+          type: true,
+          consentWhatsapp: true,
+        },
+      }),
+      prisma.message.findMany({
+        select: {
+          recipientCount: true,
+          whatsappStatus: true,
+          sentAt: true,
+        },
+      }),
+    ])
+
+    // Calculate metrics
+    const metrics = {
+      complaints: {
+        total: complaints.length,
+        open: complaints.filter((c: ComplaintData) => c.status === 'OPEN').length,
+        inProgress: complaints.filter((c: ComplaintData) => c.status === 'IN_PROGRESS').length,
+        resolved: complaints.filter((c: ComplaintData) => c.status === 'RESOLVED').length,
+        byPriority: {
+          CRITICAL: complaints.filter((c: ComplaintData) => c.priority === 'CRITICAL').length,
+          HIGH: complaints.filter((c: ComplaintData) => c.priority === 'HIGH').length,
+          MEDIUM: complaints.filter((c: ComplaintData) => c.priority === 'MEDIUM').length,
+          LOW: complaints.filter((c: ComplaintData) => c.priority === 'LOW').length,
+        },
+        byCategory: complaints.reduce((acc: Record<string, number>, c: ComplaintData) => {
+          acc[c.category] = (acc[c.category] || 0) + 1
+          return acc
+        }, {} as Record<string, number>),
+        byTower: complaints.reduce((acc: Record<string, number>, c: any) => {
+          const tower = c.resident?.tower || 'Sem Torre'
+          acc[tower] = (acc[tower] || 0) + 1
+          return acc
+        }, {} as Record<string, number>),
+        avgResolutionTime: 0,
+      },
+      residents: {
+        total: residents.length,
+        withConsent: residents.filter((r: ResidentData) => r.consentWhatsapp).length,
+        byType: {
+          owner: residents.filter((r: ResidentData) => r.type === 'OWNER').length,
+          tenant: residents.filter((r: ResidentData) => r.type === 'TENANT').length,
+        },
+        byTower: residents.reduce((acc: Record<string, number>, r: ResidentData) => {
+          acc[r.tower] = (acc[r.tower] || 0) + 1
+          return acc
+        }, {} as Record<string, number>),
+      },
+      messages: {
+        totalSent: messages.length,
+        totalRecipients: messages.reduce((sum: number, m: MessageData) => sum + (m.recipientCount || 0), 0),
+        delivered: messages.filter((m: MessageData) => m.whatsappStatus === 'DELIVERED' || m.whatsappStatus === 'READ').length,
+        read: messages.filter((m: MessageData) => m.whatsappStatus === 'READ').length,
+        failed: messages.filter((m: MessageData) => m.whatsappStatus === 'FAILED').length,
+        deliveryRate: messages.length > 0
+          ? (messages.filter((m: MessageData) => m.whatsappStatus === 'DELIVERED' || m.whatsappStatus === 'READ').length / messages.length) * 100
+          : 0,
+        last7Days: messages.filter((m: MessageData) => {
+          const sentDate = new Date(m.sentAt)
+          const sevenDaysAgo = new Date()
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          return sentDate >= sevenDaysAgo
+        }).length,
+      },
+    }
+
+    return reply.send(metrics)
+  });
+
   // Get dashboard metrics
   fastify.get('/metrics/:condominiumId', {
     onRequest: [fastify.authenticate],

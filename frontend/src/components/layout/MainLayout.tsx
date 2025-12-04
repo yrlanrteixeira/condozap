@@ -3,9 +3,13 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { NotificationToast } from "./NotificationToast";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 
 export function MainLayout() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // TODO: Implementar mobile menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     // Recuperar estado salvo no localStorage
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -41,6 +45,17 @@ export function MainLayout() {
           collapsed={sidebarCollapsed}
         />
       </div>
+
+      {/* Mobile Sidebar (Sheet) */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <Sidebar
+            openComplaintsCount={openComplaintsCount}
+            collapsed={false}
+            onNavigate={() => setMobileMenuOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">

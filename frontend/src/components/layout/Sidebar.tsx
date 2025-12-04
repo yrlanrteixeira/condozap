@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Send,
   Building,
+  Building2,
   AlertTriangle,
   Users,
   History,
@@ -42,11 +43,13 @@ interface NavItem {
 interface SidebarProps {
   collapsed?: boolean;
   openComplaintsCount?: number;
+  onNavigate?: () => void;
 }
 
 export const Sidebar = ({
   collapsed = false,
   openComplaintsCount = 0,
+  onNavigate,
 }: SidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -84,6 +87,12 @@ export const Sidebar = ({
       href: "/team",
       icon: UsersRound,
       permission: Permissions.MANAGE_RESIDENTS,
+    },
+    {
+      title: "Condomínios",
+      href: "/condominiums",
+      icon: Building2,
+      permission: Permissions.CREATE_CONDOMINIUM,
     },
     {
       title: "Estrutura",
@@ -291,6 +300,7 @@ export const Sidebar = ({
                         <Link
                           key={subItem.href}
                           to={subItem.href}
+                          onClick={onNavigate}
                           className={cn(
                             "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
                             isSubActive
@@ -318,6 +328,7 @@ export const Sidebar = ({
             <Link
               key={item.href}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative",
                 active
@@ -363,6 +374,7 @@ export const Sidebar = ({
             <Link
               key={item.href}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Resident } from "@/features/residents/types";
 import { useAppSelector } from "@/hooks";
+import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { ResidentDialog } from "@/features/residents";
@@ -12,14 +13,18 @@ import { TowerCard } from "../components";
 
 export function StructurePage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
+
+  // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
 
   const {
     data: residents,
     isLoading,
     isError,
-  } = useResidents(currentCondominiumId || "", {});
+  } = useResidents(condoIdToFetch, {});
 
   // Group residents by tower
   const residentsByTower = useMemo(() => {

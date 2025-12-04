@@ -23,10 +23,13 @@ const historyQueryKeys = {
 // =====================================================
 
 export function useHistory(condominiumId: string, filters?: HistoryFilters) {
+  const isGlobal = condominiumId === 'all';
+  const endpoint = isGlobal ? '/history/all' : `/history/${condominiumId}`;
+
   return useQuery({
     queryKey: historyQueryKeys.list(condominiumId, filters),
     queryFn: async () => {
-      const { data } = await api.get(`/history/${condominiumId}`, {
+      const { data } = await api.get(endpoint, {
         params: filters,
       });
       return data as HistoryLog[];

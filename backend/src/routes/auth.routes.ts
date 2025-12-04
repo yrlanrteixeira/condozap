@@ -15,6 +15,10 @@ const registerSchema = z.object({
   requestedTower: z.string().optional(),
   requestedFloor: z.string().optional(),
   requestedUnit: z.string().optional(),
+  requestedPhone: z.string().optional(),
+  // LGPD Consent
+  consentWhatsapp: z.boolean().default(false),
+  consentDataProcessing: z.boolean().default(false),
 });
 
 const loginSchema = z.object({
@@ -54,6 +58,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         requestedTower: body.requestedTower,
         requestedFloor: body.requestedFloor,
         requestedUnit: body.requestedUnit,
+        requestedPhone: body.requestedPhone,
+        // LGPD Consent
+        consentWhatsapp: body.consentWhatsapp,
+        consentDataProcessing: body.consentDataProcessing,
       },
       select: {
         id: true,

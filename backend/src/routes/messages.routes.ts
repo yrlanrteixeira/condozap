@@ -9,14 +9,18 @@ type ResidentData = {
 };
 
 const sendMessageSchema = z.object({
-  condominiumId: z.string(),
+  condominium_id: z.string(),
   type: z.enum(["TEXT", "TEMPLATE", "IMAGE"]),
-  scope: z.enum(["ALL", "TOWER", "FLOOR", "UNIT"]),
-  targetTower: z.string().optional(),
-  targetFloor: z.string().optional(),
-  targetUnit: z.string().optional(),
-  content: z.string(),
-  sentBy: z.string(),
+  content: z.object({
+    text: z.string(),
+  }),
+  target: z.object({
+    scope: z.enum(["ALL", "TOWER", "FLOOR", "UNIT"]),
+    tower: z.string().optional(),
+    floor: z.string().optional(),
+    unit: z.string().optional(),
+  }),
+  sentBy: z.string().optional(),
 });
 
 export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
@@ -48,21 +52,22 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = sendMessageSchema.parse(request.body);
+      const user = request.user as any;
 
     // Get targeted residents
     const residents = await prisma.resident.findMany({
       where: {
-        condominiumId: body.condominiumId,
+        condominiumId: body.condominium_id,
         consentWhatsapp: true,
-          ...(body.scope === "TOWER" && { tower: body.targetTower }),
-          ...(body.scope === "FLOOR" && {
-          tower: body.targetTower,
-          floor: body.targetFloor,
+          ...(body.target.scope === "TOWER" && { tower: body.target.tower }),
+          ...(body.target.scope === "FLOOR" && {
+          tower: body.target.tower,
+          floor: body.target.floor,
         }),
-          ...(body.scope === "UNIT" && {
-          tower: body.targetTower,
-          floor: body.targetFloor,
-          unit: body.targetUnit,
+          ...(body.target.scope === "UNIT" && {
+          tower: body.target.tower,
+          floor: body.target.floor,
+          unit: body.target.unit,
         }),
       },
       });
@@ -77,21 +82,21 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
         phone: r.phone,
         name: r.name,
       })),
-      message: body.content,
+      message: body.content.text,
     });
 
     // Create message log
     const message = await prisma.message.create({
       data: {
-        condominiumId: body.condominiumId,
+        condominiumId: body.condominium_id,
         type: body.type,
-        scope: body.scope,
-        targetTower: body.targetTower,
-        targetFloor: body.targetFloor,
-        targetUnit: body.targetUnit,
-        content: body.content,
+        scope: body.target.scope,
+        targetTower: body.target.tower,
+        targetFloor: body.target.floor,
+        targetUnit: body.target.unit,
+        content: body.content.text,
         recipientCount: result.total,
-        sentBy: body.sentBy,
+        sentBy: body.sentBy || user.id,
           whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
       },
       });
