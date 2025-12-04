@@ -50,6 +50,23 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(403).send({ error: 'Forbidden' });
       }
 
+      // Verify user has access to this condominium (except SUPER_ADMIN)
+      if (user.role !== 'SUPER_ADMIN') {
+        const userAccess = await prisma.userCondominium.findFirst({
+          where: {
+            userId: user.id,
+            condominiumId: condominiumId,
+          },
+        });
+
+        if (!userAccess) {
+          return reply.status(403).send({ 
+            error: 'Forbidden',
+            message: 'Você não tem acesso a este condomínio.',
+          });
+        }
+      }
+
       const pendingUsers = await prisma.user.findMany({
         where: {
           status: 'PENDING',
@@ -89,6 +106,39 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
       // Only admins and syndics can approve users
       if (!['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC'].includes(user.role)) {
         return reply.status(403).send({ error: 'Forbidden' });
+      }
+
+      // Verify user has access to this condominium (except SUPER_ADMIN)
+      if (user.role !== 'SUPER_ADMIN') {
+        const userAccess = await prisma.userCondominium.findFirst({
+          where: {
+            userId: user.id,
+            condominiumId: body.condominiumId,
+          },
+        });
+
+        if (!userAccess) {
+          return reply.status(403).send({ 
+            error: 'Forbidden',
+            message: 'Você não tem permissão para aprovar usuários neste condomínio.',
+          });
+        }
+      }
+
+      // Verify the pending user actually requested this condominium
+      const pendingUser = await prisma.user.findFirst({
+        where: {
+          id: body.userId,
+          status: 'PENDING',
+          requestedCondominiumId: body.condominiumId,
+        },
+      });
+
+      if (!pendingUser) {
+        return reply.status(400).send({ 
+          error: 'Invalid request',
+          message: 'Usuário não encontrado ou não está pendente para este condomínio.',
+        });
       }
 
       try {
@@ -192,6 +242,38 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
       // Only admins and syndics can reject users
       if (!['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC'].includes(user.role)) {
         return reply.status(403).send({ error: 'Forbidden' });
+      }
+
+      // Get pending user to check condominium access
+      const pendingUser = await prisma.user.findFirst({
+        where: {
+          id: body.userId,
+          status: 'PENDING',
+        },
+      });
+
+      if (!pendingUser) {
+        return reply.status(400).send({ 
+          error: 'Invalid request',
+          message: 'Usuário não encontrado ou não está pendente.',
+        });
+      }
+
+      // Verify user has access to the condominium (except SUPER_ADMIN)
+      if (user.role !== 'SUPER_ADMIN' && pendingUser.requestedCondominiumId) {
+        const userAccess = await prisma.userCondominium.findFirst({
+          where: {
+            userId: user.id,
+            condominiumId: pendingUser.requestedCondominiumId,
+          },
+        });
+
+        if (!userAccess) {
+          return reply.status(403).send({ 
+            error: 'Forbidden',
+            message: 'Você não tem permissão para rejeitar usuários deste condomínio.',
+          });
+        }
       }
 
       try {

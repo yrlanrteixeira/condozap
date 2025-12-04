@@ -38,6 +38,9 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
 import { UserApprovalPage } from "@/features/user-approval";
 
+// User Management Pages
+import { TeamManagementPage } from "@/features/user-management";
+
 // Access Denied Page
 import { AccessDeniedPage } from "@/pages/AccessDenied";
 
@@ -126,6 +129,16 @@ export function AppRoutes() {
             element={
               <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
                 <UserApprovalPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Team Management - Syndics and Admins */}
+          <Route
+            path="team"
+            element={
+              <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
+                <TeamManagementPage />
               </PermissionGuard>
             }
           />
