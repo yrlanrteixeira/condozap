@@ -20,8 +20,8 @@ export function ResidentsPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
 
-  // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  // SUPER_ADMIN vê moradores do condomínio selecionado, outros veem do seu condomínio
+  const condoIdToFetch = currentCondominiumId || '';
 
   const {
     data: residents,
