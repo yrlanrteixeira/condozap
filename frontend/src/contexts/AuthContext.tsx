@@ -20,16 +20,22 @@ import {
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
+interface SignUpData {
+  email: string;
+  password: string;
+  name: string;
+  role?: User["role"];
+  condominiumId?: string;
+  phone?: string;
+  consentDataProcessing?: boolean;
+  consentWhatsapp?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (
-    email: string,
-    password: string,
-    name: string,
-    role?: User["role"]
-  ) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
 }
@@ -127,18 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign up
   const signUp = useCallback(
-    async (
-      email: string,
-      password: string,
-      name: string,
-      role?: User["role"]
-    ) => {
+    async (signUpData: SignUpData) => {
       try {
         const { data } = await api.post<AuthResponse>("/auth/register", {
-          email,
-          password,
-          name,
-          role: role || "RESIDENT",
+          email: signUpData.email,
+          password: signUpData.password,
+          name: signUpData.name,
+          role: signUpData.role || "RESIDENT",
+          requestedCondominiumId: signUpData.condominiumId,
+          requestedPhone: signUpData.phone,
+          consentDataProcessing: signUpData.consentDataProcessing ?? false,
+          consentWhatsapp: signUpData.consentWhatsapp ?? false,
         });
 
         localStorage.setItem("auth_token", data.token);

@@ -33,6 +33,87 @@ const rejectUserSchema = z.object({
 export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   
   // =====================================================
+  // GET /condominiums/list
+  // List all condominiums (for SUPER_ADMIN approval dropdown)
+  // =====================================================
+  fastify.get(
+    '/condominiums/list',
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const user = request.user as any;
+
+      // Only SUPER_ADMIN can list all condominiums
+      if (user.role !== 'SUPER_ADMIN') {
+        return reply.status(403).send({ 
+          error: 'Forbidden',
+          message: 'Apenas SUPER_ADMIN pode listar todos os condomínios.',
+        });
+      }
+
+      const condominiums = await prisma.condominium.findMany({
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return reply.send(condominiums);
+    }
+  );
+
+  // =====================================================
+  // GET /users/pending/all
+  // List ALL pending users (SUPER_ADMIN only)
+  // =====================================================
+  fastify.get(
+    '/users/pending/all',
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const user = request.user as any;
+
+      // Only SUPER_ADMIN can view all pending users
+      if (user.role !== 'SUPER_ADMIN') {
+        return reply.status(403).send({ 
+          error: 'Forbidden',
+          message: 'Apenas SUPER_ADMIN pode ver todos os usuários pendentes.',
+        });
+      }
+
+      const pendingUsers = await prisma.user.findMany({
+        where: {
+          status: 'PENDING',
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          requestedCondominiumId: true,
+          requestedTower: true,
+          requestedFloor: true,
+          requestedUnit: true,
+          requestedPhone: true,
+          consentWhatsapp: true,
+          consentDataProcessing: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return reply.send(pendingUsers);
+    }
+  );
+
+  // =====================================================
   // GET /users/pending/:condominiumId
   // List pending users for a condominium
   // =====================================================
@@ -79,6 +160,9 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
           requestedTower: true,
           requestedFloor: true,
           requestedUnit: true,
+          requestedPhone: true,
+          consentWhatsapp: true,
+          consentDataProcessing: true,
           createdAt: true,
         },
         orderBy: {
@@ -125,19 +209,30 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      // Verify the pending user actually requested this condominium
+      // Verify the pending user exists and is pending
       const pendingUser = await prisma.user.findFirst({
         where: {
           id: body.userId,
           status: 'PENDING',
-          requestedCondominiumId: body.condominiumId,
         },
       });
 
       if (!pendingUser) {
         return reply.status(400).send({ 
           error: 'Invalid request',
-          message: 'Usuário não encontrado ou não está pendente para este condomínio.',
+          message: 'Usuário não encontrado ou não está pendente.',
+        });
+      }
+
+      // Verify the condominium exists
+      const condominium = await prisma.condominium.findUnique({
+        where: { id: body.condominiumId },
+      });
+
+      if (!condominium) {
+        return reply.status(400).send({ 
+          error: 'Invalid request',
+          message: 'Condomínio não encontrado. Verifique o ID informado.',
         });
       }
 
@@ -164,28 +259,38 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
             },
           });
 
+          // Ensure phone is in valid format
+          const phone = pendingUser.requestedPhone || '5500000000000'; // Default if not provided
+
           if (existingResident) {
-            // Update existing resident with user link
+            // Update existing resident with user link and consent
             await tx.resident.update({
               where: { id: existingResident.id },
               data: {
                 userId: body.userId,
                 name: approvedUser.name,
+                email: approvedUser.email,
+                phone: pendingUser.requestedPhone || existingResident.phone,
                 type: body.type,
+                consentWhatsapp: pendingUser.consentWhatsapp,
+                consentDataProcessing: pendingUser.consentDataProcessing,
               },
             });
           } else {
-            // Create new resident
+            // Create new resident with data from pending user
             await tx.resident.create({
               data: {
                 condominiumId: body.condominiumId,
                 userId: body.userId,
                 name: approvedUser.name,
-                phone: '', // TODO: Get from user profile or request
+                email: approvedUser.email,
+                phone: phone,
                 tower: body.tower,
                 floor: body.floor,
                 unit: body.unit,
                 type: body.type,
+                consentWhatsapp: pendingUser.consentWhatsapp,
+                consentDataProcessing: pendingUser.consentDataProcessing,
               },
             });
           }

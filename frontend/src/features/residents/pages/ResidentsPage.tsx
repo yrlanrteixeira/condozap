@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppSelector } from "@/hooks";
+import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import {
   ResidentPageHeader,
@@ -15,12 +16,16 @@ export function ResidentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { user } = useAuth();
+
+  // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
 
   const {
     data: residents,
     isLoading,
     isError,
-  } = useResidents(currentCondominiumId || "");
+  } = useResidents(condoIdToFetch);
 
   const handleAddResident = () => {
     setSelectedResident(undefined);

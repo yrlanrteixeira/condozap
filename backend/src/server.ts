@@ -15,6 +15,8 @@ import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { userApprovalRoutes } from "./routes/user-approval.routes.js";
 import { userManagementRoutes } from "./routes/user-management.routes.js";
 import { evolutionRoutes } from "./routes/evolution.routes.js";
+import { condominiumsRoutes } from "./routes/condominiums.routes.js";
+import { historyRoutes } from "./routes/history.routes.js";
 
 // Create Fastify instance
 const fastify = Fastify({
@@ -79,6 +81,8 @@ await fastify.register(messagesRoutes, { prefix: "/api/messages" });
 await fastify.register(whatsappRoutes, { prefix: "/api/whatsapp" });
 await fastify.register(evolutionRoutes, { prefix: "/api/evolution" });
 await fastify.register(dashboardRoutes, { prefix: "/api/dashboard" });
+await fastify.register(condominiumsRoutes, { prefix: "/api/condominiums" });
+await fastify.register(historyRoutes, { prefix: "/api/history" });
 
 // Error handler
 fastify.setErrorHandler((error, _request, reply) => {

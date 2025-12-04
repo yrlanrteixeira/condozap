@@ -8,13 +8,14 @@ import { ResidentComplaintsPage } from './ResidentComplaintsPage';
 import { AdminComplaintsKanbanPage } from './AdminComplaintsKanbanPage';
 import { AdminComplaintsTablePage } from './AdminComplaintsTablePage';
 import { useRole } from '@/hooks/useRole';
+import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/hooks';
 import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
 import { useResidents } from '@/features/residents/hooks/useResidentsApi';
-import { 
-  useComplaints, 
-  useCreateComplaint, 
-  useUpdateComplaint 
+import {
+  useComplaints,
+  useCreateComplaint,
+  useUpdateComplaint
 } from '../hooks/useComplaintsApi';
 
 type ViewMode = 'kanban' | 'table';
@@ -23,21 +24,25 @@ export function ComplaintsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(null);
   const { toast } = useToast();
-  
+
   const { isResident } = useRole();
+  const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
-  
+
+  // SUPER_ADMIN vê ocorrências globais, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+
   // Fetch residents
   const {
     data: residents = [],
     isLoading: isLoadingResidents,
-  } = useResidents(currentCondominiumId || '', {});
+  } = useResidents(condoIdToFetch, {});
 
   // Fetch complaints from API
   const {
     data: complaints = [],
     isLoading: isLoadingComplaints,
-  } = useComplaints(currentCondominiumId || '');
+  } = useComplaints(condoIdToFetch);
 
   const createComplaint = useCreateComplaint();
   const updateComplaint = useUpdateComplaint();
@@ -156,8 +161,8 @@ export function ComplaintsPage() {
     );
   }
 
-  // No condominium selected
-  if (!currentCondominiumId) {
+  // No condominium selected (except for SUPER_ADMIN)
+  if (!currentCondominiumId && user?.role !== 'SUPER_ADMIN') {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-6">

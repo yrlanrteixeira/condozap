@@ -14,7 +14,58 @@ const createResidentSchema = z.object({
 });
 
 export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
-  // Get all residents
+  // Get all residents from ALL condominiums (SUPER_ADMIN only)
+  fastify.get(
+    "/all",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const user = request.user as any;
+
+      if (user.role !== "SUPER_ADMIN") {
+        return reply.status(403).send({
+          error: "Forbidden",
+          message: "Apenas SUPER_ADMIN pode ver todos os moradores.",
+        });
+      }
+
+      const { tower, floor, type, search, condominiumId } = request.query as any;
+
+      const residents = await prisma.resident.findMany({
+        where: {
+          ...(condominiumId && { condominiumId }),
+          ...(tower && { tower }),
+          ...(floor && { floor }),
+          ...(type && { type }),
+          ...(search && {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { phone: { contains: search } },
+            ],
+          }),
+        },
+        include: {
+          condominium: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [
+          { condominium: { name: "asc" } },
+          { tower: "asc" },
+          { floor: "asc" },
+          { unit: "asc" },
+        ],
+      });
+
+      return reply.send(residents);
+    }
+  );
+
+  // Get all residents by condominium
   fastify.get(
     "/:condominiumId",
     {

@@ -1,27 +1,43 @@
 /**
  * User Approval Page
- * 
+ *
  * Página para síndicos/admins aprovarem novos cadastros de usuários
+ * SUPER_ADMIN pode ver todos os usuários pendentes
  */
 
-import { UserCheck, Loader2, Users } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
-import { usePendingUsers, useApproveUser, useRejectUser } from '../hooks/useUserApprovalApi';
-import { PendingUserCard } from '../components/PendingUserCard';
-import { useToast } from '@/components/ui/use-toast';
-import type { ApproveUserInput } from '../types';
+import { UserCheck, Loader2, Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  usePendingUsers,
+  useAllPendingUsers,
+  useApproveUser,
+  useRejectUser,
+  useCondominiums,
+} from "../hooks/useUserApprovalApi";
+import { PendingUserCard } from "../components/PendingUserCard";
+import { useToast } from "@/components/ui/use-toast";
+import type { ApproveUserInput } from "../types";
 
 export function UserApprovalPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  // SUPER_ADMIN sees all pending users, others see by condominium
+  const allPendingQuery = useAllPendingUsers();
+  const condoPendingQuery = usePendingUsers(currentCondominiumId || "");
+  const { data: condominiums = [] } = useCondominiums();
 
   const {
     data: pendingUsers = [],
     isLoading,
     isError,
-  } = usePendingUsers(currentCondominiumId || '');
+  } = isSuperAdmin ? allPendingQuery : condoPendingQuery;
 
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
@@ -31,13 +47,16 @@ export function UserApprovalPage() {
     tower: string,
     floor: string,
     unit: string,
-    type: 'OWNER' | 'TENANT'
+    type: "OWNER" | "TENANT",
+    condominiumId?: string
   ) => {
-    if (!currentCondominiumId) {
+    const targetCondominiumId = condominiumId || currentCondominiumId;
+
+    if (!targetCondominiumId) {
       toast({
-        title: 'Erro',
-        description: 'Selecione um condomínio.',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Selecione um condomínio.",
+        variant: "destructive",
       });
       return;
     }
@@ -45,7 +64,7 @@ export function UserApprovalPage() {
     try {
       const input: ApproveUserInput = {
         userId,
-        condominiumId: currentCondominiumId,
+        condominiumId: targetCondominiumId,
         tower,
         floor,
         unit,
@@ -55,16 +74,15 @@ export function UserApprovalPage() {
       await approveUserMutation.mutateAsync(input);
 
       toast({
-        title: 'Sucesso!',
-        description: 'Usuário aprovado e alocado com sucesso.',
-        variant: 'success',
+        title: "Sucesso!",
+        description: "Usuário aprovado e alocado com sucesso.",
       });
     } catch (error: any) {
-      console.error('Failed to approve user:', error);
+      console.error("Failed to approve user:", error);
       toast({
-        title: 'Erro ao aprovar usuário',
-        description: error.message || 'Ocorreu um erro inesperado.',
-        variant: 'destructive',
+        title: "Erro ao aprovar usuário",
+        description: error.message || "Ocorreu um erro inesperado.",
+        variant: "error",
       });
     }
   };
@@ -74,16 +92,16 @@ export function UserApprovalPage() {
       await rejectUserMutation.mutateAsync({ userId, reason });
 
       toast({
-        title: 'Cadastro rejeitado',
-        description: 'O usuário foi notificado sobre a rejeição.',
-        variant: 'default',
+        title: "Cadastro rejeitado",
+        description: "O usuário foi notificado sobre a rejeição.",
+        variant: "default",
       });
     } catch (error: any) {
-      console.error('Failed to reject user:', error);
+      console.error("Failed to reject user:", error);
       toast({
-        title: 'Erro ao rejeitar cadastro',
-        description: error.message || 'Ocorreu um erro inesperado.',
-        variant: 'destructive',
+        title: "Erro ao rejeitar cadastro",
+        description: error.message || "Ocorreu um erro inesperado.",
+        variant: "error",
       });
     }
   };
@@ -96,14 +114,14 @@ export function UserApprovalPage() {
     );
   }
 
-  if (isError || !currentCondominiumId) {
+  if (isError || (!isSuperAdmin && !currentCondominiumId)) {
     return (
       <Card className="border-border">
         <CardContent className="p-6">
           <p className="text-muted-foreground">
-            {!currentCondominiumId
-              ? 'Selecione um condomínio para visualizar cadastros pendentes.'
-              : 'Erro ao carregar cadastros pendentes.'}
+            {!currentCondominiumId && !isSuperAdmin
+              ? "Selecione um condomínio para visualizar cadastros pendentes."
+              : "Erro ao carregar cadastros pendentes."}
           </p>
         </CardContent>
       </Card>
@@ -123,7 +141,9 @@ export function UserApprovalPage() {
               Aprovação de Cadastros
             </h1>
             <p className="text-sm text-muted-foreground">
-              Revise e aprove novos moradores do condomínio
+              {isSuperAdmin
+                ? "Todos os cadastros pendentes do sistema"
+                : "Revise e aprove novos moradores do condomínio"}
             </p>
           </div>
         </div>
@@ -133,7 +153,8 @@ export function UserApprovalPage() {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <span className="font-semibold text-primary">
-                {pendingUsers.length} {pendingUsers.length === 1 ? 'pendente' : 'pendentes'}
+                {pendingUsers.length}{" "}
+                {pendingUsers.length === 1 ? "pendente" : "pendentes"}
               </span>
             </div>
           </div>
@@ -149,7 +170,11 @@ export function UserApprovalPage() {
               user={user}
               onApprove={handleApprove}
               onReject={handleReject}
-              isLoading={approveUserMutation.isPending || rejectUserMutation.isPending}
+              isLoading={
+                approveUserMutation.isPending || rejectUserMutation.isPending
+              }
+              showCondominiumInfo={isSuperAdmin}
+              condominiums={condominiums}
             />
           ))}
         </div>
@@ -164,7 +189,8 @@ export function UserApprovalPage() {
                 Nenhum cadastro pendente
               </p>
               <p className="text-sm text-muted-foreground max-w-md">
-                Todos os cadastros foram processados. Novos cadastros aparecerão aqui automaticamente.
+                Todos os cadastros foram processados. Novos cadastros aparecerão
+                aqui automaticamente.
               </p>
             </div>
           </CardContent>
@@ -173,5 +199,3 @@ export function UserApprovalPage() {
     </div>
   );
 }
-
-
