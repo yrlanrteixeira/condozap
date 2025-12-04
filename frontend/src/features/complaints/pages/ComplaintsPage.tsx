@@ -32,8 +32,7 @@ export function ComplaintsPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
   // SUPER_ADMIN vê ocorrências globais, outros veem apenas do condomínio selecionado
-  const condoIdToFetch =
-    user?.role === "SUPER_ADMIN" ? "all" : currentCondominiumId || "";
+  const condoIdToFetch = currentCondominiumId || '';
 
   // Fetch residents
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(

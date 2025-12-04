@@ -31,8 +31,7 @@ export function MessagingPage() {
   const { toast } = useToast();
 
   // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
-  const condoIdToFetch =
-    user?.role === "SUPER_ADMIN" ? "all" : currentCondominiumId || "";
+  const condoIdToFetch = currentCondominiumId || '';
 
   // Fetch residents from API
   const {
