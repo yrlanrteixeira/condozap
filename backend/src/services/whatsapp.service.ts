@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { config } from '../config/env.js'
+import { evolutionService } from './evolution/evolution.service.js'
 
 export interface WhatsAppMessage {
   to: string
@@ -16,11 +17,30 @@ export class WhatsAppService {
   private readonly baseUrl = config.WHATSAPP_API_URL
   private readonly phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID
   private readonly accessToken = config.WHATSAPP_ACCESS_TOKEN
+  private readonly provider = config.WHATSAPP_PROVIDER
 
   /**
    * Send a single WhatsApp text message
    */
   async sendTextMessage(to: string, message: string): Promise<{ messageId: string }> {
+    // Use Evolution API if configured
+    if (this.provider === 'evolution') {
+      try {
+        const response = await evolutionService.sendText({
+          number: to,
+          text: message,
+        })
+
+        return {
+          messageId: response.key.id,
+        }
+      } catch (error: any) {
+        console.error('Evolution API Error:', error.message)
+        throw new Error(`Failed to send WhatsApp message via Evolution: ${error.message}`)
+      }
+    }
+
+    // Use official WhatsApp API (Meta)
     const payload = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
@@ -54,7 +74,7 @@ export class WhatsAppService {
   }
 
   /**
-   * Send bulk messages with rate limiting (50 messages per second)
+   * Send bulk messages with rate limiting
    */
   async sendBulkMessages(bulkMessage: BulkMessage): Promise<{
     total: number
@@ -62,7 +82,35 @@ export class WhatsAppService {
     failed: number
     results: Array<{ phone: string; success: boolean; messageId?: string; error?: string }>
   }> {
-    const RATE_LIMIT = 50 // messages per second
+    // Use Evolution API batch method if configured
+    if (this.provider === 'evolution') {
+      try {
+        const numbers = bulkMessage.recipients.map(r => r.phone)
+        const result = await evolutionService.sendBatch({
+          numbers,
+          text: bulkMessage.message,
+          delay: 2000, // 2 seconds between messages
+        })
+
+        return {
+          total: result.total,
+          sent: result.sent,
+          failed: result.failed,
+          results: result.results.map(r => ({
+            phone: r.number,
+            success: r.success,
+            messageId: r.messageId,
+            error: r.error,
+          })),
+        }
+      } catch (error: any) {
+        console.error('Evolution API Batch Error:', error.message)
+        throw new Error(`Failed to send bulk messages via Evolution: ${error.message}`)
+      }
+    }
+
+    // Use official WhatsApp API with rate limiting (50 messages per second)
+    const RATE_LIMIT = 50
     const RATE_INTERVAL_MS = 1000
 
     const results: Array<{ phone: string; success: boolean; messageId?: string; error?: string }> = []
