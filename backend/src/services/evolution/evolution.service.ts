@@ -10,7 +10,6 @@ import type {
   SendTextInput,
   SendMediaInput,
   SendMessageResponse,
-  CheckNumberInput,
   CheckNumberResponse,
   InstanceStateResponse,
   QRCodeResponse,

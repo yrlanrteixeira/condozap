@@ -201,7 +201,12 @@ class MessagingService {
         total: result.total,
         sent: result.sent,
         failed: result.failed,
-        results: result.results,
+        results: result.results.map(r => ({
+          phone: r.number,
+          success: r.success,
+          messageId: r.messageId,
+          error: r.error,
+        })),
       };
     } else {
       // Usa o bulk da API oficial
