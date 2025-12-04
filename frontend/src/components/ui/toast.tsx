@@ -18,7 +18,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 right-0 z-[100] flex max-h-screen w-full flex-col p-4 md:max-w-[420px]",
+      "fixed top-0 right-0 z-[100] flex max-h-screen w-full max-w-[calc(100vw-2rem)] flex-col p-4 md:max-w-[420px]",
       className
     )}
     {...props}
@@ -27,17 +27,17 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right",
   {
     variants: {
       variant: {
         default: "border bg-background text-foreground",
         success:
-          "success group border-green-600 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100",
+          "border-green-600 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100",
         error:
-          "error group border-red-600 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-100",
+          "border-red-600 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-100",
         warning:
-          "warning group border-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-900 dark:text-yellow-100",
+          "border-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-900 dark:text-yellow-100",
       },
     },
     defaultVariants: {
@@ -55,6 +55,7 @@ const Toast = React.forwardRef<
     <ToastPrimitives.Root
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
+      data-variant={variant}
       {...props}
     />
   )
@@ -68,7 +69,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.success]:border-green-600/30 group-[.success]:hover:border-green-600/50 group-[.success]:hover:bg-green-100 group-[.success]:hover:text-green-900 group-[.success]:focus:ring-green-600 group-[.error]:border-red-600/30 group-[.error]:hover:border-red-600/50 group-[.error]:hover:bg-red-100 group-[.error]:hover:text-red-900 group-[.error]:focus:ring-red-600 group-[.warning]:border-yellow-600/30 group-[.warning]:hover:border-yellow-600/50 group-[.warning]:hover:bg-yellow-100 group-[.warning]:hover:text-yellow-900 group-[.warning]:focus:ring-yellow-600 dark:group-[.success]:hover:bg-green-950 dark:group-[.success]:hover:text-green-100 dark:group-[.error]:hover:bg-red-950 dark:group-[.error]:hover:text-red-100 dark:group-[.warning]:hover:bg-yellow-950 dark:group-[.warning]:hover:text-yellow-100",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-data-[variant=success]:border-green-600/30 group-data-[variant=success]:hover:border-green-600/50 group-data-[variant=success]:hover:bg-green-100 group-data-[variant=success]:hover:text-green-900 group-data-[variant=success]:focus:ring-green-600 group-data-[variant=error]:border-red-600/30 group-data-[variant=error]:hover:border-red-600/50 group-data-[variant=error]:hover:bg-red-100 group-data-[variant=error]:hover:text-red-900 group-data-[variant=error]:focus:ring-red-600 group-data-[variant=warning]:border-yellow-600/30 group-data-[variant=warning]:hover:border-yellow-600/50 group-data-[variant=warning]:hover:bg-yellow-100 group-data-[variant=warning]:hover:text-yellow-900 group-data-[variant=warning]:focus:ring-yellow-600 dark:group-data-[variant=success]:hover:bg-green-950 dark:group-data-[variant=success]:hover:text-green-100 dark:group-data-[variant=error]:hover:bg-red-950 dark:group-data-[variant=error]:hover:text-red-100 dark:group-data-[variant=warning]:hover:bg-yellow-950 dark:group-data-[variant=warning]:hover:text-yellow-100",
       className
     )}
     {...props}
@@ -83,7 +84,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.success]:text-green-600/50 group-[.success]:hover:text-green-600 group-[.error]:text-red-600/50 group-[.error]:hover:text-red-600 group-[.warning]:text-yellow-600/50 group-[.warning]:hover:text-yellow-600",
+      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-data-[variant=success]:text-green-600/50 group-data-[variant=success]:hover:text-green-600 group-data-[variant=error]:text-red-600/50 group-data-[variant=error]:hover:text-red-600 group-data-[variant=warning]:text-yellow-600/50 group-data-[variant=warning]:hover:text-yellow-600",
       className
     )}
     toast-close=""
