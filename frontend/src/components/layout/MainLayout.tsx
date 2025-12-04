@@ -8,7 +8,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector } from "@/hooks";
+import { useAppSelector, useCondominiumSync } from "@/hooks";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useComplaints } from "@/features/complaints/hooks/useComplaintsApi";
 
@@ -19,6 +19,9 @@ export function MainLayout() {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved ? JSON.parse(saved) : false;
   });
+
+  // Sync queries when condominium changes
+  useCondominiumSync();
 
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
