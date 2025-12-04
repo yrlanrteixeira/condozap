@@ -36,6 +36,7 @@ import { SettingsPage } from "@/pages/SettingsPage";
 
 // Approval Pages
 import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
+import { UserApprovalPage } from "@/features/user-approval";
 
 // Access Denied Page
 import { AccessDeniedPage } from "@/pages/AccessDenied";
@@ -115,6 +116,16 @@ export function AppRoutes() {
             element={
               <PermissionGuard permission={Permissions.VIEW_RESIDENTS}>
                 <ResidentsPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* User Approval - Admins and Syndics only */}
+          <Route
+            path="user-approval"
+            element={
+              <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
+                <UserApprovalPage />
               </PermissionGuard>
             }
           />

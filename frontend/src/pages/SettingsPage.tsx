@@ -1,12 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, User, Building, Shield, Bell } from "lucide-react";
+import { Settings, User, Building, Shield, Bell, MessageSquare } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { UserRoles } from "@/config/permissions";
+import { WhatsAppConnectionStatus } from "@/features/whatsapp";
 
 export function SettingsPage() {
   const { userRole } = useRole();
 
-  const sections = [
+  const sections: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    description: string;
+    roles: string[];
+    component?: React.ComponentType;
+  }> = [
     {
       icon: User,
       title: "Perfil",
@@ -55,6 +62,18 @@ export function SettingsPage() {
       ],
     },
     {
+      icon: MessageSquare,
+      title: "WhatsApp",
+      description: "Gerenciar conexão com WhatsApp",
+      roles: [
+        UserRoles.SUPER_ADMIN,
+        UserRoles.PROFESSIONAL_SYNDIC,
+        UserRoles.ADMIN,
+        UserRoles.SYNDIC,
+      ],
+      component: WhatsAppConnectionStatus,
+    },
+    {
       icon: Settings,
       title: "Sistema",
       description: "Configurações avançadas do sistema",
@@ -80,6 +99,13 @@ export function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleSections.map((section) => {
           const Icon = section.icon;
+          
+          // Se a seção tem um componente dedicado, renderiza ele
+          if (section.component) {
+            const Component = section.component;
+            return <Component key={section.title} />;
+          }
+          
           return (
             <Card
               key={section.title}

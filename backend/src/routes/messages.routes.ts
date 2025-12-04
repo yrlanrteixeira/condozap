@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { whatsappService } from "../services/whatsapp.service.js";
+import { messagingService } from "../services/messaging/index.js";
 
 type ResidentData = {
   phone: string;
@@ -71,14 +71,14 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: "No recipients found" });
     }
 
-    // Send bulk messages
-    const result = await whatsappService.sendBulkMessages({
-        recipients: residents.map((r: ResidentData) => ({
-          phone: r.phone,
-          name: r.name,
-        })),
+    // Send bulk messages via unified messaging service
+    const result = await messagingService.sendBulk({
+      recipients: residents.map((r: ResidentData) => ({
+        phone: r.phone,
+        name: r.name,
+      })),
       message: body.content,
-      });
+    });
 
     // Create message log
     const message = await prisma.message.create({

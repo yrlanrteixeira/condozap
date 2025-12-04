@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   Settings,
+  UserCheck,
 } from "lucide-react";
 // Avatar será implementado inline por enquanto
 import { Separator } from "@/components/ui/separator";
@@ -70,6 +71,12 @@ export const Sidebar = ({
       href: "/residents",
       icon: Users,
       permission: Permissions.VIEW_RESIDENTS,
+    },
+    {
+      title: "Aprovação de Cadastros",
+      href: "/user-approval",
+      icon: UserCheck,
+      permission: Permissions.MANAGE_RESIDENTS, // Only admins/syndics can approve
     },
     {
       title: "Estrutura",

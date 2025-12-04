@@ -13,6 +13,7 @@ import { messagesRoutes } from "./routes/messages.routes.js";
 import { whatsappRoutes } from "./routes/whatsapp.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { userApprovalRoutes } from "./routes/user-approval.routes.js";
+import { evolutionRoutes } from "./routes/evolution.routes.js";
 
 // Create Fastify instance
 const fastify = Fastify({
@@ -74,6 +75,7 @@ await fastify.register(complaintsRoutes, { prefix: "/api/complaints" });
 await fastify.register(residentsRoutes, { prefix: "/api/residents" });
 await fastify.register(messagesRoutes, { prefix: "/api/messages" });
 await fastify.register(whatsappRoutes, { prefix: "/api/whatsapp" });
+await fastify.register(evolutionRoutes, { prefix: "/api/evolution" });
 await fastify.register(dashboardRoutes, { prefix: "/api/dashboard" });
 
 // Error handler
