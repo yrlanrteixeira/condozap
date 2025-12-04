@@ -21,8 +21,10 @@ export function useComplaints(
   condominiumId: string,
   filters?: ComplaintFilters
 ) {
-  const isGlobal = condominiumId === 'all';
-  const endpoint = isGlobal ? '/complaints/all' : `/complaints/${condominiumId}`;
+  const isGlobal = condominiumId === "all";
+  const endpoint = isGlobal
+    ? "/complaints/all"
+    : `/complaints/${condominiumId}`;
 
   return useQuery({
     queryKey: queryKeys.list(condominiumId, filters),
@@ -70,7 +72,7 @@ export function useCreateComplaint() {
         queryKey: queryKeys.lists(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominium_id),
+        queryKey: queryKeys.list(variables.condominiumId),
       });
     },
   });

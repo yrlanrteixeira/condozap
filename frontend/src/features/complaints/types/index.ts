@@ -27,19 +27,19 @@ export interface Complaint {
 }
 
 export interface CreateComplaintInput {
-  condominium_id: string
-  resident_id: string
+  condominiumId: string
+  residentId: string
   category: string
   content: string
   priority?: ComplaintPriority
-  is_anonymous?: boolean
+  isAnonymous?: boolean
 }
 
 export interface UpdateComplaintInput {
   id: number
   status?: ComplaintStatus
   priority?: ComplaintPriority
-  resolved_by?: string
+  resolvedBy?: string
 }
 
 export interface ComplaintFilters {

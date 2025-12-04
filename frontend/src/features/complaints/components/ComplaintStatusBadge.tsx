@@ -8,17 +8,17 @@ interface ComplaintStatusBadgeProps {
 }
 
 const STATUS_CONFIG = {
-  open: {
+  OPEN: {
     label: 'Em Fila',
     icon: AlertTriangle,
     className: 'bg-red-50 text-red-700 border-red-100',
   },
-  in_progress: {
+  IN_PROGRESS: {
     label: 'Averiguando',
     icon: Clock,
     className: 'bg-yellow-50 text-yellow-700 border-yellow-100',
   },
-  resolved: {
+  RESOLVED: {
     label: 'Resolvido',
     icon: CheckCircle,
     className: 'bg-green-50 text-green-700 border-green-100',
@@ -43,6 +43,12 @@ const SIZE_CONFIG = {
 export const ComplaintStatusBadge = ({ status, size = 'md' }: ComplaintStatusBadgeProps) => {
   const statusConfig = STATUS_CONFIG[status];
   const sizeConfig = SIZE_CONFIG[size];
+  
+  if (!statusConfig) {
+    console.error('Invalid status:', status);
+    return null;
+  }
+  
   const Icon = statusConfig.icon;
 
   return (
