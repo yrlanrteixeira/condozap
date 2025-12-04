@@ -13,21 +13,21 @@ interface AdminComplaintsKanbanPageProps {
 
 const COLUMNS: KanbanColumn[] = [
   {
-    id: 'open',
+    id: 'OPEN',
     title: 'Aguardando (Fila)',
     icon: AlertTriangle,
     color: 'text-red-500',
     bg: 'bg-red-50',
   },
   {
-    id: 'in_progress',
+    id: 'IN_PROGRESS',
     title: 'Em Análise / Ronda',
     icon: Clock,
     color: 'text-yellow-500',
     bg: 'bg-yellow-50',
   },
   {
-    id: 'resolved',
+    id: 'RESOLVED',
     title: 'Finalizado / Notificado',
     icon: CheckSquare,
     color: 'text-green-500',
