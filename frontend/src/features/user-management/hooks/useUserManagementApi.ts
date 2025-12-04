@@ -4,10 +4,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { 
-  CondominiumUser, 
-  CreateAdminInput, 
-  UpdateUserRoleInput, 
+import type {
+  CondominiumUser,
+  CreateAdminInput,
+  CreateSyndicInput,
+  UpdateUserRoleInput,
   RemoveUserInput,
   InviteUserInput,
 } from '../types';
@@ -46,6 +47,32 @@ export function useCreateAdmin() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.list(variables.condominiumId),
+      });
+    },
+  });
+}
+
+/**
+ * Hook para criar um novo síndico (SUPER_ADMIN only)
+ */
+export function useCreateSyndic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateSyndicInput) => {
+      const { data } = await api.post('/users/create-syndic', input);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      // Invalidar queries de todos os condomínios afetados
+      variables.condominiumIds.forEach(condoId => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.list(condoId),
+        });
+      });
+      // Invalidar todas as queries de user management
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.all,
       });
     },
   });

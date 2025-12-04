@@ -126,4 +126,17 @@
     outline: none;
     @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+
+  /* Placeholder mais sutil para inputs */
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 0.5;
+    color: hsl(0 0% 45%);
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    opacity: 0.6;
+    color: hsl(290 3% 55%);
+  }
 }
