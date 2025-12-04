@@ -7,9 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 import { useAppSelector } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { selectCurrentCondominiumId, selectCondominiums } from "@/store/slices/condominiumSlice";
 import { useTowers } from "../hooks/useResidentsApi";
+import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 
 export interface ResidentFormData {
   name: string;
@@ -18,6 +20,7 @@ export interface ResidentFormData {
   tower: string;
   floor: string;
   unit: string;
+  condominiumId?: string;
 }
 
 interface ResidentFormProps {
@@ -26,10 +29,47 @@ interface ResidentFormProps {
 }
 
 export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
+  const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
-  const { data: towers = [] } = useTowers(currentCondominiumId || "");
+  const userCondominiums = useAppSelector(selectCondominiums);
+  const { data: allCondominiums = [] } = useCondominiums();
+  
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const condominiumsToShow = isSuperAdmin ? allCondominiums : userCondominiums;
+  const selectedCondoId = formData.condominiumId || currentCondominiumId || "";
+  
+  const { data: towers = [] } = useTowers(selectedCondoId);
+  
   return (
     <div className="space-y-4 py-4">
+      {/* Condomínio - Apenas para SUPER_ADMIN */}
+      {isSuperAdmin && condominiumsToShow.length > 0 && (
+        <div className="space-y-2">
+          <label
+            htmlFor="condominium"
+            className="text-sm font-medium flex items-center gap-2"
+          >
+            <Building2 size={14} />
+            Condomínio
+          </label>
+          <Select
+            value={formData.condominiumId || currentCondominiumId || ""}
+            onValueChange={(value) => onChange({ ...formData, condominiumId: value })}
+          >
+            <SelectTrigger id="condominium">
+              <SelectValue placeholder="Selecione um condomínio" />
+            </SelectTrigger>
+            <SelectContent>
+              {condominiumsToShow.map((condo) => (
+                <SelectItem key={condo.id} value={condo.id}>
+                  {condo.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       <div className="space-y-2">
         <label
           htmlFor="name"

@@ -29,6 +29,7 @@ const initialFormData: ResidentFormData = {
   tower: "A",
   floor: "",
   unit: "",
+  condominiumId: "",
 };
 
 // Formata telefone para o padrão brasileiro esperado pelo backend (55XXXXXXXXXX)
@@ -73,17 +74,22 @@ export const ResidentDialog = ({
         tower: resident.tower,
         floor: resident.floor,
         unit: resident.unit,
+        condominiumId: resident.condominiumId,
       });
     } else if (open && !resident) {
-      setFormData(initialFormData);
+      setFormData({
+        ...initialFormData,
+        condominiumId: currentCondominiumId || "",
+      });
     }
-  }, [open, resident]);
+  }, [open, resident, currentCondominiumId]);
 
   const isFormValid =
     formData.name && formData.email && formData.phone && formData.floor && formData.unit;
 
   const handleSave = async () => {
-    if (!currentCondominiumId || !isFormValid) return;
+    const condoId = formData.condominiumId || currentCondominiumId;
+    if (!condoId || !isFormValid) return;
 
     try {
       if (resident) {
@@ -92,7 +98,7 @@ export const ResidentDialog = ({
           id: resident.id,
           ...formData,
           phone: formatPhoneForApi(formData.phone),
-          condominiumId: currentCondominiumId,
+          condominiumId: condoId,
         });
 
         toast({
@@ -106,7 +112,7 @@ export const ResidentDialog = ({
         await createResident.mutateAsync({
           ...formData,
           phone: formatPhoneForApi(formData.phone),
-          condominiumId: currentCondominiumId,
+          condominiumId: condoId,
           type: "OWNER", // Default to OWNER
         });
 
