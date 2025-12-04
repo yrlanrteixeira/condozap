@@ -21,15 +21,15 @@ export interface Resident {
 
 export interface CreateResidentInput {
   id?: string
-  condominium_id: string
+  condominiumId: string
   name: string
   phone: string
   tower: string
   floor: string
   unit: string
   type: ResidentType
-  consent_whatsapp?: boolean
-  consent_data_processing?: boolean
+  consentWhatsapp?: boolean
+  consentDataProcessing?: boolean
 }
 
 export interface UpdateResidentInput extends Partial<CreateResidentInput> {
@@ -37,8 +37,8 @@ export interface UpdateResidentInput extends Partial<CreateResidentInput> {
 }
 
 export interface ImportResidentsInput {
-  condominium_id: string
-  residents: Omit<CreateResidentInput, 'condominium_id'>[]
+  condominiumId: string
+  residents: Omit<CreateResidentInput, 'condominiumId'>[]
 }
 
 export interface UpdateConsentInput {

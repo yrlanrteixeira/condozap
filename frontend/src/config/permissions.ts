@@ -59,6 +59,7 @@ export const Permissions = {
   EDIT_RESIDENT: "edit:resident",
   DELETE_RESIDENT: "delete:resident",
   MANAGE_CONSENT: "manage:consent", // Gerenciar consentimentos (LGPD)
+  MANAGE_RESIDENTS: "manage:residents", // Gerenciar moradores (aprovação, etc)
 
   // Denúncias/Reclamações
   VIEW_COMPLAINTS: "view:complaints",
@@ -139,6 +140,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.EDIT_RESIDENT,
     Permissions.DELETE_RESIDENT,
     Permissions.MANAGE_CONSENT,
+    Permissions.MANAGE_RESIDENTS,
 
     // Denúncias
     Permissions.VIEW_COMPLAINTS,
@@ -211,6 +213,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.EDIT_RESIDENT,
     Permissions.DELETE_RESIDENT,
     Permissions.MANAGE_CONSENT,
+    Permissions.MANAGE_RESIDENTS,
 
     // Denúncias
     Permissions.VIEW_COMPLAINTS,
@@ -277,6 +280,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.EDIT_RESIDENT,
     Permissions.DELETE_RESIDENT,
     Permissions.MANAGE_CONSENT,
+    Permissions.MANAGE_RESIDENTS,
 
     // Denúncias
     Permissions.VIEW_COMPLAINTS,
@@ -320,22 +324,31 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.EDIT_SETTINGS,
   ],
 
-  // SYNDIC: Síndico de condomínio (similar ao ADMIN, mas sem gerenciar usuários)
+  // SYNDIC: Síndico de condomínio - pode ter múltiplos condomínios atrelados pelo SUPER_ADMIN
   [UserRoles.SYNDIC]: [
     // Dashboard
     Permissions.VIEW_DASHBOARD,
+    Permissions.VIEW_UNIFIED_DASHBOARD, // Síndico pode ter múltiplos condomínios
     Permissions.VIEW_METRICS,
+    Permissions.VIEW_ALL_METRICS,
+
+    // Condomínios
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.SWITCH_CONDOMINIUM,
 
     // Estrutura
     Permissions.VIEW_STRUCTURE,
     Permissions.EDIT_STRUCTURE,
+    Permissions.MANAGE_STRUCTURE,
 
     // Moradores
     Permissions.VIEW_RESIDENTS,
     Permissions.VIEW_ALL_RESIDENTS,
     Permissions.CREATE_RESIDENT,
     Permissions.EDIT_RESIDENT,
+    Permissions.DELETE_RESIDENT,
     Permissions.MANAGE_CONSENT,
+    Permissions.MANAGE_RESIDENTS,
 
     // Denúncias
     Permissions.VIEW_COMPLAINTS,

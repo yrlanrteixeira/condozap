@@ -82,7 +82,7 @@ export function useCreateResident() {
         queryKey: queryKeys.lists(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominium_id),
+        queryKey: queryKeys.list(variables.condominiumId),
       });
     },
   });
@@ -152,7 +152,7 @@ export function useImportResidents() {
         queryKey: queryKeys.lists(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominium_id),
+        queryKey: queryKeys.list(variables.condominiumId),
       });
     },
   });

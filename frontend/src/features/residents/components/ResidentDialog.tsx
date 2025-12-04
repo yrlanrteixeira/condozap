@@ -30,6 +30,25 @@ const initialFormData: ResidentFormData = {
   unit: "",
 };
 
+// Formata telefone para o padrão brasileiro esperado pelo backend (55XXXXXXXXXX)
+function formatPhoneForApi(phone: string): string {
+  // Remove tudo que não é número
+  const digits = phone.replace(/\D/g, '');
+  
+  // Se já começar com 55, retorna como está
+  if (digits.startsWith('55') && digits.length >= 12) {
+    return digits;
+  }
+  
+  // Se tiver 10 ou 11 dígitos, adiciona 55
+  if (digits.length >= 10 && digits.length <= 11) {
+    return `55${digits}`;
+  }
+  
+  // Retorna o que foi digitado (o backend vai validar)
+  return digits;
+}
+
 export const ResidentDialog = ({
   open,
   onOpenChange,
@@ -70,7 +89,8 @@ export const ResidentDialog = ({
         await updateResident.mutateAsync({
           id: resident.id,
           ...formData,
-          condominium_id: currentCondominiumId,
+          phone: formatPhoneForApi(formData.phone),
+          condominiumId: currentCondominiumId,
         });
 
         toast({
@@ -83,7 +103,8 @@ export const ResidentDialog = ({
         // Create new resident
         await createResident.mutateAsync({
           ...formData,
-          condominium_id: currentCondominiumId,
+          phone: formatPhoneForApi(formData.phone),
+          condominiumId: currentCondominiumId,
           type: "OWNER", // Default to OWNER
         });
 
