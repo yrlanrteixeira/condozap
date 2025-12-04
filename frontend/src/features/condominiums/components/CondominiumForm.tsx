@@ -53,6 +53,8 @@ export function CondominiumForm({
 
   const form = useForm<CreateCondominiumInput & { status?: CondominiumStatus }>({
     resolver: zodResolver(CreateCondominiumSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       name: condominium?.name || '',
       cnpj: condominium?.cnpj || '',

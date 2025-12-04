@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { FormSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import type { TargetData } from "@/features/messages/types";
 import { TEMPLATES } from "@/config/constants";
@@ -146,8 +146,15 @@ export function MessagingPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex-1 flex items-start justify-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-3xl space-y-6">
+          <PageHeaderSkeleton />
+          <Card className="shadow-lg">
+            <CardContent className="p-6 sm:p-8">
+              <FormSkeleton />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

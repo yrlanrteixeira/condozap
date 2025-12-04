@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PageHeaderSkeleton, TableRowSkeleton } from "@/components/ui/skeleton";
 import { useAppSelector } from "@/hooks";
 import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
@@ -44,8 +46,17 @@ export function ResidentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <Card className="border-border">
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <TableRowSkeleton key={i} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -79,12 +90,20 @@ export function ResidentsPage() {
         </Card>
       ) : (
         <Card className="border-border">
-          <CardContent className="flex items-center justify-center p-12">
+          <CardContent className="flex flex-col items-center justify-center p-12">
+            <div className="p-4 rounded-full bg-muted/50 mb-4">
+              <Users className="h-12 w-12 text-muted-foreground" />
+            </div>
             <div className="text-center">
-              <p className="text-lg font-medium text-foreground">Nenhum morador cadastrado</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Clique em "Adicionar Morador" para começar
+              <p className="text-lg font-medium text-foreground mb-2">
+                Nenhum morador cadastrado
               </p>
+              <p className="text-sm text-muted-foreground max-w-md mb-4">
+                Comece adicionando moradores para gerenciar unidades e enviar mensagens
+              </p>
+              <Button onClick={handleAddResident} variant="outline">
+                Adicionar Primeiro Morador
+              </Button>
             </div>
           </CardContent>
         </Card>

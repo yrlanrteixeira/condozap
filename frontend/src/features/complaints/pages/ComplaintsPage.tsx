@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import type { Complaint, ComplaintStatus } from "../types";
 import { ComplaintViewModeToggle } from "../components";
@@ -188,8 +188,23 @@ export function ComplaintsPage() {
   // Loading state
   if (isLoadingResidents || isLoadingComplaints) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, colIndex) => (
+            <div key={colIndex} className="space-y-4">
+              <Card className="border-border">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <KanbanCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

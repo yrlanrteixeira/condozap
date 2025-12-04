@@ -1,5 +1,6 @@
-import { History, FileText, Loader2 } from 'lucide-react';
+import { History, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHeaderSkeleton, ListItemSkeleton } from '@/components/ui/skeleton';
 import { HistoryHeader, HistoryLogList } from '../components';
 import { useHistory } from '../hooks/useHistoryApi';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,8 +24,17 @@ export function HistoryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <Card className="border-border">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <ListItemSkeleton key={i} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -10,14 +10,14 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,17 +27,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Users, 
-  UserPlus, 
-  MoreVertical, 
-  Shield, 
-  ShieldCheck, 
-  User, 
+import {
+  Users,
+  UserPlus,
+  MoreVertical,
+  Shield,
+  ShieldCheck,
+  User,
   Trash2,
   Loader2,
   Crown,
 } from 'lucide-react';
+import { PageHeaderSkeleton, ListItemSkeleton } from '@/components/ui/skeleton';
 import { useAppSelector } from '@/hooks';
 import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
 import { useCondominiumUsers, useRemoveUser, useUpdateUserRole } from '../hooks/useUserManagementApi';
@@ -142,8 +143,34 @@ export function TeamManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full py-12">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <Card className="border-border">
+          <CardHeader>
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ListItemSkeleton key={i} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border">
+          <CardHeader>
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ListItemSkeleton />
+          </CardContent>
+        </Card>
       </div>
     );
   }
