@@ -7,6 +7,9 @@
 export { useAppDispatch } from './useAppDispatch';
 export { useAppSelector } from './useAppSelector';
 
+// Condominium Sync Hook
+export { useCondominiumSync } from './useCondominiumSync';
+
 // Role & Permissions Hooks
 export {
   useRole,

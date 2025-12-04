@@ -23,6 +23,13 @@ const createAdminSchema = z.object({
   condominiumId: z.string(),
 });
 
+const createSyndicSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(3),
+  password: z.string().min(8),
+  condominiumIds: z.array(z.string()).min(1, "Selecione pelo menos um condomínio"),
+});
+
 const updateUserRoleSchema = z.object({
   userId: z.string(),
   newRole: z.enum(["ADMIN", "SYNDIC", "RESIDENT"]),
@@ -138,6 +145,95 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.log.error("Failed to create admin:", error);
         return reply.status(500).send({
           error: "Failed to create admin",
+          message: error.message,
+        });
+      }
+    }
+  );
+
+  // =====================================================
+  // POST /users/create-syndic
+  // SUPER_ADMIN cria um síndico e vincula a múltiplos condomínios
+  // =====================================================
+  fastify.post(
+    "/users/create-syndic",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const currentUser = request.user as any;
+      const body = createSyndicSchema.parse(request.body);
+
+      // Apenas SUPER_ADMIN pode criar síndicos
+      if (currentUser.role !== "SUPER_ADMIN") {
+        return reply.status(403).send({
+          error: "Forbidden",
+          message: "Apenas SUPER_ADMIN pode criar síndicos.",
+        });
+      }
+
+      // Verificar se o email já está em uso
+      const existingUser = await prisma.user.findUnique({
+        where: { email: body.email },
+      });
+
+      if (existingUser) {
+        return reply.status(400).send({
+          error: "Email already in use",
+          message: "Este email já está cadastrado no sistema.",
+        });
+      }
+
+      try {
+        // Hash da senha
+        const hashedPassword = await bcrypt.hash(body.password, 10);
+
+        // Criar usuário como SYNDIC
+        const newSyndic = await prisma.user.create({
+          data: {
+            email: body.email,
+            password: hashedPassword,
+            name: body.name,
+            role: "SYNDIC",
+            permissionScope: "LOCAL",
+            status: "APPROVED",
+            approvedAt: new Date(),
+            approvedBy: currentUser.id,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            status: true,
+            createdAt: true,
+          },
+        });
+
+        // Vincular aos condomínios
+        const userCondominiumsData = body.condominiumIds.map(condoId => ({
+          userId: newSyndic.id,
+          condominiumId: condoId,
+          role: "SYNDIC" as const,
+        }));
+
+        await prisma.userCondominium.createMany({
+          data: userCondominiumsData,
+        });
+
+        fastify.log.info(
+          `Syndic ${newSyndic.email} created by ${currentUser.email} for ${body.condominiumIds.length} condominiums`
+        );
+
+        return reply.status(201).send({
+          message: "Síndico criado com sucesso",
+          user: newSyndic,
+          condominiumsCount: body.condominiumIds.length,
+        });
+      } catch (error: any) {
+        fastify.log.error("Failed to create syndic:", error);
+        return reply.status(500).send({
+          error: "Failed to create syndic",
           message: error.message,
         });
       }

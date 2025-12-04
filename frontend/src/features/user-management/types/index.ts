@@ -36,3 +36,10 @@ export interface InviteUserInput {
   role: 'ADMIN' | 'SYNDIC' | 'RESIDENT';
 }
 
+export interface CreateSyndicInput {
+  email: string;
+  name: string;
+  password: string;
+  condominiumIds: string[];
+}
+

@@ -42,6 +42,7 @@ import { useAppSelector } from '@/hooks';
 import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
 import { useCondominiumUsers, useRemoveUser, useUpdateUserRole } from '../hooks/useUserManagementApi';
 import { CreateAdminDialog } from '../components/CreateAdminDialog';
+import { CreateSyndicDialog } from '../components/CreateSyndicDialog';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import type { CondominiumUser } from '../types';
@@ -82,6 +83,7 @@ export function TeamManagementPage() {
   const { toast } = useToast();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateSyndicDialog, setShowCreateSyndicDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<CondominiumUser | null>(null);
 
   const { data: users = [], isLoading, refetch } = useCondominiumUsers(currentCondominiumId || '');
@@ -168,18 +170,28 @@ export function TeamManagementPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Conselheiros
+              {isSuperAdmin ? 'Gerenciar Equipe' : 'Conselheiros'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Cadastre pessoas de confiança para ajudar a gerenciar o condomínio
+              {isSuperAdmin
+                ? 'Gerencie síndicos e conselheiros do sistema'
+                : 'Cadastre pessoas de confiança para ajudar a gerenciar o condomínio'}
             </p>
           </div>
         </div>
 
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Novo Conselheiro
-        </Button>
+        <div className="flex gap-2">
+          {isSuperAdmin && (
+            <Button onClick={() => setShowCreateSyndicDialog(true)} variant="outline">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Novo Síndico
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Conselheiro
+          </Button>
+        </div>
       </div>
 
       {/* Managers Section */}
@@ -315,6 +327,15 @@ export function TeamManagementPage() {
         onOpenChange={setShowCreateDialog}
         onSuccess={() => refetch()}
       />
+
+      {/* Create Syndic Dialog (SUPER_ADMIN only) */}
+      {isSuperAdmin && (
+        <CreateSyndicDialog
+          open={showCreateSyndicDialog}
+          onOpenChange={setShowCreateSyndicDialog}
+          onSuccess={() => refetch()}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
