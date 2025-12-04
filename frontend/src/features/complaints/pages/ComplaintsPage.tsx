@@ -1,28 +1,30 @@
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import type { Complaint, ComplaintStatus } from '../types';
-import { ComplaintViewModeToggle } from '../components';
-import { ResidentComplaintsPage } from './ResidentComplaintsPage';
-import { AdminComplaintsKanbanPage } from './AdminComplaintsKanbanPage';
-import { AdminComplaintsTablePage } from './AdminComplaintsTablePage';
-import { useRole } from '@/hooks/useRole';
-import { useAuth } from '@/hooks/useAuth';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
-import { useResidents } from '@/features/residents/hooks/useResidentsApi';
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import type { Complaint, ComplaintStatus } from "../types";
+import { ComplaintViewModeToggle } from "../components";
+import { ResidentComplaintsPage } from "./ResidentComplaintsPage";
+import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
+import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
+import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import {
   useComplaints,
   useCreateComplaint,
-  useUpdateComplaint
-} from '../hooks/useComplaintsApi';
+  useUpdateComplaintStatus,
+} from "../hooks/useComplaintsApi";
 
-type ViewMode = 'kanban' | 'table';
+type ViewMode = "kanban" | "table";
 
 export function ComplaintsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
-  const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(
+    null
+  );
   const { toast } = useToast();
 
   const { isResident } = useRole();
@@ -30,24 +32,26 @@ export function ComplaintsPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
   // SUPER_ADMIN vê ocorrências globais, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  const condoIdToFetch =
+    user?.role === "SUPER_ADMIN" ? "all" : currentCondominiumId || "";
 
   // Fetch residents
-  const {
-    data: residents = [],
-    isLoading: isLoadingResidents,
-  } = useResidents(condoIdToFetch, {});
+  const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
+    condoIdToFetch,
+    {}
+  );
 
   // Fetch complaints from API
-  const {
-    data: complaints = [],
-    isLoading: isLoadingComplaints,
-  } = useComplaints(condoIdToFetch);
+  const { data: complaints = [], isLoading: isLoadingComplaints } =
+    useComplaints(condoIdToFetch);
 
   const createComplaint = useCreateComplaint();
-  const updateComplaint = useUpdateComplaint();
+  const updateComplaintStatus = useUpdateComplaintStatus();
 
-  const handleComplaintSubmit = async (data: { category: string; content: string }) => {
+  const handleComplaintSubmit = async (data: {
+    category: string;
+    content: string;
+  }) => {
     if (!currentCondominiumId) {
       toast({
         title: "Erro",
@@ -59,11 +63,12 @@ export function ComplaintsPage() {
     }
 
     const residentId = (user as any)?.residentId;
-    
+
     if (!residentId) {
       toast({
         title: "Erro",
-        description: "Não foi possível identificar seu registro de morador. Tente fazer logout e login novamente.",
+        description:
+          "Não foi possível identificar seu registro de morador. Tente fazer logout e login novamente.",
         variant: "error",
         duration: 5000,
       });
@@ -76,22 +81,24 @@ export function ComplaintsPage() {
         residentId: residentId,
         category: data.category,
         content: data.content,
-        priority: 'MEDIUM',
+        priority: "MEDIUM",
         isAnonymous: false,
       });
 
       toast({
         title: "Ocorrência registrada!",
-        description: "Sua ocorrência foi registrada com sucesso e será analisada em breve.",
+        description:
+          "Sua ocorrência foi registrada com sucesso e será analisada em breve.",
         variant: "success",
         duration: 3000,
       });
     } catch (error) {
-      console.error('Failed to create complaint:', error);
+      console.error("Failed to create complaint:", error);
 
       toast({
         title: "Erro ao registrar",
-        description: "Não foi possível registrar a ocorrência. Tente novamente.",
+        description:
+          "Não foi possível registrar a ocorrência. Tente novamente.",
         variant: "error",
         duration: 5000,
       });
@@ -100,19 +107,22 @@ export function ComplaintsPage() {
 
   const handleDragStart = (e: React.DragEvent, complaint: Complaint) => {
     setDraggedComplaint(complaint);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = async (e: React.DragEvent, newStatus: Complaint['status']) => {
+  const handleDrop = async (
+    e: React.DragEvent,
+    newStatus: Complaint["status"]
+  ) => {
     e.preventDefault();
     if (draggedComplaint && draggedComplaint.status !== newStatus) {
       try {
-        await updateComplaint.mutateAsync({
+        await updateComplaintStatus.mutateAsync({
           id: draggedComplaint.id,
           status: newStatus,
         });
@@ -124,8 +134,8 @@ export function ComplaintsPage() {
           duration: 3000,
         });
       } catch (error) {
-        console.error('Failed to update complaint:', error);
-        
+        console.error("Failed to update complaint:", error);
+
         toast({
           title: "Erro ao atualizar",
           description: "Não foi possível atualizar o status. Tente novamente.",
@@ -137,9 +147,12 @@ export function ComplaintsPage() {
     setDraggedComplaint(null);
   };
 
-  const handleStatusChange = async (complaintId: number, newStatus: ComplaintStatus) => {
+  const handleStatusChange = async (
+    complaintId: number,
+    newStatus: ComplaintStatus
+  ) => {
     try {
-      await updateComplaint.mutateAsync({
+      await updateComplaintStatus.mutateAsync({
         id: complaintId,
         status: newStatus,
       });
@@ -151,8 +164,8 @@ export function ComplaintsPage() {
         duration: 3000,
       });
     } catch (error) {
-      console.error('Failed to update complaint:', error);
-      
+      console.error("Failed to update complaint:", error);
+
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar o status. Tente novamente.",
@@ -165,10 +178,9 @@ export function ComplaintsPage() {
   // Helper function to get status label
   const getStatusLabel = (status: ComplaintStatus): string => {
     const labels: Record<ComplaintStatus, string> = {
-      pending: 'Pendente',
-      in_progress: 'Em Andamento',
-      resolved: 'Resolvido',
-      cancelled: 'Cancelado',
+      OPEN: "Aberto",
+      IN_PROGRESS: "Em Andamento",
+      RESOLVED: "Resolvido",
     };
     return labels[status] || status;
   };
@@ -183,7 +195,7 @@ export function ComplaintsPage() {
   }
 
   // No condominium selected (except for SUPER_ADMIN)
-  if (!currentCondominiumId && user?.role !== 'SUPER_ADMIN') {
+  if (!currentCondominiumId && user?.role !== "SUPER_ADMIN") {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-6">
@@ -199,17 +211,25 @@ export function ComplaintsPage() {
 
   // Resident view
   if (isResident) {
-    return <ResidentComplaintsPage complaints={complaints} onSubmit={handleComplaintSubmit} />;
+    return (
+      <ResidentComplaintsPage
+        complaints={complaints}
+        onSubmit={handleComplaintSubmit}
+      />
+    );
   }
 
   // Admin/Syndic view
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 sm:p-6 pb-0">
-        <ComplaintViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+        <ComplaintViewModeToggle
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
       </div>
 
-      {viewMode === 'kanban' ? (
+      {viewMode === "kanban" ? (
         <AdminComplaintsKanbanPage
           complaints={complaints}
           residents={residents}
