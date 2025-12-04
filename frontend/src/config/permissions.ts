@@ -385,9 +385,6 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
   // RESIDENT: Morador (acesso limitado)
   [UserRoles.RESIDENT]: [
-    // Dashboard
-    Permissions.VIEW_DASHBOARD,
-
     // Perfil próprio
     Permissions.VIEW_OWN_PROFILE,
 
@@ -397,9 +394,6 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Mensagens (apenas visualizar)
     Permissions.VIEW_MESSAGES,
-
-    // Histórico (apenas próprio)
-    Permissions.VIEW_HISTORY,
   ],
 };
 

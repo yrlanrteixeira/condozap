@@ -1,5 +1,6 @@
 import type { Complaint } from '@/types';
 import { ComplaintForm, ComplaintHistoryList } from '../components';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ResidentComplaintsPageProps {
   complaints: Complaint[];
@@ -7,7 +8,11 @@ interface ResidentComplaintsPageProps {
 }
 
 export function ResidentComplaintsPage({ complaints, onSubmit }: ResidentComplaintsPageProps) {
-  const myComplaints = complaints.filter((c) => c.residentId === '1');
+  const { user } = useAuth();
+  const residentId = (user as any)?.residentId;
+
+  // Filter complaints to show only user's own complaints
+  const myComplaints = complaints.filter((c) => c.residentId === residentId);
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl">

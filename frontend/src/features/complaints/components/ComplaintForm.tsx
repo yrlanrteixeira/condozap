@@ -1,6 +1,7 @@
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COMPLAINT_CATEGORIES } from '@/config/constants';
-import { ComplaintSchema, type ComplaintFormData } from '@/schemas';
+
+const ComplaintFormSchema = z.object({
+  category: z.enum(COMPLAINT_CATEGORIES as [string, ...string[]]),
+  content: z.string().min(10, 'Descrição deve ter ao menos 10 caracteres'),
+});
+
+type ComplaintFormData = z.infer<typeof ComplaintFormSchema>;
 
 interface ComplaintFormProps {
   onSubmit: (data: { category: string; content: string }) => void;
@@ -27,7 +34,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ComplaintFormData>({
-    resolver: zodResolver(ComplaintSchema),
+    resolver: zodResolver(ComplaintFormSchema),
     defaultValues: {
       category: COMPLAINT_CATEGORIES[0],
       content: '',

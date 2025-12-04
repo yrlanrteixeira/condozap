@@ -104,7 +104,7 @@ export const Sidebar = ({
       title: "Ocorrências",
       href: "/complaints",
       icon: AlertTriangle,
-      permission: Permissions.VIEW_COMPLAINTS,
+      // Both admins (VIEW_COMPLAINTS) and residents (VIEW_OWN_COMPLAINTS) can access
       badge: openComplaintsCount,
     },
     {
@@ -133,6 +133,7 @@ export const Sidebar = ({
       title: "Configurações",
       href: "/settings",
       icon: Settings,
+      permission: Permissions.VIEW_SETTINGS,
     },
   ];
 
@@ -176,6 +177,12 @@ export const Sidebar = ({
 
   const filteredNavItems = navItems.filter((item) => {
     if (!item.permission) return true;
+    
+    // Special case for Complaints: both VIEW_COMPLAINTS and VIEW_OWN_COMPLAINTS should show it
+    if (item.href === '/complaints') {
+      return can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS);
+    }
+    
     return can(item.permission);
   });
 
