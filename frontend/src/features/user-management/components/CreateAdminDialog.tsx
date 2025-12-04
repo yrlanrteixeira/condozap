@@ -1,7 +1,7 @@
 /**
- * Create Admin Dialog
+ * Create Admin Dialog (Conselheiro)
  * 
- * Dialog para síndicos criarem novos administradores
+ * Dialog para síndicos criarem novos conselheiros (pessoas de confiança)
  */
 
 import { useState } from 'react';
@@ -73,7 +73,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
 
       toast({
         title: 'Sucesso!',
-        description: `Administrador ${formData.name} criado com sucesso.`,
+        description: `Conselheiro ${formData.name} criado com sucesso.`,
         variant: 'success',
       });
 
@@ -83,7 +83,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
       onSuccess?.();
     } catch (error: any) {
       toast({
-        title: 'Erro ao criar administrador',
+        title: 'Erro ao criar conselheiro',
         description: error.response?.data?.message || error.message || 'Erro desconhecido.',
         variant: 'destructive',
       });
@@ -103,10 +103,10 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Criar Novo Administrador
+            Criar Novo Conselheiro
           </DialogTitle>
           <DialogDescription>
-            Crie um administrador de confiança para ajudar a gerenciar o condomínio.
+            Crie um conselheiro de confiança para ajudar a gerenciar o condomínio.
             O usuário terá acesso imediato ao sistema.
           </DialogDescription>
         </DialogHeader>
@@ -155,7 +155,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              O administrador poderá alterar a senha após o primeiro login.
+              O conselheiro poderá alterar a senha após o primeiro login.
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
             ) : (
               <>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Criar Administrador
+                Criar Conselheiro
               </>
             )}
           </Button>

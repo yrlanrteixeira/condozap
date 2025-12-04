@@ -50,7 +50,7 @@ export const ResidentTableRow = ({
         <TableCell className="font-medium text-foreground">
           {resident.name || '-'}
         </TableCell>
-        <TableCell className="font-mono text-muted-foreground">
+      <TableCell className="font-mono text-muted-foreground">
           {resident.phone || '-'}
         </TableCell>
         <TableCell className="text-sm text-foreground">
@@ -61,18 +61,18 @@ export const ResidentTableRow = ({
         </TableCell>
         <TableCell className="text-sm text-foreground">
           {resident.unit || '-'}
-        </TableCell>
-        <TableCell>
+      </TableCell>
+      <TableCell>
           <div className="flex items-center gap-2">
-            <Button
-              variant="link"
-              size="sm"
+        <Button
+          variant="link"
+          size="sm"
               className="text-primary hover:text-primary/80 p-0 h-auto font-medium"
-              onClick={() => onEdit(resident)}
-            >
-              <Pencil size={14} className="mr-1" />
-              Editar
-            </Button>
+          onClick={() => onEdit(resident)}
+        >
+          <Pencil size={14} className="mr-1" />
+          Editar
+        </Button>
             <Button
               variant="link"
               size="sm"
@@ -83,8 +83,8 @@ export const ResidentTableRow = ({
               Excluir
             </Button>
           </div>
-        </TableCell>
-      </TableRow>
+      </TableCell>
+    </TableRow>
 
       <ConfirmDialog
         open={showDeleteDialog}
