@@ -23,7 +23,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default("7d"),
 
-  // CORS
+  // CORS - Pode ser uma string única ou múltiplas separadas por vírgula
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
 
   // WhatsApp API (Official - Meta)
@@ -62,4 +62,8 @@ export const config = {
   isDev: parsed.data.NODE_ENV === "development",
   isProd: parsed.data.NODE_ENV === "production",
   isTest: parsed.data.NODE_ENV === "test",
+  // Parse CORS_ORIGIN como array se tiver vírgulas
+  CORS_ORIGIN: parsed.data.CORS_ORIGIN.includes(",")
+    ? parsed.data.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+    : parsed.data.CORS_ORIGIN,
 };

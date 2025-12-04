@@ -1,7 +1,9 @@
 /**
- * Team Management Page
+ * Team Management Page (Conselheiros)
  * 
- * Página para síndicos/admins gerenciarem a equipe do condomínio
+ * Página para síndicos gerenciarem conselheiros e pessoas de confiança
+ * - Síndico pode cadastrar ADMINs (conselheiros)
+ * - Apenas SUPER_ADMIN (desenvolvedor) pode criar/vincular síndicos
  */
 
 import { useState } from 'react';
@@ -45,9 +47,9 @@ import { useAuth } from '@/hooks/useAuth';
 import type { CondominiumUser } from '../types';
 
 const roleLabels: Record<string, string> = {
-  SUPER_ADMIN: 'Super Admin',
+  SUPER_ADMIN: 'Desenvolvedor',
   PROFESSIONAL_SYNDIC: 'Síndico Profissional',
-  ADMIN: 'Administrador',
+  ADMIN: 'Conselheiro',
   SYNDIC: 'Síndico',
   RESIDENT: 'Morador',
 };
@@ -86,9 +88,13 @@ export function TeamManagementPage() {
   const removeUserMutation = useRemoveUser();
   const updateRoleMutation = useUpdateUserRole();
 
-  // Filtrar apenas gestores (não moradores)
-  const managers = users.filter(u => ['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC'].includes(u.role));
+  // Filtrar conselheiros (ADMINs) e síndicos deste condomínio
+  // SUPER_ADMIN não aparece aqui pois é o desenvolvedor
+  const managers = users.filter(u => ['ADMIN', 'SYNDIC'].includes(u.role));
   const residents = users.filter(u => u.role === 'RESIDENT');
+  
+  // Verificar se o usuário atual é SUPER_ADMIN
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
   const handleRemoveUser = async () => {
     if (!userToDelete || !currentCondominiumId) return;
@@ -162,17 +168,17 @@ export function TeamManagementPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Gerenciar Equipe
+              Conselheiros
             </h1>
             <p className="text-sm text-muted-foreground">
-              Adicione administradores de confiança para ajudar a gerenciar o condomínio
+              Cadastre pessoas de confiança para ajudar a gerenciar o condomínio
             </p>
           </div>
         </div>
 
         <Button onClick={() => setShowCreateDialog(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
-          Novo Administrador
+          Novo Conselheiro
         </Button>
       </div>
 
@@ -181,10 +187,10 @@ export function TeamManagementPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Administradores e Síndicos
+            Conselheiros e Síndicos
           </CardTitle>
           <CardDescription>
-            Usuários com permissão para gerenciar o condomínio
+            Pessoas com permissão para gerenciar o condomínio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -222,32 +228,41 @@ export function TeamManagementPage() {
                         {roleLabels[user.role]}
                       </Badge>
 
-                      {!isCurrentUser && !['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC'].includes(user.role) && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'ADMIN')}>
-                              <Shield className="mr-2 h-4 w-4" />
-                              Tornar Administrador
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'SYNDIC')}>
-                              <ShieldCheck className="mr-2 h-4 w-4" />
-                              Tornar Síndico
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => setUserToDelete(user)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Remover do Condomínio
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      {/* Síndico só pode gerenciar ADMINs (conselheiros), não outros síndicos */}
+                      {/* SUPER_ADMIN pode gerenciar todos */}
+                      {!isCurrentUser && (
+                        (isSuperAdmin || (user.role === 'ADMIN')) && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/* Apenas SUPER_ADMIN pode alterar roles */}
+                              {isSuperAdmin && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'ADMIN')}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Tornar Conselheiro
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'SYNDIC')}>
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    Tornar Síndico
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              )}
+                              <DropdownMenuItem 
+                                onClick={() => setUserToDelete(user)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remover do Condomínio
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )
                       )}
                     </div>
                   </div>
@@ -256,14 +271,14 @@ export function TeamManagementPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhum administrador cadastrado.</p>
+              <p className="text-muted-foreground">Nenhum conselheiro cadastrado.</p>
               <Button 
                 variant="outline" 
                 className="mt-4"
                 onClick={() => setShowCreateDialog(true)}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Adicionar Primeiro Administrador
+                Adicionar Primeiro Conselheiro
               </Button>
             </div>
           )}

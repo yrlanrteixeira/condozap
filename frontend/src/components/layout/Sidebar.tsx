@@ -50,7 +50,7 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { isSuperAdmin, isProfessionalSyndic } = useRole();
+  const { isSuperAdmin, isProfessionalSyndic, isSyndic } = useRole();
   const { can } = usePermissions();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
@@ -80,7 +80,7 @@ export const Sidebar = ({
       permission: Permissions.MANAGE_RESIDENTS,
     },
     {
-      title: "Gerenciar Equipe",
+      title: "Conselheiros",
       href: "/team",
       icon: UsersRound,
       permission: Permissions.MANAGE_RESIDENTS,
@@ -106,8 +106,11 @@ export const Sidebar = ({
     },
   ];
 
-  // Dashboard Unificado apenas para Síndicos Profissionais e Super Admins
-  if (isProfessionalSyndic || isSuperAdmin) {
+  // Dashboard Unificado para quem gerencia múltiplos condomínios
+  // - SUPER_ADMIN: sempre tem acesso (gerencia todos)
+  // - SYNDIC: se tiver mais de 1 condomínio vinculado pelo SUPER_ADMIN
+  const hasMultipleCondos = user?.condominiums && user.condominiums.length > 1;
+  if (isSuperAdmin || isProfessionalSyndic || (isSyndic && hasMultipleCondos)) {
     navItems.unshift({
       title: "Dashboard Unificado",
       href: "/unified-dashboard",

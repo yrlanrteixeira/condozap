@@ -20,15 +20,15 @@ export const ResidentSchema = z.object({
 });
 
 export const CreateResidentSchema = z.object({
-  condominium_id: z.string(),
+  condominiumId: z.string(),
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   phone: z.string().min(10, "Telefone inválido"),
   tower: z.string().min(1, "Torre é obrigatória"),
   floor: z.string().min(1, "Andar é obrigatório"),
   unit: z.string().min(1, "Unidade é obrigatória"),
   type: z.enum(["OWNER", "TENANT"]),
-  consent_whatsapp: z.boolean().optional().default(false),
-  consent_data_processing: z.boolean().optional().default(false),
+  consentWhatsapp: z.boolean().optional().default(false),
+  consentDataProcessing: z.boolean().optional().default(false),
 });
 
 export const UpdateResidentSchema = CreateResidentSchema.partial().extend({

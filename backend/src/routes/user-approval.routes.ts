@@ -220,7 +220,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
           user: result,
         });
       } catch (error) {
-        fastify.log.error('Failed to approve user:', error as Error);
+        fastify.log.error({ error }, 'Failed to approve user');
         return reply.status(500).send({ error: 'Failed to approve user' });
       }
     }
@@ -293,7 +293,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
           user: rejectedUser,
         });
       } catch (error) {
-        fastify.log.error('Failed to reject user:', error as Error);
+        fastify.log.error({ error }, 'Failed to reject user');
         return reply.status(500).send({ error: 'Failed to reject user' });
       }
     }

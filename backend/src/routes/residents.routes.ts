@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma.js";
 const createResidentSchema = z.object({
   condominiumId: z.string(),
   name: z.string().min(3),
+  email: z.string().email(),
   phone: z.string().regex(/^55\d{10,11}$/),
   tower: z.string(),
   floor: z.string(),

@@ -1,4 +1,4 @@
-import { User, Phone, Building2, MapPin } from "lucide-react";
+import { User, Phone, Building2, MapPin, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,6 +13,7 @@ import { useTowers } from "../hooks/useResidentsApi";
 
 export interface ResidentFormData {
   name: string;
+  email: string;
   phone: string;
   tower: string;
   floor: string;
@@ -42,6 +43,23 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
           placeholder="Ex: João Silva"
           value={formData.name}
           onChange={(e) => onChange({ ...formData, name: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label
+          htmlFor="email"
+          className="text-sm font-medium flex items-center gap-2"
+        >
+          <Mail size={14} />
+          Email
+        </label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="Ex: joao@email.com"
+          value={formData.email}
+          onChange={(e) => onChange({ ...formData, email: e.target.value })}
         />
       </div>
 

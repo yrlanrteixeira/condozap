@@ -68,7 +68,7 @@ export function ResidentsPage() {
           <CardContent className="p-0">
             <ResidentTable
               residents={residents}
-              onEditResident={handleEditResident}
+              onEdit={handleEditResident}
             />
           </CardContent>
         </Card>
