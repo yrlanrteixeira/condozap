@@ -35,6 +35,8 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     formState: { errors, isSubmitting },
   } = useForm<ComplaintFormData>({
     resolver: zodResolver(ComplaintFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       category: COMPLAINT_CATEGORIES[0],
       content: '',

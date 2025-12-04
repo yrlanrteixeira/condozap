@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Inbox } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Complaint, Resident } from '@/types';
@@ -61,8 +61,12 @@ export const ComplaintKanbanColumn = ({
         })}
 
         {complaints.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed border-border rounded-lg">
-            Vazio
+          <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-lg bg-background/50">
+            <Inbox className="h-8 w-8 text-muted-foreground/50 mb-2" />
+            <p className="text-sm text-muted-foreground font-medium">Nenhuma ocorrência</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
+              Arraste cartões para cá
+            </p>
           </div>
         )}
       </div>

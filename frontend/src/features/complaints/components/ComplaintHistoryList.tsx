@@ -1,4 +1,4 @@
-import { History, Clock } from 'lucide-react';
+import { History, Clock, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Complaint, ComplaintStatus } from '@/types';
@@ -18,8 +18,14 @@ export const ComplaintHistoryList = ({ complaints }: ComplaintHistoryListProps) 
 
       <div className="space-y-2 sm:space-y-3">
         {complaints.length === 0 && (
-          <div className="text-center py-10 bg-muted/50 rounded-lg border border-dashed border-border">
-            <p className="text-muted-foreground italic">Nenhum registro encontrado.</p>
+          <div className="flex flex-col items-center justify-center py-12 bg-muted/50 rounded-lg border border-dashed border-border">
+            <div className="p-3 rounded-full bg-background mb-3">
+              <FileText className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-sm font-medium text-foreground">Nenhum relato ainda</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
+              Suas denúncias aparecerão aqui após o envio
+            </p>
           </div>
         )}
 

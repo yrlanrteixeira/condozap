@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Loader2, PlusCircle, Building2, Grid3X3 } from "lucide-react";
+import { PlusCircle, Building2, Grid3X3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeaderSkeleton, StatsCardSkeleton, CardSkeleton } from "@/components/ui/skeleton";
 import type { Resident } from "@/features/residents/types";
 import { useAppSelector } from "@/hooks";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,8 +60,18 @@ export function StructurePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
