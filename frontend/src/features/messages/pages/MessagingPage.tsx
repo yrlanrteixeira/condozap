@@ -8,6 +8,7 @@ import { filterResidentsByTarget } from "@/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { useSendMessage } from "../hooks/useMessagesApi";
 import { useAppSelector } from "@/hooks";
+import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import {
   MessageHeader,
@@ -24,16 +25,20 @@ type Scope = "unit" | "floor" | "tower" | "all";
 type MsgType = "text" | "template" | "image";
 
 export function MessagingPage() {
-  // Get current condominium ID
+  // Get current condominium ID and user
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
 
   // Fetch residents from API
   const {
     data: residents = [],
     isLoading,
     isError,
-  } = useResidents(currentCondominiumId || "", {});
+  } = useResidents(condoIdToFetch, {});
 
   // Send message mutation
   const sendMessage = useSendMessage();
@@ -147,8 +152,8 @@ export function MessagingPage() {
     );
   }
 
-  // Error state
-  if (isError || !currentCondominiumId) {
+  // Error state - SUPER_ADMIN pode acessar sem condomínio selecionado (vê todos)
+  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-6">

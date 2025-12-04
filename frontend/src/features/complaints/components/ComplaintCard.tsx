@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Complaint, Resident } from '@/types';
+import { formatDate } from '@/utils/helpers';
 
 interface ComplaintCardProps {
   complaint: Complaint;
@@ -16,6 +17,9 @@ export const ComplaintCard = ({
   draggable = false,
   onDragStart,
 }: ComplaintCardProps) => {
+  // Suporta tanto timestamp (compatibilidade) quanto createdAt (padrão)
+  const dateField = complaint.timestamp || complaint.createdAt;
+
   return (
     <Card
       draggable={draggable}
@@ -35,7 +39,7 @@ export const ComplaintCard = ({
             {complaint.category}
           </Badge>
           <span className="text-[10px] text-muted-foreground">
-            {new Date(complaint.timestamp).toLocaleDateString()}
+            {formatDate(dateField)}
           </span>
         </div>
         <p className="text-foreground text-sm mb-3 font-medium">{complaint.content}</p>
