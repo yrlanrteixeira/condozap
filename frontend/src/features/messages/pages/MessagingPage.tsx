@@ -2,12 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import type {
-  Message,
-  TargetData,
-  MessageContent,
-} from "@/features/messages/types";
-import type { Resident } from "@/features/residents/types";
+import type { TargetData } from "@/features/messages/types";
 import { TEMPLATES } from "@/config/constants";
 import { filterResidentsByTarget } from "@/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
@@ -32,16 +27,17 @@ export function MessagingPage() {
   // Get current condominium ID
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { toast } = useToast();
-  
+
   // Fetch residents from API
-  const { data: residents = [], isLoading, isError } = useResidents(
-    currentCondominiumId || "",
-    {}
-  );
+  const {
+    data: residents = [],
+    isLoading,
+    isError,
+  } = useResidents(currentCondominiumId || "", {});
 
   // Send message mutation
   const sendMessage = useSendMessage();
-  
+
   const [scope, setScope] = useState<Scope>("unit");
   const [msgType, setMsgType] = useState<MsgType>("text");
   const [selectedTower, setSelectedTower] = useState("A");
@@ -53,7 +49,7 @@ export function MessagingPage() {
 
   const recipientCount = useMemo(() => {
     if (!residents || residents.length === 0) return 0;
-    
+
     const targetData: TargetData = {
       scope: scope.toUpperCase() as TargetData["scope"],
       tower: selectedTower,
@@ -97,31 +93,30 @@ export function MessagingPage() {
     }
 
     try {
-      let content: MessageContent = {};
-      if (msgType === "text") content = { text: textContent };
-      if (msgType === "template") content = { templateName: templateId };
-      if (msgType === "image") content = {
-        mediaUrl: "http://exemplo.com/img.jpg", // TODO: Implement image upload
-        caption: textContent,
-      };
-
-      const targetData: TargetData = {
-        scope: scope.toUpperCase() as TargetData["scope"],
-        tower: selectedTower,
-        floor: selectedFloor,
-        unit: selectedUnit,
-      };
+      // Prepare content based on message type
+      let contentString = "";
+      if (msgType === "text") {
+        contentString = textContent;
+      } else if (msgType === "template") {
+        contentString = templateId;
+      } else if (msgType === "image") {
+        contentString = textContent; // Caption for image
+      }
 
       await sendMessage.mutateAsync({
         condominium_id: currentCondominiumId,
-        target: targetData,
         type: msgType.toUpperCase() as any,
-        content,
+        scope: scope.toUpperCase() as any,
+        target_tower: selectedTower,
+        target_floor: selectedFloor,
+        target_unit: selectedUnit,
+        content: contentString,
+        sent_by: "", // Will be filled by backend from JWT
       });
 
       toast({
         title: "Mensagem enviada!",
-        description: `Mensagem enviada para ${recipientCount} morador${recipientCount !== 1 ? 'es' : ''} com sucesso.`,
+        description: `Mensagem enviada para ${recipientCount} morador${recipientCount !== 1 ? "es" : ""} com sucesso.`,
         variant: "success",
         duration: 3000,
       });
@@ -133,7 +128,7 @@ export function MessagingPage() {
       }
     } catch (error) {
       console.error("Failed to send message:", error);
-      
+
       toast({
         title: "Erro ao enviar",
         description: "Não foi possível enviar a mensagem. Tente novamente.",
