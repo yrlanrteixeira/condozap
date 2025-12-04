@@ -49,7 +49,7 @@ export function LoginPage() {
   return (
     <AuthCard>
       <AuthHeader
-        title="Bem-vindo ao CondoZap"
+        title="Bem-vindo ao TalkZap"
         description="Entre com sua conta para acessar o painel de gestão"
       />
 

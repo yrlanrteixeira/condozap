@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import {
   ProtectedRoute,
   PermissionGuard,
+  AnyPermissionGuard,
   InitialRedirect,
   ApprovalGuard,
 } from "@/components/guards";
@@ -170,9 +171,14 @@ export function AppRoutes() {
           <Route
             path="complaints"
             element={
-              <PermissionGuard permission={Permissions.VIEW_COMPLAINTS}>
+              <AnyPermissionGuard
+                permissions={[
+                  Permissions.VIEW_COMPLAINTS,
+                  Permissions.VIEW_OWN_COMPLAINTS,
+                ]}
+              >
                 <ComplaintsPage />
-              </PermissionGuard>
+              </AnyPermissionGuard>
             }
           />
 

@@ -10,6 +10,7 @@ const VIEW_LABELS: Record<View, string> = {
   structure: "Estrutura",
   complaints: "Ocorrências",
   history: "Logs do Sistema",
+  unified_dashboard: "Visão Geral",
 };
 
 export function MobileHeader() {
@@ -18,7 +19,7 @@ export function MobileHeader() {
   return (
     <header className="md:hidden bg-background border-b p-4 shadow-sm flex items-center justify-between">
       <div>
-        <h1 className="font-bold text-lg">CondoTalk</h1>
+        <h1 className="font-bold text-lg">TalkZap</h1>
         <p className="text-xs text-muted-foreground">{VIEW_LABELS[view]}</p>
       </div>
       <div className="flex items-center gap-2">

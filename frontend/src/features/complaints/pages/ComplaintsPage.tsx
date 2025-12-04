@@ -50,9 +50,21 @@ export function ComplaintsPage() {
   const handleComplaintSubmit = async (data: { category: string; content: string }) => {
     if (!currentCondominiumId) return;
 
+    const residentId = (user as any)?.residentId;
+    if (!residentId) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível identificar seu registro de morador.",
+        variant: "error",
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
       await createComplaint.mutateAsync({
         condominium_id: currentCondominiumId,
+        resident_id: residentId,
         category: data.category,
         description: data.content,
         status: 'pending',
@@ -67,7 +79,7 @@ export function ComplaintsPage() {
       });
     } catch (error) {
       console.error('Failed to create complaint:', error);
-      
+
       toast({
         title: "Erro ao registrar",
         description: "Não foi possível registrar a ocorrência. Tente novamente.",
