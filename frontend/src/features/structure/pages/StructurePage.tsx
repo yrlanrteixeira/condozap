@@ -65,7 +65,8 @@ export function StructurePage() {
     );
   }
 
-  if (isError || !currentCondominiumId) {
+  // SUPER_ADMIN pode acessar sem condomínio selecionado (vê todos)
+  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="border-border">

@@ -100,3 +100,13 @@ export interface HistoryStats {
   last7Days: number;
   last30Days: number;
 }
+
+/**
+ * Tipo genérico para histórico (compatível com Message e outras entidades)
+ */
+export type HistoryLog = MessageHistory;
+
+/**
+ * Re-export para compatibilidade
+ */
+export type { MessageHistory as Message };

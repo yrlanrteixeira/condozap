@@ -38,8 +38,10 @@ export const Header = ({
 
   const condominiumsToShow =
     user?.role === "SUPER_ADMIN" ? allCondominiums : userCondominiums;
+
+  // Mostra o seletor para SUPER_ADMIN ou para usuários com múltiplos condomínios
   const showCondominiumSelector =
-    user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0;
+    condominiumsToShow.length > 1 || (user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0);
 
   const handleCondominiumChange = (condoId: string) => {
     dispatch(setCurrentCondominium(condoId));

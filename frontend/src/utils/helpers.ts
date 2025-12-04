@@ -56,3 +56,46 @@ export function canTransitionStatus(
 
 // Note: generateId moved to utils/constants.ts as generateUniqueId()
 // This file kept for other helper functions
+
+// Safe date formatting functions
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return 'Data inválida'
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Data inválida'
+    }
+
+    return dateObj.toLocaleDateString('pt-BR')
+  } catch (error) {
+    console.error('Error formatting date:', error)
+    return 'Data inválida'
+  }
+}
+
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return 'Data inválida'
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Data inválida'
+    }
+
+    const dateStr = dateObj.toLocaleDateString('pt-BR')
+    const timeStr = dateObj.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+
+    return `${dateStr} às ${timeStr}`
+  } catch (error) {
+    console.error('Error formatting datetime:', error)
+    return 'Data inválida'
+  }
+}
