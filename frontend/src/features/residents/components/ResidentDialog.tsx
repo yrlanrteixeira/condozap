@@ -24,6 +24,7 @@ interface ResidentDialogProps {
 
 const initialFormData: ResidentFormData = {
   name: "",
+  email: "",
   phone: "",
   tower: "A",
   floor: "",
@@ -67,6 +68,7 @@ export const ResidentDialog = ({
     if (open && resident) {
       setFormData({
         name: resident.name,
+        email: resident.email,
         phone: resident.phone,
         tower: resident.tower,
         floor: resident.floor,
@@ -78,7 +80,7 @@ export const ResidentDialog = ({
   }, [open, resident]);
 
   const isFormValid =
-    formData.name && formData.phone && formData.floor && formData.unit;
+    formData.name && formData.email && formData.phone && formData.floor && formData.unit;
 
   const handleSave = async () => {
     if (!currentCondominiumId || !isFormValid) return;

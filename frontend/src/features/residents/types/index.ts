@@ -9,6 +9,7 @@ export interface Resident {
   condominiumId: string
   userId?: string | null
   name: string
+  email: string
   phone: string
   tower: string
   floor: string
@@ -23,6 +24,7 @@ export interface CreateResidentInput {
   id?: string
   condominiumId: string
   name: string
+  email: string
   phone: string
   tower: string
   floor: string

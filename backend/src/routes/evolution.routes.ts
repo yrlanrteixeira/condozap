@@ -10,7 +10,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { evolutionService } from '../services/evolution/index.js';
-import { prisma } from '../lib/prisma.js';
 import type { WebhookPayload, MessageWebhookData } from '../services/evolution/types.js';
 
 export const evolutionRoutes: FastifyPluginAsync = async (fastify) => {
