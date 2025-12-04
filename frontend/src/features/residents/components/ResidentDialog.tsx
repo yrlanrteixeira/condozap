@@ -1,0 +1,152 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
+import type { Resident } from "../types";
+import { ResidentForm, type ResidentFormData } from "./ResidentForm";
+import { useCreateResident, useUpdateResident } from "../hooks/useResidentsApi";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+
+interface ResidentDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  resident?: Resident;
+  onClose?: () => void;
+}
+
+const initialFormData: ResidentFormData = {
+  name: "",
+  phone: "",
+  tower: "A",
+  floor: "",
+  unit: "",
+};
+
+export const ResidentDialog = ({
+  open,
+  onOpenChange,
+  resident,
+  onClose,
+}: ResidentDialogProps) => {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const [formData, setFormData] = useState<ResidentFormData>(initialFormData);
+  const { toast } = useToast();
+
+  const createResident = useCreateResident();
+  const updateResident = useUpdateResident();
+
+  // Reset form when dialog opens/closes or resident changes
+  useEffect(() => {
+    if (open && resident) {
+      setFormData({
+        name: resident.name,
+        phone: resident.phone,
+        tower: resident.tower,
+        floor: resident.floor,
+        unit: resident.unit,
+      });
+    } else if (open && !resident) {
+      setFormData(initialFormData);
+    }
+  }, [open, resident]);
+
+  const isFormValid =
+    formData.name && formData.phone && formData.floor && formData.unit;
+
+  const handleSave = async () => {
+    if (!currentCondominiumId || !isFormValid) return;
+
+    try {
+      if (resident) {
+        // Update existing resident
+        await updateResident.mutateAsync({
+          id: resident.id,
+          ...formData,
+          condominium_id: currentCondominiumId,
+        });
+
+        toast({
+          title: "Morador atualizado!",
+          description: `${formData.name} foi atualizado com sucesso.`,
+          variant: "success",
+          duration: 3000,
+        });
+      } else {
+        // Create new resident
+        await createResident.mutateAsync({
+          ...formData,
+          condominium_id: currentCondominiumId,
+          type: "OWNER", // Default to OWNER
+        });
+
+        toast({
+          title: "Morador cadastrado!",
+          description: `${formData.name} foi adicionado com sucesso.`,
+          variant: "success",
+          duration: 3000,
+        });
+      }
+
+      handleClose();
+    } catch (error) {
+      console.error("Failed to save resident:", error);
+
+      toast({
+        title: "Erro ao salvar",
+        description: resident
+          ? "Não foi possível atualizar o morador. Tente novamente."
+          : "Não foi possível cadastrar o morador. Tente novamente.",
+        variant: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleClose = () => {
+    setFormData(initialFormData);
+    onOpenChange(false);
+    onClose?.();
+  };
+
+  const isLoading = createResident.isPending || updateResident.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
+          <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
+            {resident ? "Editar Morador" : "Adicionar Novo Morador"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {resident
+              ? "Atualize as informações do morador"
+              : "Preencha os dados para adicionar um novo morador ao condomínio"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ResidentForm formData={formData} onChange={setFormData} />
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} disabled={!isFormValid || isLoading}>
+            {isLoading
+              ? "Salvando..."
+              : resident
+                ? "Salvar Alterações"
+                : "Adicionar Morador"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
