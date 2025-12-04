@@ -162,6 +162,7 @@ model Resident {
   condominiumId  String       @map("condominium_id")
   userId         String?      @unique @map("user_id")
   name           String
+  email          String       @default("pendente@condozap.com")
   phone          String
   tower          String
   floor          String
@@ -180,6 +181,7 @@ model Resident {
 
   @@unique([condominiumId, tower, floor, unit])
   @@index([condominiumId, phone])
+  @@index([condominiumId, email])
   @@map("residents")
 }
 
