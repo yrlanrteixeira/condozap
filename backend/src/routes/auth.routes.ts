@@ -110,6 +110,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
+        resident: true, // Include resident if exists
       },
     });
 
@@ -130,10 +131,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       email: user.email,
       role: user.role,
       status: user.status,
+      residentId: user.resident?.id, // Include residentId if user is a resident
     });
 
     // Return user without password
-    const { password: _, condominiums, ...userWithoutPassword } = user;
+    const { password: _, condominiums, resident, ...userWithoutPassword } = user;
 
     // Transform condominiums for response
     const userCondominiums = condominiums.map((uc) => ({
@@ -145,6 +147,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       user: {
         ...userWithoutPassword,
         condominiums: userCondominiums,
+        residentId: resident?.id, // Include residentId if exists
       },
       token,
       isPending: user.status === "PENDING",
@@ -173,6 +176,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
               },
             },
           },
+          resident: true, // Include resident if exists
         },
       });
 
@@ -181,7 +185,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Remove password and transform condominiums
-      const { password: _, condominiums, ...userWithoutPassword } = user;
+      const { password: _, condominiums, resident, ...userWithoutPassword } = user;
 
       const userCondominiums = condominiums.map((uc) => ({
         id: uc.condominium.id,
@@ -191,6 +195,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.send({
         ...userWithoutPassword,
         condominiums: userCondominiums,
+        residentId: resident?.id, // Include residentId if exists
       });
     }
   );
