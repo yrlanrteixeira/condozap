@@ -7,6 +7,10 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
+import { useAppSelector } from "@/hooks";
+import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useComplaints } from "@/features/complaints/hooks/useComplaintsApi";
 
 export function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,6 +20,19 @@ export function MainLayout() {
     return saved ? JSON.parse(saved) : false;
   });
 
+  const { user } = useAuth();
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+
+  // SUPER_ADMIN vê ocorrências globais, RESIDENT vê apenas suas, outros veem do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  
+  const { data: complaints = [] } = useComplaints(condoIdToFetch);
+
+  // Contar ocorrências abertas
+  const openComplaintsCount = user?.role === 'RESIDENT' 
+    ? complaints.filter(c => c.residentId === (user as any)?.residentId && c.status === 'OPEN').length
+    : complaints.filter(c => c.status === 'OPEN').length;
+
   // Salvar estado no localStorage quando mudar
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", JSON.stringify(sidebarCollapsed));
@@ -24,9 +41,6 @@ export function MainLayout() {
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-
-  // TODO: Buscar contagem real de ocorrências abertas da API
-  const openComplaintsCount = 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

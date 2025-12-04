@@ -48,15 +48,36 @@ export function ComplaintsPage() {
   const updateComplaint = useUpdateComplaint();
 
   const handleComplaintSubmit = async (data: { category: string; content: string }) => {
-    if (!currentCondominiumId) return;
+    if (!currentCondominiumId) {
+      toast({
+        title: "Erro",
+        description: "Nenhum condomínio selecionado.",
+        variant: "error",
+        duration: 5000,
+      });
+      return;
+    }
+
+    const residentId = (user as any)?.residentId;
+    
+    if (!residentId) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível identificar seu registro de morador. Tente fazer logout e login novamente.",
+        variant: "error",
+        duration: 5000,
+      });
+      return;
+    }
 
     try {
       await createComplaint.mutateAsync({
-        condominium_id: currentCondominiumId,
+        condominiumId: currentCondominiumId,
+        residentId: residentId,
         category: data.category,
-        description: data.content,
-        status: 'pending',
-        priority: 'medium',
+        content: data.content,
+        priority: 'MEDIUM',
+        isAnonymous: false,
       });
 
       toast({
@@ -67,7 +88,7 @@ export function ComplaintsPage() {
       });
     } catch (error) {
       console.error('Failed to create complaint:', error);
-      
+
       toast({
         title: "Erro ao registrar",
         description: "Não foi possível registrar a ocorrência. Tente novamente.",
