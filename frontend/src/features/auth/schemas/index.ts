@@ -23,6 +23,11 @@ export const RegisterUserSchema = z.object({
     .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
   confirmPassword: z.string(),
   role: z.enum(['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC', 'RESIDENT']).optional(),
+  // LGPD Consent
+  consentDataProcessing: z.boolean().refine(val => val === true, {
+    message: 'Você precisa aceitar os termos de uso para criar sua conta',
+  }),
+  consentWhatsapp: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],

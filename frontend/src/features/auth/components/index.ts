@@ -8,4 +8,5 @@ export { AuthFooter } from './AuthFooter'
 export { AuthErrorAlert } from './AuthErrorAlert'
 export { RegisterSuccessCard } from './RegisterSuccessCard'
 export { LoginForm } from './LoginForm'
+export { ConsentDialog } from './ConsentDialog'
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Users, MessageSquare, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppSelector } from "@/hooks";
+import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useDashboardMetrics } from "../hooks/useDashboardApi";
 import {
@@ -16,12 +17,16 @@ import {
 export function DashboardPage() {
   const [period, setPeriod] = useState<Period>("30d");
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { user } = useAuth();
+
+  // SUPER_ADMIN vê métricas globais, outros veem apenas do condomínio selecionado
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
 
   const {
     data: metrics,
     isLoading,
     isError,
-  } = useDashboardMetrics(currentCondominiumId || "");
+  } = useDashboardMetrics(condoIdToFetch);
 
   if (isLoading) {
     return (

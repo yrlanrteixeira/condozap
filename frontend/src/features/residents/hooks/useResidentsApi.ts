@@ -19,11 +19,12 @@ import type {
 // Query: Fetch Residents
 // =====================================================
 
-export function useResidents(condominiumId: string, filters?: ResidentFilters) {
+export function useResidents(condominiumId: string | 'all', filters?: ResidentFilters) {
   return useQuery({
     queryKey: queryKeys.list(condominiumId, filters),
     queryFn: async () => {
-      const { data } = await api.get(`/residents/${condominiumId}`, {
+      const url = condominiumId === 'all' ? '/residents/all' : `/residents/${condominiumId}`;
+      const { data } = await api.get(url, {
         params: filters, // Filters as query params (tower, floor, type, search)
       });
       return data.map((resident: Resident) => ResidentSchema.parse(resident));

@@ -4,12 +4,42 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { PendingUser, ApproveUserInput, RejectUserInput } from '../types';
+import type { PendingUser, ApproveUserInput, RejectUserInput, Condominium } from '../types';
 
 const queryKeys = {
   all: ['userApproval'] as const,
+  pendingAll: () => [...queryKeys.all, 'pending', 'all'] as const,
   pending: (condominiumId: string) => [...queryKeys.all, 'pending', condominiumId] as const,
+  condominiums: () => [...queryKeys.all, 'condominiums'] as const,
 };
+
+/**
+ * Hook to fetch all condominiums (SUPER_ADMIN only)
+ */
+export function useCondominiums() {
+  return useQuery({
+    queryKey: queryKeys.condominiums(),
+    queryFn: async (): Promise<Condominium[]> => {
+      const { data } = await api.get('/condominiums/list');
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch ALL pending users (SUPER_ADMIN only)
+ */
+export function useAllPendingUsers() {
+  return useQuery({
+    queryKey: queryKeys.pendingAll(),
+    queryFn: async (): Promise<PendingUser[]> => {
+      const { data } = await api.get('/users/pending/all');
+      return data;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
 
 /**
  * Hook to fetch pending users for a condominium

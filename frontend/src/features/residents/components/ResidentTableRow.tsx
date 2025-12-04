@@ -10,11 +10,13 @@ import type { Resident } from "../types";
 interface ResidentTableRowProps {
   resident: Resident;
   onEdit: (resident: Resident) => void;
+  showCondominium?: boolean;
 }
 
 export const ResidentTableRow = ({
   resident,
   onEdit,
+  showCondominium = false,
 }: ResidentTableRowProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
@@ -50,7 +52,12 @@ export const ResidentTableRow = ({
         <TableCell className="font-medium text-foreground">
           {resident.name || '-'}
         </TableCell>
-      <TableCell className="font-mono text-muted-foreground">
+        {showCondominium && (
+          <TableCell className="text-sm text-muted-foreground">
+            {(resident as any).condominium?.name || '-'}
+          </TableCell>
+        )}
+        <TableCell className="font-mono text-muted-foreground">
           {resident.phone || '-'}
         </TableCell>
         <TableCell className="text-sm text-foreground">

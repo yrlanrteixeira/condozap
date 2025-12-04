@@ -11,13 +11,15 @@ import type { DashboardMetrics, UnifiedDashboardMetrics } from '../types'
 // Query: Fetch Dashboard Metrics
 // =====================================================
 
-export function useDashboardMetrics(condominiumId: string) {
+export function useDashboardMetrics(condominiumId: string | 'all') {
   return useQuery({
     queryKey: queryKeys.metrics(condominiumId),
     queryFn: async (): Promise<DashboardMetrics> => {
-      const { data } = await api.get(`/dashboard/metrics/${condominiumId}`)
+      const url = condominiumId === 'all' ? '/dashboard/metrics/all' : `/dashboard/metrics/${condominiumId}`;
+      const { data } = await api.get(url)
       return data
     },
+    enabled: !!condominiumId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 5, // Auto-refresh every 5 minutes
   })

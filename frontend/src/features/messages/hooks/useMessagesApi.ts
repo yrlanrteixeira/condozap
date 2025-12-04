@@ -108,7 +108,7 @@ export function useSendMessage() {
 
   return useMutation({
     mutationFn: async (input: SendMessageInput) => {
-      const { data } = await api.post('/messages', input)
+      const { data } = await api.post('/messages/send', input)
       return data
     },
     onSuccess: (_, variables) => {

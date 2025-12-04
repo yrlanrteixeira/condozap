@@ -58,6 +58,19 @@ async function main() {
     },
   });
 
+  // Yolan's SUPER_ADMIN account
+  const yrlanAdmin = await prisma.user.create({
+    data: {
+      email: "yrlan.01@hotmail.com",
+      password: hashedPassword,
+      name: "Yolan - Super Admin",
+      role: "SUPER_ADMIN",
+      permissionScope: "GLOBAL",
+      status: "APPROVED",
+      approvedAt: new Date(),
+    },
+  });
+
   const admin = await prisma.user.create({
     data: {
       email: "admin@condozap.com",

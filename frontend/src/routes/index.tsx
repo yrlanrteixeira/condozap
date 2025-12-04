@@ -41,6 +41,9 @@ import { UserApprovalPage } from "@/features/user-approval";
 // User Management Pages
 import { TeamManagementPage } from "@/features/user-management";
 
+// Condominiums Pages
+import { CondominiumsPage } from "@/features/condominiums";
+
 // Access Denied Page
 import { AccessDeniedPage } from "@/pages/AccessDenied";
 
@@ -139,6 +142,16 @@ export function AppRoutes() {
             element={
               <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
                 <TeamManagementPage />
+              </PermissionGuard>
+            }
+          />
+
+          {/* Condominiums Management - SUPER_ADMIN only */}
+          <Route
+            path="condominiums"
+            element={
+              <PermissionGuard permission={Permissions.CREATE_CONDOMINIUM}>
+                <CondominiumsPage />
               </PermissionGuard>
             }
           />
