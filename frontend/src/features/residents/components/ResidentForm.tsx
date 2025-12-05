@@ -35,9 +35,12 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const userCondominiums = useAppSelector(selectCondominiums);
-  const { data: allCondominiums = [] } = useCondominiums();
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const { data: allCondominiums = [] } = useCondominiums({
+    enabled: isSuperAdmin,
+  });
+
   const condominiumsToShow = isSuperAdmin ? allCondominiums : userCondominiums;
   const selectedCondoId = formData.condominiumId || currentCondominiumId || "";
 

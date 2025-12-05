@@ -31,7 +31,9 @@ export function UserApprovalPage() {
   // SUPER_ADMIN sees all pending users, others see by condominium
   const allPendingQuery = useAllPendingUsers();
   const condoPendingQuery = usePendingUsers(currentCondominiumId || "");
-  const { data: condominiums = [] } = useCondominiums();
+  const { data: condominiums = [] } = useCondominiums({
+    enabled: isSuperAdmin,
+  });
 
   const {
     data: pendingUsers = [],

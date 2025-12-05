@@ -1,22 +1,22 @@
-import { AlertTriangle, ArrowRight } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { AlertTriangle, ArrowRight } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { COMPLAINT_CATEGORIES } from '@/config/constants';
+} from "@/components/ui/select";
+import { COMPLAINT_CATEGORIES } from "@/config/constants";
 
 const ComplaintFormSchema = z.object({
   category: z.enum(COMPLAINT_CATEGORIES as [string, ...string[]]),
-  content: z.string().min(10, 'Descrição deve ter ao menos 10 caracteres'),
+  content: z.string().min(10, "Descrição deve ter ao menos 10 caracteres"),
 });
 
 type ComplaintFormData = z.infer<typeof ComplaintFormSchema>;
@@ -35,15 +35,15 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     formState: { errors, isSubmitting },
   } = useForm<ComplaintFormData>({
     resolver: zodResolver(ComplaintFormSchema),
-    mode: 'onBlur',
-    reValidateMode: 'onChange',
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       category: COMPLAINT_CATEGORIES[0],
-      content: '',
+      content: "",
     },
   });
 
-  const category = watch('category');
+  const category = watch("category");
 
   const handleSubmit = (data: ComplaintFormData) => {
     onSubmit({ content: data.content, category: data.category });
@@ -68,10 +68,15 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
               <Select
                 value={category}
                 onValueChange={(value) =>
-                  setValue('category', value as (typeof COMPLAINT_CATEGORIES)[number])
+                  setValue(
+                    "category",
+                    value as (typeof COMPLAINT_CATEGORIES)[number]
+                  )
                 }
               >
-                <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                <SelectTrigger
+                  className={errors.category ? "border-red-500" : ""}
+                >
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -83,7 +88,9 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                 </SelectContent>
               </Select>
               {errors.category && (
-                <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.category.message}
+                </p>
               )}
             </div>
             <div className="sm:col-span-2">
@@ -92,11 +99,13 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
               </label>
               <Input
                 placeholder="Ex: Som alto no andar de cima..."
-                {...register('content')}
-                className={errors.content ? 'border-red-500' : ''}
+                {...register("content")}
+                className={errors.content ? "border-red-500" : ""}
               />
               {errors.content && (
-                <p className="text-xs text-red-500 mt-1">{errors.content.message}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.content.message}
+                </p>
               )}
             </div>
           </div>
@@ -107,7 +116,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
               disabled={isSubmitting}
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {isSubmitting ? 'Enviando...' : 'Enviar Denúncia'}
+              {isSubmitting ? "Enviando..." : "Enviar Denúncia"}
               <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
@@ -116,5 +125,3 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     </Card>
   );
 };
-
-

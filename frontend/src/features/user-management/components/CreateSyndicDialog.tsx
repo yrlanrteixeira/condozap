@@ -24,7 +24,9 @@ interface CreateSyndicDialogProps {
 export function CreateSyndicDialog({ open, onOpenChange, onSuccess }: CreateSyndicDialogProps) {
   const { toast } = useToast();
   const createSyndic = useCreateSyndic();
-  const { data: condominiums = [], isLoading: isLoadingCondos } = useCondominiums();
+  const { data: condominiums = [], isLoading: isLoadingCondos } = useCondominiums({
+    enabled: open, // Só busca quando o dialog está aberto
+  });
 
   const [formData, setFormData] = useState({
     name: '',

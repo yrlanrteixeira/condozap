@@ -238,10 +238,7 @@ export function PendingUserCard({
             {showCondominiumInfo && (
               <div className="space-y-2">
                 <Label htmlFor="condominiumId">Condomínio</Label>
-                <Select
-                  value={condominiumId}
-                  onValueChange={setCondominiumId}
-                >
+                <Select value={condominiumId} onValueChange={setCondominiumId}>
                   <SelectTrigger id="condominiumId">
                     <SelectValue placeholder="Selecione o condomínio" />
                   </SelectTrigger>
@@ -318,9 +315,7 @@ export function PendingUserCard({
                   {user.consentDataProcessing && (
                     <li>Tratamento de dados (LGPD)</li>
                   )}
-                  {user.consentWhatsapp && (
-                    <li>Notificações via WhatsApp</li>
-                  )}
+                  {user.consentWhatsapp && <li>Notificações via WhatsApp</li>}
                 </ul>
               </div>
             )}
