@@ -72,9 +72,12 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                 }
               >
                 <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="" disabled hidden>
+                    Selecione a categoria
+                  </SelectItem>
                   {COMPLAINT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}

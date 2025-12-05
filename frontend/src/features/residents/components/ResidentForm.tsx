@@ -60,6 +60,9 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
               <SelectValue placeholder="Selecione um condomínio" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="" disabled hidden>
+                Selecione um condomínio
+              </SelectItem>
               {condominiumsToShow.map((condo) => (
                 <SelectItem key={condo.id} value={condo.id}>
                   {condo.name}
@@ -133,9 +136,12 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
             onValueChange={(value) => onChange({ ...formData, tower: value })}
           >
             <SelectTrigger id="tower">
-              <SelectValue placeholder="Selecione..." />
+              <SelectValue placeholder="Selecione a torre" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="" disabled hidden>
+                Selecione a torre
+              </SelectItem>
               {towers.length > 0 ? (
                 towers.map((tower) => (
                   <SelectItem key={tower} value={tower}>

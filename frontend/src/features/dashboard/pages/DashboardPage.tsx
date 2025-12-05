@@ -21,7 +21,7 @@ export function DashboardPage() {
   const { user } = useAuth();
 
   // SUPER_ADMIN vê métricas globais, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  const condoIdToFetch = currentCondominiumId || '';
 
   const {
     data: metrics,

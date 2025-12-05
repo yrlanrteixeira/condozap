@@ -1,70 +1,78 @@
-import { AlertTriangle, Building2, Clock, CheckCircle2, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { useApp } from '@/contexts'
-import type { UrgentFeedItem, ComplaintPriority } from '@/types'
-import { cn } from '@/lib/utils'
+import { AlertTriangle, Building2, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useApp } from '@/contexts';
+import type { UrgentFeedItem, ComplaintPriority } from '@/types';
+import { useUnifiedDashboard } from '../hooks/useDashboardApi';
+import { PageHeaderSkeleton, CardSkeleton } from '@/components/ui/skeleton';
 
-// TODO: Buscar dados reais da API
-const MULTI_CONDO_COMPLAINTS: any[] = [];
-const URGENT_FEED: UrgentFeedItem[] = [];
-const CONDOMINIUMS: any[] = [];
 
-const PRIORITY_COLORS: Record<ComplaintPriority, string> = {
-  critical: 'bg-red-500 text-white',
-  high: 'bg-orange-500 text-white',
-  medium: 'bg-yellow-500 text-yellow-900',
-  low: 'bg-blue-500 text-white',
-}
-
-const PRIORITY_LABELS: Record<ComplaintPriority, string> = {
-  critical: 'Crítico',
-  high: 'Alto',
-  medium: 'Médio',
-  low: 'Baixo',
-}
 
 export function UnifiedDashboardPage() {
-  const { setCurrentCondominiumId, getAccessibleCondominiums } = useApp()
+  const { setCurrentCondominiumId, getAccessibleCondominiums } = useApp();
 
-  const accessibleCondos = getAccessibleCondominiums()
-  const totalCondos = accessibleCondos.length
+  const accessibleCondos = getAccessibleCondominiums();
+  const condominiumIds = accessibleCondos.map((c) => c.id);
 
-  // Calcular métricas globais
-  const totalComplaints = MULTI_CONDO_COMPLAINTS.length
-  const criticalComplaints = MULTI_CONDO_COMPLAINTS.filter(c => c.priority === 'critical').length
-  const openComplaints = MULTI_CONDO_COMPLAINTS.filter(c => c.status === 'open').length
-  const inProgressComplaints = MULTI_CONDO_COMPLAINTS.filter(c => c.status === 'in_progress').length
-
-  // Ocorrências por condomínio
-  const complaintsByCondoId = MULTI_CONDO_COMPLAINTS.reduce((acc, complaint) => {
-    if (!acc[complaint.condominiumId]) {
-      acc[complaint.condominiumId] = { total: 0, critical: 0, open: 0 }
-    }
-    acc[complaint.condominiumId].total++
-    if (complaint.priority === 'critical') acc[complaint.condominiumId].critical++
-    if (complaint.status === 'open') acc[complaint.condominiumId].open++
-    return acc
-  }, {} as Record<string, { total: number; critical: number; open: number }>)
+  const { data: dashboardData, isLoading, isError } = useUnifiedDashboard(condominiumIds);
 
   const handleCondoClick = (condoId: string) => {
-    setCurrentCondominiumId(condoId)
-  }
+    setCurrentCondominiumId(condoId);
+  };
 
   const formatTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const date = new Date(timestamp)
-    const diffMs = now.getTime() - date.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-    if (diffHours < 1) return 'Agora mesmo'
-    if (diffHours === 1) return 'Há 1 hora'
-    if (diffHours < 24) return `Há ${diffHours} horas`
-    const diffDays = Math.floor(diffHours / 24)
-    if (diffDays === 1) return 'Há 1 dia'
-    return `Há ${diffDays} dias`
+    if (diffHours < 1) return 'Agora mesmo';
+    if (diffHours === 1) return 'Há 1 hora';
+    if (diffHours < 24) return `Há ${diffHours} horas`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Há 1 dia';
+    return `Há ${diffDays} dias`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6">
+        <PageHeaderSkeleton />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    );
   }
+
+  if (isError || !dashboardData) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-6">
+          <CardContent>
+            <p className="text-muted-foreground">
+              Erro ao carregar o dashboard unificado. Tente novamente mais tarde.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const {
+    totalCondos,
+    totalComplaints,
+    criticalComplaints,
+    openComplaints,
+    inProgressComplaints,
+    urgentFeed,
+    complaintsByCondo,
+  } = dashboardData;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -140,30 +148,37 @@ export function UnifiedDashboardPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
-            Feed de Urgência ({URGENT_FEED.length} não lidas)
+            Feed de Urgência ({urgentFeed.length} não lidas)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {URGENT_FEED.length === 0 ? (
+          {urgentFeed.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>Nenhuma ocorrência urgente no momento</p>
             </div>
           ) : (
-            URGENT_FEED.map((item) => (
+            urgentFeed.map((item) => (
               <div
                 key={item.id}
-                className={cn(
-                  'p-4 rounded-lg border-l-4 hover:bg-accent/50 transition cursor-pointer',
-                  item.priority === 'critical' ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20' : 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                )}
+                className={`p-4 rounded-lg border-l-4 hover:bg-accent/50 transition cursor-pointer ${
+                  item.priority === 'CRITICAL'
+                    ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20'
+                    : 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                }`}
                 onClick={() => handleCondoClick(item.condominiumId)}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className={cn('text-xs', PRIORITY_COLORS[item.priority])}>
-                        {PRIORITY_LABELS[item.priority]}
+                      <Badge
+                        className={`text-xs ${
+                          item.priority === 'CRITICAL'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-orange-500 text-white'
+                        }`}
+                      >
+                        {item.priority === 'CRITICAL' ? 'Crítico' : 'Alto'}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         [{item.condominiumName}]
@@ -188,8 +203,7 @@ export function UnifiedDashboardPage() {
           <CardTitle>Visão por Condomínio</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {accessibleCondos.map((condo) => {
-            const stats = complaintsByCondoId[condo.id] || { total: 0, critical: 0, open: 0 }
+          {complaintsByCondo.map((condo) => {
             return (
               <div
                 key={condo.id}
@@ -203,12 +217,12 @@ export function UnifiedDashboardPage() {
                   </div>
                   <div className="flex gap-4 items-center">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                      <p className="text-2xl font-bold text-foreground">{condo.total}</p>
                       <p className="text-xs text-muted-foreground">Total</p>
                     </div>
-                    {stats.critical > 0 && (
+                    {condo.critical > 0 && (
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
+                        <p className="text-2xl font-bold text-destructive">{condo.critical}</p>
                         <p className="text-xs text-muted-foreground">Críticas</p>
                       </div>
                     )}

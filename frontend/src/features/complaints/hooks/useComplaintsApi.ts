@@ -21,17 +21,12 @@ export function useComplaints(
   condominiumId: string,
   filters?: ComplaintFilters
 ) {
-  const isGlobal = condominiumId === "all";
-  const endpoint = isGlobal
-    ? "/complaints/all"
-    : `/complaints/${condominiumId}`;
+  const endpoint = `/complaints/${condominiumId}`;
 
   return useQuery({
     queryKey: queryKeys.list(condominiumId, filters),
     queryFn: async () => {
-      const { data } = isGlobal
-        ? await api.get(endpoint, { params: filters })
-        : await api.get(endpoint, { params: filters });
+      const { data } = await api.get(endpoint, { params: filters });
       return data.map((complaint: Complaint) =>
         ComplaintSchema.parse(complaint)
       );

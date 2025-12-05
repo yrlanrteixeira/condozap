@@ -149,7 +149,7 @@ export function AdminComplaintsTablePage({
                         }
                       >
                         <SelectTrigger className="h-9 text-xs">
-                          <SelectValue />
+                          <SelectValue placeholder="Alterar status" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="open">

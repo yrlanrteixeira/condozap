@@ -197,23 +197,16 @@ export function TeamManagementPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {isSuperAdmin ? 'Gerenciar Equipe' : 'Conselheiros'}
+              Conselheiros
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isSuperAdmin
-                ? 'Gerencie síndicos e conselheiros do sistema'
-                : 'Cadastre pessoas de confiança para ajudar a gerenciar o condomínio'}
+              Cadastre pessoas de confiança para ajudar a gerenciar o condomínio
             </p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          {isSuperAdmin && (
-            <Button onClick={() => setShowCreateSyndicDialog(true)} variant="outline">
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Novo Síndico
-            </Button>
-          )}
+
           <Button onClick={() => setShowCreateDialog(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Novo Conselheiro
@@ -279,19 +272,7 @@ export function TeamManagementPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {/* Apenas SUPER_ADMIN pode alterar roles */}
-                              {isSuperAdmin && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'ADMIN')}>
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    Tornar Conselheiro
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'SYNDIC')}>
-                                    <ShieldCheck className="mr-2 h-4 w-4" />
-                                    Tornar Síndico
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                </>
-                              )}
+
                               <DropdownMenuItem 
                                 onClick={() => setUserToDelete(user)}
                                 className="text-destructive focus:text-destructive"
@@ -356,13 +337,7 @@ export function TeamManagementPage() {
       />
 
       {/* Create Syndic Dialog (SUPER_ADMIN only) */}
-      {isSuperAdmin && (
-        <CreateSyndicDialog
-          open={showCreateSyndicDialog}
-          onOpenChange={setShowCreateSyndicDialog}
-          onSuccess={() => refetch()}
-        />
-      )}
+
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>

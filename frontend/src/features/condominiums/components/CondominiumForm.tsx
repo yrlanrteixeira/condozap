@@ -153,6 +153,9 @@ export function CondominiumForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="" disabled hidden>
+                          Selecione o status
+                        </SelectItem>
                         <SelectItem value="TRIAL">Trial</SelectItem>
                         <SelectItem value="ACTIVE">Ativo</SelectItem>
                         <SelectItem value="SUSPENDED">Suspenso</SelectItem>
