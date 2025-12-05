@@ -53,7 +53,6 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { isSuperAdmin, isProfessionalSyndic, isSyndic } = useRole();
   const { can } = usePermissions();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
@@ -119,14 +118,14 @@ export const Sidebar = ({
   // - SUPER_ADMIN: sempre tem acesso (gerencia todos)
   // - SYNDIC: se tiver mais de 1 condomínio vinculado pelo SUPER_ADMIN
   const hasMultipleCondos = user?.condominiums && user.condominiums.length > 1;
-  if (isSuperAdmin || isProfessionalSyndic || (isSyndic && hasMultipleCondos)) {
-    navItems.unshift({
-      title: "Dashboard Unificado",
-      href: "/unified-dashboard",
-      icon: LayoutDashboard,
-      permission: Permissions.VIEW_UNIFIED_DASHBOARD,
-    });
-  }
+  // if (isSuperAdmin || isProfessionalSyndic || (isSyndic && hasMultipleCondos)) {
+  //   navItems.unshift({
+  //     title: "Dashboard Unificado",
+  //     href: "/unified-dashboard",
+  //     icon: LayoutDashboard,
+  //     permission: Permissions.VIEW_UNIFIED_DASHBOARD,
+  //   });
+  // }
 
   const bottomNavItems: NavItem[] = [
     {

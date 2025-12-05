@@ -152,7 +152,7 @@ export function AdminComplaintsTablePage({
                           <SelectValue placeholder="Alterar status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="open">
+                          <SelectItem value="OPEN">
                             <div className="flex items-center gap-2">
                               <AlertTriangle
                                 size={14}
@@ -161,13 +161,13 @@ export function AdminComplaintsTablePage({
                               Em Fila
                             </div>
                           </SelectItem>
-                          <SelectItem value="in_progress">
+                          <SelectItem value="IN_PROGRESS">
                             <div className="flex items-center gap-2">
                               <Clock size={14} className="text-yellow-500" />
                               Averiguando
                             </div>
                           </SelectItem>
-                          <SelectItem value="resolved">
+                          <SelectItem value="RESOLVED">
                             <div className="flex items-center gap-2">
                               <CheckCircle
                                 size={14}
