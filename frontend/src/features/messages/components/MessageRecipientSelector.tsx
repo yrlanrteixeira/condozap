@@ -69,9 +69,6 @@ export const MessageRecipientSelector = ({
               <SelectValue placeholder="Selecione Torre" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="" disabled hidden>
-                Selecione uma torre
-              </SelectItem>
               {towers.length > 0 ? (
                 towers.map((tower) => (
                   <SelectItem key={tower} value={tower}>

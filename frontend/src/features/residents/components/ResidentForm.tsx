@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppSelector } from "@/hooks";
-import { selectCurrentCondominiumId, selectCondominiums } from "@/store/slices/condominiumSlice";
+import {
+  selectCurrentCondominiumId,
+  selectCondominiums,
+} from "@/store/slices/condominiumSlice";
 import { useTowers } from "../hooks/useResidentsApi";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 
@@ -33,13 +36,13 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const userCondominiums = useAppSelector(selectCondominiums);
   const { data: allCondominiums = [] } = useCondominiums();
-  
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const condominiumsToShow = isSuperAdmin ? allCondominiums : userCondominiums;
   const selectedCondoId = formData.condominiumId || currentCondominiumId || "";
-  
+
   const { data: towers = [] } = useTowers(selectedCondoId);
-  
+
   return (
     <div className="space-y-4 py-4">
       {/* Condomínio - Apenas para SUPER_ADMIN */}
@@ -53,16 +56,15 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
             Condomínio
           </label>
           <Select
-            value={formData.condominiumId || currentCondominiumId || ""}
-            onValueChange={(value) => onChange({ ...formData, condominiumId: value })}
+            value={formData.condominiumId || currentCondominiumId || undefined}
+            onValueChange={(value) =>
+              onChange({ ...formData, condominiumId: value })
+            }
           >
             <SelectTrigger id="condominium">
               <SelectValue placeholder="Selecione um condomínio" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="" disabled hidden>
-                Selecione um condomínio
-              </SelectItem>
               {condominiumsToShow.map((condo) => (
                 <SelectItem key={condo.id} value={condo.id}>
                   {condo.name}
@@ -72,7 +74,7 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
           </Select>
         </div>
       )}
-      
+
       <div className="space-y-2">
         <label
           htmlFor="name"
@@ -139,9 +141,6 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
               <SelectValue placeholder="Selecione a torre" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="" disabled hidden>
-                Selecione a torre
-              </SelectItem>
               {towers.length > 0 ? (
                 towers.map((tower) => (
                   <SelectItem key={tower} value={tower}>
