@@ -83,7 +83,7 @@ export const Header = ({
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <Select
-            value={currentCondominiumId || ""}
+            value={currentCondominiumId || undefined}
             onValueChange={handleCondominiumChange}
           >
             <SelectTrigger className="w-[200px]">

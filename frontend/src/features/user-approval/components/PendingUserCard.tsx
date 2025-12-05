@@ -246,9 +246,6 @@ export function PendingUserCard({
                     <SelectValue placeholder="Selecione o condomínio" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="" disabled hidden>
-                      Selecione um condomínio
-                    </SelectItem>
                     {condominiums.map((condo) => (
                       <SelectItem key={condo.id} value={condo.id}>
                         {condo.name}

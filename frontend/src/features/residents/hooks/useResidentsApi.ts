@@ -53,14 +53,14 @@ export function useResident(residentId: string) {
 // =====================================================
 
 export function useTowers(condominiumId: string) {
-  return useQuery({
+  return useQuery<string[]>({
     queryKey: queryKeys.towers(condominiumId),
     queryFn: async () => {
       // TODO: Backend doesn't have this endpoint yet
       // Get unique towers from residents
       const { data } = await api.get(`/residents/${condominiumId}`);
       const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
-      return uniqueTowers.sort();
+      return uniqueTowers.sort() as string[];
     },
     enabled: !!condominiumId,
   });

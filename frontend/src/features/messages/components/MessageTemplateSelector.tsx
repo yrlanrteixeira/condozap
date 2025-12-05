@@ -23,9 +23,6 @@ export const MessageTemplateSelector = ({
           <SelectValue placeholder="Selecione um template" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="" disabled hidden>
-            Selecione um template
-          </SelectItem>
           {TEMPLATES.map((t) => (
             <SelectItem key={t.name} value={t.name}>
               {t.label}

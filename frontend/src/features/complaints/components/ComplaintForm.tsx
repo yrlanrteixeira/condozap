@@ -75,9 +75,6 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="" disabled hidden>
-                    Selecione a categoria
-                  </SelectItem>
                   {COMPLAINT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
