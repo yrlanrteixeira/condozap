@@ -34,7 +34,9 @@ export const Header = ({
   const userCondominiums = useAppSelector(selectCondominiums);
 
   // SUPER_ADMIN pode ver todos os condomínios
-  const { data: allCondominiums = [] } = useCondominiums();
+  const { data: allCondominiums = [] } = useCondominiums({
+    enabled: user?.role === "SUPER_ADMIN",
+  });
 
   const condominiumsToShow =
     user?.role === "SUPER_ADMIN" ? allCondominiums : userCondominiums;

@@ -16,7 +16,7 @@ const queryKeys = {
 /**
  * Hook to fetch all condominiums (SUPER_ADMIN only)
  */
-export function useCondominiums() {
+export function useCondominiums(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.condominiums(),
     queryFn: async (): Promise<Condominium[]> => {
@@ -24,6 +24,7 @@ export function useCondominiums() {
       return data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: options?.enabled !== false,
   });
 }
 

@@ -2,11 +2,11 @@
  * Condominium Form Component
  */
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -15,14 +15,14 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -30,15 +30,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { CreateCondominiumSchema, type CreateCondominiumInput } from '../schemas';
-import type { Condominium, CondominiumStatus } from '../types';
+} from "@/components/ui/dialog";
+import {
+  CreateCondominiumSchema,
+  type CreateCondominiumInput,
+} from "../schemas";
+import type { Condominium, CondominiumStatus } from "../types";
 
 interface CondominiumFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   condominium?: Condominium | null;
-  onSubmit: (data: CreateCondominiumInput & { status?: CondominiumStatus }) => Promise<void>;
+  onSubmit: (
+    data: CreateCondominiumInput & { status?: CondominiumStatus }
+  ) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -51,20 +56,24 @@ export function CondominiumForm({
 }: CondominiumFormProps) {
   const isEditing = !!condominium;
 
-  const form = useForm<CreateCondominiumInput & { status?: CondominiumStatus }>({
-    resolver: zodResolver(CreateCondominiumSchema),
-    mode: 'onBlur',
-    reValidateMode: 'onChange',
-    defaultValues: {
-      name: condominium?.name || '',
-      cnpj: condominium?.cnpj || '',
-      whatsappPhone: condominium?.whatsappPhone || '',
-      whatsappBusinessId: condominium?.whatsappBusinessId || '',
-      status: condominium?.status || 'TRIAL',
-    },
-  });
+  const form = useForm<CreateCondominiumInput & { status?: CondominiumStatus }>(
+    {
+      resolver: zodResolver(CreateCondominiumSchema),
+      mode: "onBlur",
+      reValidateMode: "onChange",
+      defaultValues: {
+        name: condominium?.name || "",
+        cnpj: condominium?.cnpj || "",
+        whatsappPhone: condominium?.whatsappPhone || "",
+        whatsappBusinessId: condominium?.whatsappBusinessId || "",
+        status: condominium?.status || "TRIAL",
+      },
+    }
+  );
 
-  const handleSubmit = async (data: CreateCondominiumInput & { status?: CondominiumStatus }) => {
+  const handleSubmit = async (
+    data: CreateCondominiumInput & { status?: CondominiumStatus }
+  ) => {
     await onSubmit(data);
     form.reset();
   };
@@ -77,12 +86,12 @@ export function CondominiumForm({
   };
 
   // Reset form when condominium changes
-  if (condominium && form.getValues('name') !== condominium.name) {
+  if (condominium && form.getValues("name") !== condominium.name) {
     form.reset({
       name: condominium.name,
       cnpj: condominium.cnpj,
-      whatsappPhone: condominium.whatsappPhone || '',
-      whatsappBusinessId: condominium.whatsappBusinessId || '',
+      whatsappPhone: condominium.whatsappPhone || "",
+      whatsappBusinessId: condominium.whatsappBusinessId || "",
       status: condominium.status,
     });
   }
@@ -92,17 +101,20 @@ export function CondominiumForm({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? 'Editar Condomínio' : 'Novo Condomínio'}
+            {isEditing ? "Editar Condomínio" : "Novo Condomínio"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Atualize as informações do condomínio'
-              : 'Preencha os dados para criar um novo condomínio'}
+              ? "Atualize as informações do condomínio"
+              : "Preencha os dados para criar um novo condomínio"}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -110,7 +122,10 @@ export function CondominiumForm({
                 <FormItem>
                   <FormLabel>Nome do Condomínio</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Condomínio Vista Verde" {...field} />
+                    <Input
+                      placeholder="Ex: Condomínio Vista Verde"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -196,9 +211,9 @@ export function CondominiumForm({
                     Salvando...
                   </>
                 ) : isEditing ? (
-                  'Salvar Alterações'
+                  "Salvar Alterações"
                 ) : (
-                  'Criar Condomínio'
+                  "Criar Condomínio"
                 )}
               </Button>
             </DialogFooter>
@@ -208,4 +223,3 @@ export function CondominiumForm({
     </Dialog>
   );
 }
-

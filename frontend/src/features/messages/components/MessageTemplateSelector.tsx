@@ -4,8 +4,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TEMPLATES } from '@/config/constants';
+} from "@/components/ui/select";
+import { TEMPLATES } from "@/config/constants";
 
 interface MessageTemplateSelectorProps {
   templateId: string;
@@ -36,4 +36,3 @@ export const MessageTemplateSelector = ({
     </div>
   );
 };
-
