@@ -262,6 +262,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
   [UserRoles.ADMIN]: [
     // Dashboard
     Permissions.VIEW_DASHBOARD,
+    Permissions.VIEW_UNIFIED_DASHBOARD,
     Permissions.VIEW_METRICS,
 
     // Condomínios

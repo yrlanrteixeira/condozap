@@ -18,8 +18,8 @@ export function StructurePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
 
-  // SUPER_ADMIN vê todos os moradores, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  // Buscar moradores do condomínio selecionado
+  const condoIdToFetch = currentCondominiumId || '';
 
   const {
     data: residents,
@@ -76,8 +76,8 @@ export function StructurePage() {
     );
   }
 
-  // SUPER_ADMIN pode acessar sem condomínio selecionado (vê todos)
-  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
+  // Validar se há condomínio selecionado
+  if (isError || !currentCondominiumId) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="border-border">

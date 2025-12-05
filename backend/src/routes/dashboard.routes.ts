@@ -221,4 +221,122 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
 
     return reply.send(metrics)
   })
+
+  // Get unified dashboard metrics for multiple condominiums
+  fastify.get('/unified', {
+    onRequest: [fastify.authenticate],
+  }, async (request, reply) => {
+    const user = request.user as any;
+    const { condominiumIds } = request.query as { condominiumIds?: string };
+
+    if (!condominiumIds) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'condominiumIds é obrigatório',
+      });
+    }
+
+    const condoIds = condominiumIds.split(',').filter((id) => id.trim() !== '');
+
+    if (condoIds.length === 0) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'Pelo menos um condomínio deve ser informado',
+      });
+    }
+
+    // Fetch condominiums data
+    const condominiums = await prisma.condominium.findMany({
+      where: { id: { in: condoIds } },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (condominiums.length === 0) {
+      return reply.send({
+        totalCondos: 0,
+        totalComplaints: 0,
+        criticalComplaints: 0,
+        openComplaints: 0,
+        inProgressComplaints: 0,
+        urgentFeed: [],
+        complaintsByCondo: [],
+      });
+    }
+
+    // Fetch all complaints for these condominiums
+    const complaints = await prisma.complaint.findMany({
+      where: { condominiumId: { in: condoIds } },
+      select: {
+        id: true,
+        condominiumId: true,
+        category: true,
+        content: true,
+        status: true,
+        priority: true,
+        createdAt: true,
+        resident: {
+          select: {
+            name: true,
+          },
+        },
+        condominium: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Calculate totals
+    const totalCondos = condominiums.length;
+    const totalComplaints = complaints.length;
+    const openComplaints = complaints.filter((c) => c.status === 'OPEN').length;
+    const inProgressComplaints = complaints.filter((c) => c.status === 'IN_PROGRESS').length;
+    const criticalComplaints = complaints.filter((c) => c.priority === 'CRITICAL').length;
+
+    // Build urgent feed (CRITICAL and HIGH priority, OPEN or IN_PROGRESS)
+    const urgentFeed = complaints
+      .filter((c) => 
+        (c.priority === 'CRITICAL' || c.priority === 'HIGH') && 
+        (c.status === 'OPEN' || c.status === 'IN_PROGRESS')
+      )
+      .slice(0, 20) // Limit to 20 most recent
+      .map((c) => ({
+        id: c.id.toString(),
+        title: c.category,
+        description: c.content.substring(0, 150) + (c.content.length > 150 ? '...' : ''),
+        priority: c.priority as 'CRITICAL' | 'HIGH',
+        timestamp: c.createdAt.toISOString(),
+        condominiumId: c.condominiumId,
+        condominiumName: c.condominium.name,
+      }));
+
+    // Build complaints by condominium
+    const complaintsByCondo = condominiums.map((condo) => {
+      const condoComplaints = complaints.filter((c) => c.condominiumId === condo.id);
+      return {
+        id: condo.id,
+        name: condo.name,
+        address: '', // Condominium doesn't have address in schema, can be added later
+        total: condoComplaints.length,
+        critical: condoComplaints.filter((c) => c.priority === 'CRITICAL').length,
+      };
+    });
+
+    return reply.send({
+      totalCondos,
+      totalComplaints,
+      criticalComplaints,
+      openComplaints,
+      inProgressComplaints,
+      urgentFeed,
+      complaintsByCondo,
+    });
+  });
 }

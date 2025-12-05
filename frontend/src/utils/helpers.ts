@@ -7,21 +7,27 @@ export function filterResidentsByTarget(
   residents: Resident[],
   targetData: TargetData
 ): Resident[] {
+  // Filtrar apenas moradores com consentimento de WhatsApp
+  const residentsWithConsent = residents.filter((r) => r.consentWhatsapp);
+
   switch (targetData.scope) {
     case "ALL":
-      return residents;
+      return residentsWithConsent;
     case "TOWER":
-      return residents.filter((r) => r.tower === targetData.tower);
+      return residentsWithConsent.filter((r) => r.tower === targetData.tower);
     case "FLOOR":
-      return residents.filter(
+      return residentsWithConsent.filter(
         (r) => r.tower === targetData.tower && r.floor === targetData.floor
       );
     case "UNIT":
-      return residents.filter(
-        (r) => r.tower === targetData.tower && r.unit === targetData.unit
+      return residentsWithConsent.filter(
+        (r) => 
+          r.tower === targetData.tower && 
+          r.floor === targetData.floor && 
+          r.unit === targetData.unit
       );
     default:
-      return residents;
+      return residentsWithConsent;
   }
 }
 
