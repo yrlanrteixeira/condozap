@@ -45,28 +45,27 @@ export interface DashboardMetrics {
 }
 
 export interface UnifiedDashboardMetrics {
-  condominiums: Array<{
+  totalCondos: number
+  totalComplaints: number
+  criticalComplaints: number
+  openComplaints: number
+  inProgressComplaints: number
+  urgentFeed: Array<{
+    id: string
+    title: string
+    description: string
+    priority: ComplaintPriority
+    timestamp: string
     condominiumId: string
     condominiumName: string
-    metrics: DashboardMetrics
   }>
-  totals: {
-    complaints: {
-      total: number
-      open: number
-      inProgress: number
-      resolved: number
-      critical: number
-    }
-    residents: {
-      total: number
-      withConsent: number
-    }
-    messages: {
-      totalSent: number
-      last7Days: number
-    }
-  }
+  complaintsByCondo: Array<{
+    id: string
+    name: string
+    address: string
+    total: number
+    critical: number
+  }>
 }
 
 
