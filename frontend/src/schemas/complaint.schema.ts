@@ -6,12 +6,12 @@ import { COMPLAINT_CATEGORIES } from "@/config/constants";
  * Suporta validação de formulários e atualizações de status
  */
 
-export const ComplaintStatusEnum = z.enum(["open", "in_progress", "resolved"]);
+export const ComplaintStatusEnum = z.enum(["OPEN", "IN_PROGRESS", "RESOLVED"]);
 export const ComplaintPriorityEnum = z.enum([
-  "critical",
-  "high",
-  "medium",
-  "low",
+  "CRITICAL",
+  "HIGH",
+  "MEDIUM",
+  "LOW",
 ]);
 
 export const ComplaintSchema = z.object({
@@ -28,7 +28,7 @@ export const ComplaintSchema = z.object({
     .string()
     .min(10, "Descrição deve ter ao menos 10 caracteres")
     .max(1000, "Descrição muito longa (máximo 1000 caracteres)"),
-  status: ComplaintStatusEnum.default("open"),
+  status: ComplaintStatusEnum.default("OPEN"),
   priority: ComplaintPriorityEnum.optional(),
   timestamp: z.string().datetime().optional(), // ISO 8601
   isAnonymous: z.boolean().default(false).optional(),
