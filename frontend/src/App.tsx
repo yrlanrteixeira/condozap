@@ -27,7 +27,7 @@ export default function App() {
       <PersistGate loading={<LoadingFallback />} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider defaultTheme="system" storageKey="condozap-ui-theme">
-            <BrowserRouter basename="/">
+            <BrowserRouter>
               <AuthProvider>
                 <AppProvider>
                   <AppRoutes />
