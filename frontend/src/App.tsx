@@ -1,4 +1,4 @@
-import { HashRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -27,14 +27,14 @@ export default function App() {
       <PersistGate loading={<LoadingFallback />} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider defaultTheme="system" storageKey="condozap-ui-theme">
-            <HashRouter>
+            <BrowserRouter>
               <AuthProvider>
                 <AppProvider>
                   <AppRoutes />
                   <Toaster />
                 </AppProvider>
               </AuthProvider>
-            </HashRouter>
+            </BrowserRouter>
             {import.meta.env.DEV && (
               <ReactQueryDevtools initialIsOpen={false} />
             )}
