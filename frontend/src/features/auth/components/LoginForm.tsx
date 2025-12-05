@@ -1,27 +1,34 @@
-import { Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { LoginSchema, type LoginInput } from '../schemas'
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { LoginSchema, type LoginInput } from "../schemas";
 
 interface LoginFormProps {
-  onSubmit: (values: LoginInput) => Promise<void>
-  error: string | null
+  onSubmit: (values: LoginInput) => Promise<void>;
+  error: string | null;
 }
 
 export function LoginForm({ onSubmit, error }: LoginFormProps) {
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
-  })
+  });
 
-  const isSubmitting = form.formState.isSubmitting
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <Form {...form}>
@@ -44,6 +51,28 @@ export function LoginForm({ onSubmit, error }: LoginFormProps) {
             </FormItem>
           )}
         />
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Entrando...
+            </>
+          ) : (
+            "Entrar"
+          )}
+        </Button>
 
         <FormField
           control={form.control}
@@ -71,31 +100,7 @@ export function LoginForm({ onSubmit, error }: LoginFormProps) {
             </FormItem>
           )}
         />
-
-        {error && (
-          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
-            {error}
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Entrando...
-            </>
-          ) : (
-            'Entrar'
-          )}
-        </Button>
       </form>
     </Form>
-  )
+  );
 }
-
-

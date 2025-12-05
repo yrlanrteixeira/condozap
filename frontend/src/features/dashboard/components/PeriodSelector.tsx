@@ -27,6 +27,9 @@ export function PeriodSelector({ period, onPeriodChange }: PeriodSelectorProps) 
         <SelectValue placeholder="Selecione o período" />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="" disabled hidden>
+          Selecione o período
+        </SelectItem>
         {Object.entries(PERIODS).map(([key, label]) => (
           <SelectItem key={key} value={key}>
             {label}

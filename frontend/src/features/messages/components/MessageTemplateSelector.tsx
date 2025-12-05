@@ -20,9 +20,12 @@ export const MessageTemplateSelector = ({
     <div className="space-y-3">
       <Select value={templateId} onValueChange={onTemplateChange}>
         <SelectTrigger>
-          <SelectValue />
+          <SelectValue placeholder="Selecione um template" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="" disabled hidden>
+            Selecione um template
+          </SelectItem>
           {TEMPLATES.map((t) => (
             <SelectItem key={t.name} value={t.name}>
               {t.label}
