@@ -181,12 +181,12 @@ export function MessagingPage() {
   }
 
   return (
-    <div className="flex-1 flex items-start justify-center p-4 sm:p-6 lg:p-8">
+    <div className="flex-1 flex items-start justify-center p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="w-full max-w-3xl">
         <MessageHeader />
 
         <Card className="shadow-lg">
-          <CardContent className="p-6 sm:p-8 space-y-6 sm:space-y-8">
+          <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
             <MessageRecipientSelector
               scope={scope}
               onScopeChange={setScope}

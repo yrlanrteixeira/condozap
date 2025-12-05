@@ -27,8 +27,8 @@ export const CreateResidentSchema = z.object({
   floor: z.string().min(1, "Andar é obrigatório"),
   unit: z.string().min(1, "Unidade é obrigatória"),
   type: z.enum(["OWNER", "TENANT"]),
-  consentWhatsapp: z.boolean().optional().default(false),
-  consentDataProcessing: z.boolean().optional().default(false),
+  consentWhatsapp: z.boolean().optional().default(true),
+  consentDataProcessing: z.boolean().optional().default(true),
 });
 
 export const UpdateResidentSchema = CreateResidentSchema.partial().extend({

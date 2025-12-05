@@ -17,6 +17,7 @@ import { userManagementRoutes } from "./routes/user-management.routes.js";
 import { evolutionRoutes } from "./routes/evolution.routes.js";
 import { condominiumsRoutes } from "./routes/condominiums.routes.js";
 import { historyRoutes } from "./routes/history.routes.js";
+import { structureRoutes } from "./routes/structure.routes.js";
 
 // Create Fastify instance
 const fastify = Fastify({
@@ -83,6 +84,7 @@ await fastify.register(evolutionRoutes, { prefix: "/api/evolution" });
 await fastify.register(dashboardRoutes, { prefix: "/api/dashboard" });
 await fastify.register(condominiumsRoutes, { prefix: "/api/condominiums" });
 await fastify.register(historyRoutes, { prefix: "/api/history" });
+await fastify.register(structureRoutes, { prefix: "/api/structure" });
 
 // Error handler
 fastify.setErrorHandler((error, _request, reply) => {

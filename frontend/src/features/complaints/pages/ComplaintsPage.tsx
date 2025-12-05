@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,7 +9,7 @@ import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
 import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector } from "@/hooks";
+import { useAppSelector, useIsMobile } from "@/hooks";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import {
@@ -21,7 +21,15 @@ import {
 type ViewMode = "kanban" | "table";
 
 export function ComplaintsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const isMobile = useIsMobile();
+  
+  // No mobile, inicia com modo tabela (cards), no desktop com kanban
+  const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? "table" : "kanban");
+  
+  // Atualizar viewMode quando mudar entre mobile/desktop
+  useEffect(() => {
+    setViewMode(isMobile ? "table" : "kanban");
+  }, [isMobile]);
   const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(
     null
   );

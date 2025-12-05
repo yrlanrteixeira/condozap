@@ -14,6 +14,7 @@ import {
   selectCondominiums,
 } from "@/store/slices/condominiumSlice";
 import { useTowers } from "../hooks/useResidentsApi";
+import { useStructure } from "@/features/structure/hooks/useStructureApi";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 
 export interface ResidentFormData {
@@ -44,7 +45,13 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
   const condominiumsToShow = isSuperAdmin ? allCondominiums : userCondominiums;
   const selectedCondoId = formData.condominiumId || currentCondominiumId || "";
 
-  const { data: towers = [] } = useTowers(selectedCondoId);
+  // Buscar estrutura configurada do condomínio
+  const { data: structureData } = useStructure(selectedCondoId);
+  
+  // Se houver estrutura configurada, usar as torres dela, senão buscar do backend
+  const { data: towersFromResidents = [] } = useTowers(selectedCondoId);
+  
+  const towers = structureData?.structure?.towers?.map(t => t.name) || towersFromResidents;
 
   return (
     <div className="space-y-4 py-4">

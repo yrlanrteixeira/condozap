@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../lib/prisma.js";
+import { requireSuperAdmin } from "../middlewares/index.js";
 
 type ComplaintData = {
   status: string;
@@ -26,18 +27,9 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/metrics/all",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const user = request.user as any;
-
-      if (user.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Apenas SUPER_ADMIN pode ver métricas globais.",
-        });
-      }
-
+    async (_request, reply) => {
       // Fetch all data (all condominiums)
       const [complaints, residents, messages] = await Promise.all([
         prisma.complaint.findMany({

@@ -1,96 +1,44 @@
 import { FastifyPluginAsync } from "fastify";
-import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { whatsappService } from "../services/whatsapp.service.js";
-
-const createComplaintSchema = z.object({
-  condominiumId: z.string(),
-  residentId: z.string(),
-  category: z.string(),
-  content: z.string(),
-  priority: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]).optional(),
-  isAnonymous: z.boolean().optional(),
-});
-
-const updateStatusSchema = z.object({
-  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED"]),
-  notes: z.string().optional(),
-});
-
-const updatePrioritySchema = z.object({
-  priority: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]),
-});
-
-const addCommentSchema = z.object({
-  notes: z.string().min(1, "Comentário não pode ser vazio"),
-});
+import { requireSuperAdmin } from "../middlewares/index.js";
+import * as complaintService from "../services/complaints.service.js";
+import {
+  validateCreateComplaint,
+  validateUpdateStatus,
+  validateUpdatePriority,
+  validateAddComment,
+} from "../schemas/complaints.js";
+import type {
+  CreateComplaintRequest,
+  UpdateComplaintStatusRequest,
+  UpdateComplaintPriorityRequest,
+  AddComplaintCommentRequest,
+  ComplaintFilters,
+} from "../types/requests.js";
 
 export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
-  // Get all complaints from ALL condominiums (SUPER_ADMIN only)
+  // =====================================================
+  // GET /complaints/all
+  // Get all complaints (SUPER_ADMIN only)
+  // =====================================================
   fastify.get(
     "/all",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
-      const user = request.user as any;
+      const filters = request.query as ComplaintFilters;
 
-      if (user.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Apenas SUPER_ADMIN pode ver todas as ocorrências.",
-        });
-      }
-
-      const { status, priority, category, condominiumId } = request.query as {
-        status?: string;
-        priority?: string;
-        category?: string;
-        condominiumId?: string;
-      };
-
-      const complaints = await prisma.complaint.findMany({
-        where: {
-          ...(condominiumId && { condominiumId }),
-          ...(status && { status: status as any }),
-          ...(priority && { priority: priority as any }),
-          ...(category && { category }),
-        },
-        include: {
-          condominium: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          resident: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              tower: true,
-              floor: true,
-              unit: true,
-            },
-          },
-          attachments: true,
-          statusHistory: {
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-        },
-        orderBy: [
-          { condominium: { name: "asc" } },
-          { createdAt: "desc" },
-        ],
-      });
+      const complaints = await complaintService.getAllComplaints(prisma, filters);
 
       return reply.send(complaints);
     }
   );
 
-  // Get all complaints for a condominium
+  // =====================================================
+  // GET /complaints/:condominiumId
+  // Get complaints by condominium
+  // =====================================================
   fastify.get(
     "/:condominiumId",
     {
@@ -98,47 +46,22 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { condominiumId } = request.params as { condominiumId: string };
-      const { status, priority, category } = request.query as {
-        status?: string;
-        priority?: string;
-        category?: string;
-      };
+      const filters = request.query as Omit<ComplaintFilters, "condominiumId">;
 
-      const complaints = await prisma.complaint.findMany({
-        where: {
-          condominiumId,
-          ...(status && { status: status as any }),
-          ...(priority && { priority: priority as any }),
-          ...(category && { category }),
-        },
-        include: {
-          resident: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              tower: true,
-              floor: true,
-              unit: true,
-            },
-          },
-          attachments: true,
-          statusHistory: {
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      const complaints = await complaintService.getComplaintsByCondominium(
+        prisma,
+        condominiumId,
+        filters
+      );
 
       return reply.send(complaints);
     }
   );
 
+  // =====================================================
+  // GET /complaints/detail/:id
   // Get single complaint
+  // =====================================================
   fastify.get(
     "/detail/:id",
     {
@@ -147,18 +70,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const { id } = request.params as { id: string };
 
-      const complaint = await prisma.complaint.findUnique({
-        where: { id: parseInt(id) },
-        include: {
-          resident: true,
-          attachments: true,
-          statusHistory: {
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-        },
-      });
+      const complaint = await complaintService.getComplaintById(prisma, parseInt(id));
 
       if (!complaint) {
         return reply.status(404).send({ error: "Complaint not found" });
@@ -168,70 +80,42 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // =====================================================
+  // POST /complaints
   // Create complaint
+  // =====================================================
   fastify.post(
     "/",
     {
       onRequest: [fastify.authenticate],
     },
     async (request, reply) => {
-      const body = createComplaintSchema.parse(request.body);
+      const body = request.body as CreateComplaintRequest;
 
-      // Get resident info for notification
-      const resident = await prisma.resident.findUnique({
-        where: { id: body.residentId },
-      });
-
-      if (!resident) {
-        return reply.status(404).send({ error: "Resident not found" });
+      // Validate
+      const validationError = validateCreateComplaint(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      // Create complaint
-      const complaint = await prisma.complaint.create({
-        data: {
-          condominiumId: body.condominiumId,
-          residentId: body.residentId,
-          category: body.category,
-          content: body.content,
-          priority: body.priority || "MEDIUM",
-          isAnonymous: body.isAnonymous || false,
-        },
-        include: {
-          resident: true,
-          attachments: true,
-        },
-      });
-
-      // Send WhatsApp notification to resident
-      if (resident.consentWhatsapp && !body.isAnonymous) {
-        try {
-          const priorityEmoji = {
-            CRITICAL: "🔴",
-            HIGH: "🟠",
-            MEDIUM: "🟡",
-            LOW: "🟢",
-          }[complaint.priority];
-
-          let message = `📢 *Denúncia Registrada com Sucesso*\n\n`;
-          message += `Olá ${resident.name}!\n\n`;
-          message += `Sua denúncia foi recebida e registrada no sistema.\n\n`;
-          message += `🆔 Protocolo: *#${complaint.id}*\n`;
-          message += `📋 Categoria: ${body.category}\n`;
-          message += `${priorityEmoji} Prioridade: ${complaint.priority}\n`;
-          message += `📅 Data: ${new Date().toLocaleDateString("pt-BR")}\n\n`;
-          message += `Você pode acompanhar o andamento pelo sistema CondoZap.`;
-
-          await whatsappService.sendTextMessage(resident.phone, message);
-        } catch (error) {
-          fastify.log.error({ error }, "Failed to send WhatsApp notification");
-        }
+      try {
+        const complaint = await complaintService.createComplaint(
+          prisma,
+          fastify.log,
+          body
+        );
+        return reply.status(201).send(complaint);
+      } catch (error: any) {
+        const status = error.message.includes("not found") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      return reply.status(201).send(complaint);
     }
   );
 
+  // =====================================================
+  // PATCH /complaints/:id/status
   // Update complaint status
+  // =====================================================
   fastify.patch(
     "/:id/status",
     {
@@ -239,87 +123,35 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const body = updateStatusSchema.parse(request.body);
+      const body = request.body as UpdateComplaintStatusRequest;
       const userId = (request.user as any).id;
 
-      const complaint = await prisma.complaint.findUnique({
-        where: { id: parseInt(id) },
-        include: { resident: true },
-      });
-
-      if (!complaint) {
-        return reply.status(404).send({ error: "Complaint not found" });
+      // Validate
+      const validationError = validateUpdateStatus(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      // Update complaint status
-      const updated = await prisma.complaint.update({
-        where: { id: parseInt(id) },
-        data: {
-          status: body.status,
-          ...(body.status === "RESOLVED" && {
-            resolvedAt: new Date(),
-            resolvedBy: userId,
-          }),
-        },
-        include: {
-          resident: true,
-          statusHistory: true,
-        },
-      });
-
-      // Create status history
-      await prisma.complaintStatusHistory.create({
-        data: {
-          complaintId: parseInt(id),
-          fromStatus: complaint.status,
-          toStatus: body.status,
-          changedBy: userId,
-          notes: body.notes,
-        },
-      });
-
-      // Send WhatsApp notification
-      if (complaint.resident.consentWhatsapp) {
-        try {
-          const statusEmoji = {
-            OPEN: "🔵",
-            IN_PROGRESS: "🟡",
-            RESOLVED: "✅",
-          }[body.status];
-
-          const statusText = {
-            OPEN: "Aberta",
-            IN_PROGRESS: "Em Andamento",
-            RESOLVED: "Resolvida",
-          }[body.status];
-
-          let message = `${statusEmoji} *Atualização da Denúncia #${complaint.id}*\n\n`;
-          message += `Olá ${complaint.resident.name}!\n\n`;
-          message += `Status alterado para: *${statusText}*\n`;
-          message += `Categoria: ${complaint.category}\n`;
-
-          if (body.notes) {
-            message += `\n📝 Observação:\n${body.notes}`;
-          }
-
-          if (body.status === "RESOLVED") {
-            message += `\n\n✅ Sua denúncia foi resolvida! Obrigado por utilizar o CondoZap.`;
-          }
-
-          await whatsappService.sendTextMessage(
-            complaint.resident.phone,
-            message
-          );
-        } catch (error) {
-          fastify.log.error({ error }, "Failed to send WhatsApp notification");
-        }
+      try {
+        const updated = await complaintService.updateComplaintStatus(
+          prisma,
+          fastify.log,
+          parseInt(id),
+          body,
+          userId
+        );
+        return reply.send(updated);
+      } catch (error: any) {
+        const status = error.message.includes("not found") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      return reply.send(updated);
     }
   );
 
+  // =====================================================
+  // PATCH /complaints/:id/priority
   // Update complaint priority
+  // =====================================================
   fastify.patch(
     "/:id/priority",
     {
@@ -327,39 +159,32 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const body = updatePrioritySchema.parse(request.body);
+      const body = request.body as UpdateComplaintPriorityRequest;
 
-      const complaint = await prisma.complaint.update({
-        where: { id: parseInt(id) },
-        data: { priority: body.priority },
-        include: { resident: true },
-      });
-
-      // Send WhatsApp notification about priority change
-      if (complaint.resident.consentWhatsapp) {
-        try {
-          const priorityText = {
-            CRITICAL: "🔴 Crítica",
-            HIGH: "🟠 Alta",
-            MEDIUM: "🟡 Média",
-            LOW: "🟢 Baixa",
-          }[body.priority];
-
-          await whatsappService.sendTextMessage(
-            complaint.resident.phone,
-            `Olá ${complaint.resident.name}! ` +
-              `A prioridade da sua denúncia #${complaint.id} foi alterada para: *${priorityText}*`
-          );
-        } catch (error) {
-          fastify.log.error({ error }, "Failed to send WhatsApp notification");
-        }
+      // Validate
+      const validationError = validateUpdatePriority(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      return reply.send(complaint);
+      try {
+        const complaint = await complaintService.updateComplaintPriority(
+          prisma,
+          fastify.log,
+          parseInt(id),
+          body
+        );
+        return reply.send(complaint);
+      } catch (error: any) {
+        return reply.status(400).send({ error: error.message });
+      }
     }
   );
 
-  // Add comment/note to complaint
+  // =====================================================
+  // POST /complaints/:id/comment
+  // Add comment to complaint
+  // =====================================================
   fastify.post(
     "/:id/comment",
     {
@@ -367,63 +192,37 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const body = addCommentSchema.parse(request.body);
+      const body = request.body as AddComplaintCommentRequest;
       const userId = (request.user as any).id;
-      const user = request.user as any;
+      const userRole = (request.user as any).role;
 
-      const complaint = await prisma.complaint.findUnique({
-        where: { id: parseInt(id) },
-        include: { resident: true },
-      });
-
-      if (!complaint) {
-        return reply.status(404).send({ error: "Complaint not found" });
+      // Validate
+      const validationError = validateAddComment(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      // Create status history entry with comment (keeps same status)
-      const historyEntry = await prisma.complaintStatusHistory.create({
-        data: {
-          complaintId: parseInt(id),
-          fromStatus: complaint.status,
-          toStatus: complaint.status, // Same status, just adding comment
-          changedBy: userId,
-          notes: body.notes,
-        },
-      });
-
-      // Update complaint updatedAt timestamp
-      await prisma.complaint.update({
-        where: { id: parseInt(id) },
-        data: { updatedAt: new Date() },
-      });
-
-      // Send WhatsApp notification about new comment
-      if (complaint.resident.consentWhatsapp) {
-        try {
-          // Get user role for better message context
-          const roleText =
-            user.role === "SYNDIC"
-              ? "Síndico"
-              : user.role === "ADMIN"
-              ? "Administrador"
-              : "Responsável";
-
-          await whatsappService.sendTextMessage(
-            complaint.resident.phone,
-            `Olá ${complaint.resident.name}! ` +
-              `O ${roleText} adicionou um comentário na sua denúncia #${complaint.id}:\n\n` +
-              `"${body.notes}"`
-          );
-        } catch (error) {
-          fastify.log.error({ error }, "Failed to send WhatsApp notification");
-        }
+      try {
+        const historyEntry = await complaintService.addComplaintComment(
+          prisma,
+          fastify.log,
+          parseInt(id),
+          body,
+          userId,
+          userRole
+        );
+        return reply.status(201).send(historyEntry);
+      } catch (error: any) {
+        const status = error.message.includes("not found") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      return reply.status(201).send(historyEntry);
     }
   );
 
+  // =====================================================
+  // DELETE /complaints/:id
   // Delete complaint
+  // =====================================================
   fastify.delete(
     "/:id",
     {
@@ -432,9 +231,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const { id } = request.params as { id: string };
 
-      await prisma.complaint.delete({
-        where: { id: parseInt(id) },
-      });
+      await complaintService.deleteComplaint(prisma, fastify.log, parseInt(id));
 
       return reply.status(204).send();
     }

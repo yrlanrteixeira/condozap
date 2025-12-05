@@ -16,7 +16,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "db:clear": "tsx prisma/clear.ts",
     "db:reset": "npm run db:clear && npm run prisma:seed",
-    "db:fresh": "prisma migrate reset --force"
+    "db:fresh": "prisma migrate reset --force",
+    "db:update-consent": "tsx prisma/update-consent.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

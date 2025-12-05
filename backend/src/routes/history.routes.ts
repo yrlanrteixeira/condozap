@@ -1,22 +1,15 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../lib/prisma.js";
+import { requireSuperAdmin } from "../middlewares/index.js";
 
 export const historyRoutes: FastifyPluginAsync = async (fastify) => {
   // Get all history from ALL condominiums (SUPER_ADMIN only)
   fastify.get(
     "/all",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
-      const user = request.user as any;
-
-      if (user.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Apenas SUPER_ADMIN pode ver todo o histórico.",
-        });
-      }
 
       const { condominiumId } = request.query as {
         condominiumId?: string;

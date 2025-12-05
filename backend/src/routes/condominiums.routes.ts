@@ -1,81 +1,29 @@
-/**
- * Condominiums Routes
- * 
- * Rotas para gerenciar condomínios (SUPER_ADMIN only)
- */
-
-import { FastifyPluginAsync } from 'fastify';
-import { z } from 'zod';
-import { prisma } from '../lib/prisma.js';
-
-// =====================================================
-// Schemas
-// =====================================================
-
-const createCondominiumSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  cnpj: z.string().regex(/^\d{14}$/, 'CNPJ deve ter 14 dígitos'),
-  whatsappPhone: z.string().optional(),
-  whatsappBusinessId: z.string().optional(),
-});
-
-const updateCondominiumSchema = z.object({
-  name: z.string().min(3).optional(),
-  cnpj: z.string().regex(/^\d{14}$/).optional(),
-  status: z.enum(['TRIAL', 'ACTIVE', 'SUSPENDED']).optional(),
-  whatsappPhone: z.string().optional(),
-  whatsappBusinessId: z.string().optional(),
-});
-
-// =====================================================
-// Routes
-// =====================================================
+import { FastifyPluginAsync } from "fastify";
+import { prisma } from "../lib/prisma.js";
+import { requireSuperAdmin, requireCondoAccess } from "../middlewares/index.js";
+import { AuthUser } from "../types/auth.js";
+import * as condominiumService from "../services/condominiums.service.js";
+import {
+  validateCreateCondominium,
+  validateUpdateCondominium,
+} from "../schemas/condominiums.js";
+import type {
+  CreateCondominiumRequest,
+  UpdateCondominiumRequest,
+} from "../types/requests.js";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
-  
   // =====================================================
   // GET /condominiums
   // List all condominiums (SUPER_ADMIN only)
   // =====================================================
   fastify.get(
-    '/',
+    "/",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const user = request.user as any;
-
-      // Only SUPER_ADMIN can list all condominiums
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode listar todos os condomínios.',
-        });
-      }
-
-      const condominiums = await prisma.condominium.findMany({
-        select: {
-          id: true,
-          name: true,
-          cnpj: true,
-          status: true,
-          whatsappPhone: true,
-          whatsappBusinessId: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              residents: true,
-              users: true,
-              complaints: true,
-            },
-          },
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-
+    async (_request, reply) => {
+      const condominiums = await condominiumService.getAllCondominiums(prisma);
       return reply.send(condominiums);
     }
   );
@@ -85,48 +33,17 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   // Get single condominium details
   // =====================================================
   fastify.get(
-    '/:id',
+    "/:id",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess({ paramName: "id" })],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user as any;
 
-      // Only SUPER_ADMIN can view any condominium
-      if (user.role !== 'SUPER_ADMIN') {
-        // Check if user has access to this condominium
-        const userAccess = await prisma.userCondominium.findFirst({
-          where: {
-            userId: user.id,
-            condominiumId: id,
-          },
-        });
-
-        if (!userAccess) {
-          return reply.status(403).send({ 
-            error: 'Forbidden',
-            message: 'Você não tem acesso a este condomínio.',
-          });
-        }
-      }
-
-      const condominium = await prisma.condominium.findUnique({
-        where: { id },
-        include: {
-          _count: {
-            select: {
-              residents: true,
-              users: true,
-              complaints: true,
-              messages: true,
-            },
-          },
-        },
-      });
+      const condominium = await condominiumService.getCondominiumById(prisma, id);
 
       if (!condominium) {
-        return reply.status(404).send({ error: 'Condomínio não encontrado' });
+        return reply.status(404).send({ error: "Condomínio não encontrado" });
       }
 
       return reply.send(condominium);
@@ -138,48 +55,31 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   // Create new condominium (SUPER_ADMIN only)
   // =====================================================
   fastify.post(
-    '/',
+    "/",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
-      const user = request.user as any;
+      const user = request.user as AuthUser;
+      const body = request.body as CreateCondominiumRequest;
 
-      // Only SUPER_ADMIN can create condominiums
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode criar condomínios.',
-        });
+      // Validate
+      const validationError = validateCreateCondominium(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      const body = createCondominiumSchema.parse(request.body);
-
-      // Check if CNPJ already exists
-      const existingCondominium = await prisma.condominium.findUnique({
-        where: { cnpj: body.cnpj },
-      });
-
-      if (existingCondominium) {
-        return reply.status(400).send({ 
-          error: 'CNPJ já cadastrado',
-          message: 'Já existe um condomínio com este CNPJ.',
-        });
+      try {
+        const condominium = await condominiumService.createCondominium(
+          prisma,
+          fastify.log,
+          body,
+          user.id
+        );
+        return reply.status(201).send(condominium);
+      } catch (error: any) {
+        return reply.status(400).send({ error: error.message });
       }
-
-      const condominium = await prisma.condominium.create({
-        data: {
-          name: body.name,
-          cnpj: body.cnpj,
-          status: 'TRIAL',
-          whatsappPhone: body.whatsappPhone,
-          whatsappBusinessId: body.whatsappBusinessId,
-        },
-      });
-
-      fastify.log.info(`Condominium ${condominium.id} created by ${user.id}`);
-
-      return reply.status(201).send(condominium);
     }
   );
 
@@ -188,55 +88,34 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   // Update condominium (SUPER_ADMIN only)
   // =====================================================
   fastify.patch(
-    '/:id',
+    "/:id",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user as any;
+      const user = request.user as AuthUser;
+      const body = request.body as UpdateCondominiumRequest;
 
-      // Only SUPER_ADMIN can update condominiums
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode atualizar condomínios.',
-        });
+      // Validate
+      const validationError = validateUpdateCondominium(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      const body = updateCondominiumSchema.parse(request.body);
-
-      // Check if condominium exists
-      const existing = await prisma.condominium.findUnique({
-        where: { id },
-      });
-
-      if (!existing) {
-        return reply.status(404).send({ error: 'Condomínio não encontrado' });
+      try {
+        const condominium = await condominiumService.updateCondominium(
+          prisma,
+          fastify.log,
+          id,
+          body,
+          user.id
+        );
+        return reply.send(condominium);
+      } catch (error: any) {
+        const status = error.message.includes("não encontrado") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      // If updating CNPJ, check if it's already in use
-      if (body.cnpj && body.cnpj !== existing.cnpj) {
-        const cnpjInUse = await prisma.condominium.findUnique({
-          where: { cnpj: body.cnpj },
-        });
-
-        if (cnpjInUse) {
-          return reply.status(400).send({ 
-            error: 'CNPJ já cadastrado',
-            message: 'Já existe outro condomínio com este CNPJ.',
-          });
-        }
-      }
-
-      const condominium = await prisma.condominium.update({
-        where: { id },
-        data: body,
-      });
-
-      fastify.log.info(`Condominium ${id} updated by ${user.id}`);
-
-      return reply.send(condominium);
     }
   );
 
@@ -245,54 +124,26 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   // Delete condominium (SUPER_ADMIN only)
   // =====================================================
   fastify.delete(
-    '/:id',
+    "/:id",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user as any;
+      const user = request.user as AuthUser;
 
-      // Only SUPER_ADMIN can delete condominiums
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode deletar condomínios.',
-        });
+      try {
+        await condominiumService.deleteCondominium(
+          prisma,
+          fastify.log,
+          id,
+          user.id
+        );
+        return reply.status(204).send();
+      } catch (error: any) {
+        const status = error.message.includes("não encontrado") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      // Check if condominium exists
-      const existing = await prisma.condominium.findUnique({
-        where: { id },
-        include: {
-          _count: {
-            select: {
-              residents: true,
-              users: true,
-            },
-          },
-        },
-      });
-
-      if (!existing) {
-        return reply.status(404).send({ error: 'Condomínio não encontrado' });
-      }
-
-      // Warn if there are residents or users
-      if (existing._count.residents > 0 || existing._count.users > 0) {
-        return reply.status(400).send({ 
-          error: 'Não é possível excluir',
-          message: `Este condomínio possui ${existing._count.residents} moradores e ${existing._count.users} usuários vinculados. Remova-os primeiro.`,
-        });
-      }
-
-      await prisma.condominium.delete({
-        where: { id },
-      });
-
-      fastify.log.info(`Condominium ${id} deleted by ${user.id}`);
-
-      return reply.status(204).send();
     }
   );
 
@@ -301,50 +152,16 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   // Get condominium statistics
   // =====================================================
   fastify.get(
-    '/:id/stats',
+    "/:id/stats",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess({ paramName: "id" })],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user as any;
 
-      // Only SUPER_ADMIN can view any condominium stats
-      if (user.role !== 'SUPER_ADMIN') {
-        const userAccess = await prisma.userCondominium.findFirst({
-          where: {
-            userId: user.id,
-            condominiumId: id,
-          },
-        });
+      const stats = await condominiumService.getCondominiumStats(prisma, id);
 
-        if (!userAccess) {
-          return reply.status(403).send({ error: 'Forbidden' });
-        }
-      }
-
-      const [
-        residentsCount,
-        complaintsOpen,
-        complaintsResolved,
-        messagesCount,
-      ] = await Promise.all([
-        prisma.resident.count({ where: { condominiumId: id } }),
-        prisma.complaint.count({ where: { condominiumId: id, status: 'OPEN' } }),
-        prisma.complaint.count({ where: { condominiumId: id, status: 'RESOLVED' } }),
-        prisma.message.count({ where: { condominiumId: id } }),
-      ]);
-
-      return reply.send({
-        residents: residentsCount,
-        complaints: {
-          open: complaintsOpen,
-          resolved: complaintsResolved,
-          total: complaintsOpen + complaintsResolved,
-        },
-        messages: messagesCount,
-      });
+      return reply.send(stats);
     }
   );
 };
-

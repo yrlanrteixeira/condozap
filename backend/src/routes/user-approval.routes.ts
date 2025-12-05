@@ -7,6 +7,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { requireSuperAdmin, requireAdmin, requireCondoAccess } from '../middlewares/index.js';
+import { AuthUser } from '../types/auth.js';
 
 // =====================================================
 // Schemas
@@ -39,19 +41,9 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/condominiums/list',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const user = request.user as any;
-
-      // Only SUPER_ADMIN can list all condominiums
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode listar todos os condomínios.',
-        });
-      }
-
+    async (_request, reply) => {
       const condominiums = await prisma.condominium.findMany({
         select: {
           id: true,
@@ -74,19 +66,9 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/users/pending/all',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const user = request.user as any;
-
-      // Only SUPER_ADMIN can view all pending users
-      if (user.role !== 'SUPER_ADMIN') {
-        return reply.status(403).send({ 
-          error: 'Forbidden',
-          message: 'Apenas SUPER_ADMIN pode ver todos os usuários pendentes.',
-        });
-      }
-
+    async (_request, reply) => {
       const pendingUsers = await prisma.user.findMany({
         where: {
           status: 'PENDING',
@@ -181,33 +163,15 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/users/approve',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [
+        fastify.authenticate,
+        requireAdmin(),
+        requireCondoAccess({ source: 'body' }),
+      ],
     },
     async (request, reply) => {
-      const user = request.user as any;
+      const user = request.user as AuthUser;
       const body = approvUserSchema.parse(request.body);
-
-      // Only admins and syndics can approve users
-      if (!['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC'].includes(user.role)) {
-        return reply.status(403).send({ error: 'Forbidden' });
-      }
-
-      // Verify user has access to this condominium (except SUPER_ADMIN)
-      if (user.role !== 'SUPER_ADMIN') {
-        const userAccess = await prisma.userCondominium.findFirst({
-          where: {
-            userId: user.id,
-            condominiumId: body.condominiumId,
-          },
-        });
-
-        if (!userAccess) {
-          return reply.status(403).send({ 
-            error: 'Forbidden',
-            message: 'Você não tem permissão para aprovar usuários neste condomínio.',
-          });
-        }
-      }
 
       // Verify the pending user exists and is pending
       const pendingUser = await prisma.user.findFirst({

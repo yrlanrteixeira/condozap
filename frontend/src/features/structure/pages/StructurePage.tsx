@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PlusCircle, Building2, Grid3X3 } from "lucide-react";
+import { PlusCircle, Building2, Grid3X3, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,16 +10,21 @@ import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { ResidentDialog } from "@/features/residents";
-import { TowerCard } from "../components";
+import { TowerCard, StructureConfigDialog } from "../components";
+import { useStructure } from "../hooks/useStructureApi";
 
 export function StructurePage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isStructureDialogOpen, setIsStructureDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
 
   // Buscar moradores do condomínio selecionado
   const condoIdToFetch = currentCondominiumId || '';
+
+  // Buscar estrutura do condomínio
+  const { data: structureData } = useStructure(condoIdToFetch);
 
   const {
     data: residents,
@@ -96,24 +101,35 @@ export function StructurePage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Building2 className="h-6 w-6 text-primary" />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+            <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               Estrutura do Condomínio
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base mt-1">
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">
               Visualização hierárquica de torres, andares e unidades
             </p>
           </div>
         </div>
-        <Button onClick={handleAddResident} className="shrink-0">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Morador
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsStructureDialogOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Configurar Estrutura</span>
+            <span className="sm:hidden">Configurar</span>
+          </Button>
+          <Button onClick={handleAddResident} className="w-full sm:w-auto">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Adicionar Morador
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -201,6 +217,13 @@ export function StructurePage() {
         onOpenChange={setIsDialogOpen}
         resident={selectedResident}
         onClose={handleCloseDialog}
+      />
+
+      <StructureConfigDialog
+        open={isStructureDialogOpen}
+        onOpenChange={setIsStructureDialogOpen}
+        condominiumId={currentCondominiumId!}
+        currentStructure={structureData?.structure}
       />
     </div>
   );

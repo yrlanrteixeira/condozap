@@ -1,71 +1,37 @@
 import { FastifyPluginAsync } from "fastify";
-import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-
-const createResidentSchema = z.object({
-  condominiumId: z.string(),
-  name: z.string().min(3),
-  email: z.string().email(),
-  phone: z.string().regex(/^55\d{10,11}$/),
-  tower: z.string(),
-  floor: z.string(),
-  unit: z.string(),
-  type: z.enum(["OWNER", "TENANT"]).optional(),
-});
+import { requireSuperAdmin } from "../middlewares/index.js";
+import * as residentService from "../services/residents.service.js";
+import { validateCreateResident, validateUpdateResident } from "../schemas/residents.js";
+import type {
+  CreateResidentRequest,
+  UpdateResidentRequest,
+  ResidentFilters,
+} from "../types/requests.js";
 
 export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
-  // Get all residents from ALL condominiums (SUPER_ADMIN only)
+  // =====================================================
+  // GET /residents/all
+  // Get all residents (SUPER_ADMIN only)
+  // =====================================================
   fastify.get(
     "/all",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
-      const user = request.user as any;
+      const filters = request.query as ResidentFilters;
 
-      if (user.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Apenas SUPER_ADMIN pode ver todos os moradores.",
-        });
-      }
-
-      const { tower, floor, type, search, condominiumId } = request.query as any;
-
-      const residents = await prisma.resident.findMany({
-        where: {
-          ...(condominiumId && { condominiumId }),
-          ...(tower && { tower }),
-          ...(floor && { floor }),
-          ...(type && { type }),
-          ...(search && {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search } },
-            ],
-          }),
-        },
-        include: {
-          condominium: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: [
-          { condominium: { name: "asc" } },
-          { tower: "asc" },
-          { floor: "asc" },
-          { unit: "asc" },
-        ],
-      });
+      const residents = await residentService.getAllResidents(prisma, filters);
 
       return reply.send(residents);
     }
   );
 
-  // Get all residents by condominium
+  // =====================================================
+  // GET /residents/:condominiumId
+  // Get residents by condominium
+  // =====================================================
   fastify.get(
     "/:condominiumId",
     {
@@ -73,49 +39,53 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { condominiumId } = request.params as { condominiumId: string };
-      const { tower, floor, type, search } = request.query as any;
+      const filters = request.query as Omit<ResidentFilters, "condominiumId">;
 
-      const residents = await prisma.resident.findMany({
-        where: {
-          condominiumId,
-          ...(tower && { tower }),
-          ...(floor && { floor }),
-          ...(type && { type }),
-          ...(search && {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search } },
-            ],
-          }),
-        },
-        orderBy: [{ tower: "asc" }, { floor: "asc" }, { unit: "asc" }],
-      });
+      const residents = await residentService.getResidentsByCondominium(
+        prisma,
+        condominiumId,
+        filters
+      );
 
       return reply.send(residents);
     }
   );
 
+  // =====================================================
+  // POST /residents
   // Create resident
+  // =====================================================
   fastify.post(
     "/",
     {
       onRequest: [fastify.authenticate],
     },
     async (request, reply) => {
-      const body = createResidentSchema.parse(request.body);
+      const body = request.body as CreateResidentRequest;
 
-      const resident = await prisma.resident.create({
-        data: {
-          ...body,
-          type: body.type || "OWNER",
-        },
-      });
+      // Validate
+      const validationError = validateCreateResident(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
+      }
 
-      return reply.status(201).send(resident);
+      try {
+        const resident = await residentService.createResident(
+          prisma,
+          fastify.log,
+          body
+        );
+        return reply.status(201).send(resident);
+      } catch (error: any) {
+        return reply.status(400).send({ error: error.message });
+      }
     }
   );
 
+  // =====================================================
+  // PATCH /residents/:id
   // Update resident
+  // =====================================================
   fastify.patch(
     "/:id",
     {
@@ -123,18 +93,33 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const body = request.body as Partial<typeof createResidentSchema._type>;
+      const body = request.body as UpdateResidentRequest;
 
-      const resident = await prisma.resident.update({
-        where: { id },
-        data: body,
-      });
+      // Validate
+      const validationError = validateUpdateResident(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
+      }
 
-      return reply.send(resident);
+      try {
+        const resident = await residentService.updateResident(
+          prisma,
+          fastify.log,
+          id,
+          body
+        );
+        return reply.send(resident);
+      } catch (error: any) {
+        const status = error.message.includes("não encontrado") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
+      }
     }
   );
 
+  // =====================================================
+  // DELETE /residents/:id
   // Delete resident
+  // =====================================================
   fastify.delete(
     "/:id",
     {
@@ -143,11 +128,13 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const { id } = request.params as { id: string };
 
-      await prisma.resident.delete({
-        where: { id },
-      });
-
-      return reply.status(204).send();
+      try {
+        await residentService.deleteResident(prisma, fastify.log, id);
+        return reply.status(204).send();
+      } catch (error: any) {
+        const status = error.message.includes("não encontrado") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
+      }
     }
   );
 };

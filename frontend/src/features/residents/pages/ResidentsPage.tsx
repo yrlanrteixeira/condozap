@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
 import {
   ResidentPageHeader,
-  ResidentTable,
+  ResidentList,
   ResidentDialog,
 } from "../components";
 import { useResidents } from "../hooks/useResidentsApi";
@@ -81,11 +81,13 @@ export function ResidentsPage() {
 
       {residents && residents.length > 0 ? (
         <Card className="border-border">
-          <CardContent className="p-0">
-            <ResidentTable
-              residents={residents}
-              onEdit={handleEditResident}
-            />
+          <CardContent className="p-0 md:p-0">
+            <div className="p-3 md:p-0">
+              <ResidentList
+                residents={residents}
+                onEdit={handleEditResident}
+              />
+            </div>
           </CardContent>
         </Card>
       ) : (

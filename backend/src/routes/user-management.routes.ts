@@ -2,47 +2,32 @@
  * User Management Routes
  *
  * Rotas para síndicos/admins gerenciarem usuários do condomínio
- * - Criar admins (pessoas de confiança)
- * - Listar usuários do condomínio
- * - Atualizar/remover usuários
  */
 
 import { FastifyPluginAsync } from "fastify";
-import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma.js";
-
-// =====================================================
-// Schemas
-// =====================================================
-
-const createAdminSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(3),
-  password: z.string().min(8),
-  condominiumId: z.string(),
-});
-
-const createSyndicSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(3),
-  password: z.string().min(8),
-  condominiumIds: z.array(z.string()).min(1, "Selecione pelo menos um condomínio"),
-});
-
-const updateUserRoleSchema = z.object({
-  userId: z.string(),
-  newRole: z.enum(["ADMIN", "SYNDIC", "RESIDENT"]),
-});
-
-const removeUserSchema = z.object({
-  userId: z.string(),
-  condominiumId: z.string(),
-});
-
-// =====================================================
-// Routes
-// =====================================================
+import {
+  requireRole,
+  requireSuperAdmin,
+  requireAdmin,
+  requireCondoAccess,
+} from "../middlewares/index.js";
+import { AuthUser } from "../types/auth.js";
+import * as userService from "../services/users.service.js";
+import {
+  validateCreateAdmin,
+  validateCreateSyndic,
+  validateUpdateUserRole,
+  validateRemoveUser,
+  validateInviteUser,
+} from "../schemas/users.js";
+import type {
+  CreateAdminRequest,
+  CreateSyndicRequest,
+  UpdateUserRoleRequest,
+  RemoveUserRequest,
+  InviteUserRequest,
+} from "../types/requests.js";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   // =====================================================
@@ -52,89 +37,28 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/create-admin",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [
+        fastify.authenticate,
+        requireAdmin(),
+        requireCondoAccess({ source: "body" }),
+      ],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
-      const body = createAdminSchema.parse(request.body);
+      const currentUser = request.user as AuthUser;
+      const body = request.body as CreateAdminRequest;
 
-      // Verificar se o usuário atual pode criar admins
-      // Apenas SUPER_ADMIN, PROFESSIONAL_SYNDIC, ADMIN e SYNDIC podem
-      if (
-        !["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(
-          currentUser.role
-        )
-      ) {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Você não tem permissão para criar administradores.",
-        });
-      }
-
-      // Verificar se o usuário atual tem acesso ao condomínio
-      const userCondominium = await prisma.userCondominium.findFirst({
-        where: {
-          userId: currentUser.id,
-          condominiumId: body.condominiumId,
-        },
-      });
-
-      if (!userCondominium && currentUser.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Você não tem acesso a este condomínio.",
-        });
-      }
-
-      // Verificar se o email já está em uso
-      const existingUser = await prisma.user.findUnique({
-        where: { email: body.email },
-      });
-
-      if (existingUser) {
-        return reply.status(400).send({
-          error: "Email already in use",
-          message: "Este email já está cadastrado no sistema.",
-        });
+      // Validate
+      const validationError = validateCreateAdmin(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
       try {
-        // Hash da senha
-        const hashedPassword = await bcrypt.hash(body.password, 10);
-
-        // Criar usuário já aprovado
-        const newAdmin = await prisma.user.create({
-          data: {
-            email: body.email,
-            password: hashedPassword,
-            name: body.name,
-            role: "ADMIN",
-            permissionScope: "LOCAL",
-            status: "APPROVED",
-            approvedAt: new Date(),
-            approvedBy: currentUser.id,
-          },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            status: true,
-            createdAt: true,
-          },
-        });
-
-        // Vincular ao condomínio
-        await prisma.userCondominium.create({
-          data: {
-            userId: newAdmin.id,
-            condominiumId: body.condominiumId,
-            role: "ADMIN",
-          },
-        });
-
-        fastify.log.info(
-          `Admin ${newAdmin.email} created by ${currentUser.email} for condominium ${body.condominiumId}`
+        const newAdmin = await userService.createAdmin(
+          prisma,
+          fastify.log,
+          body,
+          currentUser.id
         );
 
         return reply.status(201).send({
@@ -142,11 +66,8 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
           user: newAdmin,
         });
       } catch (error: any) {
-        fastify.log.error("Failed to create admin:", error);
-        return reply.status(500).send({
-          error: "Failed to create admin",
-          message: error.message,
-        });
+        const status = error.message.includes("já está cadastrado") ? 400 : 500;
+        return reply.status(status).send({ error: error.message });
       }
     }
   );
@@ -158,84 +79,34 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/create-syndic",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
-      const body = createSyndicSchema.parse(request.body);
+      const currentUser = request.user as AuthUser;
+      const body = request.body as CreateSyndicRequest;
 
-      // Apenas SUPER_ADMIN pode criar síndicos
-      if (currentUser.role !== "SUPER_ADMIN") {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Apenas SUPER_ADMIN pode criar síndicos.",
-        });
-      }
-
-      // Verificar se o email já está em uso
-      const existingUser = await prisma.user.findUnique({
-        where: { email: body.email },
-      });
-
-      if (existingUser) {
-        return reply.status(400).send({
-          error: "Email already in use",
-          message: "Este email já está cadastrado no sistema.",
-        });
+      // Validate
+      const validationError = validateCreateSyndic(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
       try {
-        // Hash da senha
-        const hashedPassword = await bcrypt.hash(body.password, 10);
-
-        // Criar usuário como SYNDIC
-        const newSyndic = await prisma.user.create({
-          data: {
-            email: body.email,
-            password: hashedPassword,
-            name: body.name,
-            role: "SYNDIC",
-            permissionScope: "LOCAL",
-            status: "APPROVED",
-            approvedAt: new Date(),
-            approvedBy: currentUser.id,
-          },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            status: true,
-            createdAt: true,
-          },
-        });
-
-        // Vincular aos condomínios
-        const userCondominiumsData = body.condominiumIds.map(condoId => ({
-          userId: newSyndic.id,
-          condominiumId: condoId,
-          role: "SYNDIC" as const,
-        }));
-
-        await prisma.userCondominium.createMany({
-          data: userCondominiumsData,
-        });
-
-        fastify.log.info(
-          `Syndic ${newSyndic.email} created by ${currentUser.email} for ${body.condominiumIds.length} condominiums`
+        const result = await userService.createSyndic(
+          prisma,
+          fastify.log,
+          body,
+          currentUser.id
         );
 
         return reply.status(201).send({
           message: "Síndico criado com sucesso",
-          user: newSyndic,
-          condominiumsCount: body.condominiumIds.length,
+          user: result.user,
+          condominiumsCount: result.condominiumsCount,
         });
       } catch (error: any) {
-        fastify.log.error("Failed to create syndic:", error);
-        return reply.status(500).send({
-          error: "Failed to create syndic",
-          message: error.message,
-        });
+        const status = error.message.includes("já está cadastrado") ? 400 : 500;
+        return reply.status(status).send({ error: error.message });
       }
     }
   );
@@ -247,54 +118,14 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/users/condominium/:condominiumId",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireAdmin()],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
       const { condominiumId } = request.params as { condominiumId: string };
 
-      // Verificar permissão
-      if (
-        !["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(
-          currentUser.role
-        )
-      ) {
-        return reply.status(403).send({ error: "Forbidden" });
-      }
+      const users = await userService.getUsersByCondominium(prisma, condominiumId);
 
-      // Buscar usuários do condomínio
-      const users = await prisma.userCondominium.findMany({
-        where: { condominiumId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true,
-              status: true,
-              createdAt: true,
-              approvedAt: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      const formattedUsers = users.map((uc) => ({
-        id: uc.user.id,
-        email: uc.user.email,
-        name: uc.user.name,
-        role: uc.role,
-        globalRole: uc.user.role,
-        status: uc.user.status,
-        createdAt: uc.user.createdAt,
-        approvedAt: uc.user.approvedAt,
-      }));
-
-      return reply.send(formattedUsers);
+      return reply.send(users);
     }
   );
 
@@ -305,52 +136,35 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/users/update-role",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "SYNDIC"]),
+      ],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
-      const body = updateUserRoleSchema.parse(request.body);
+      const currentUser = request.user as AuthUser;
+      const body = request.body as UpdateUserRoleRequest;
 
-      // Apenas SUPER_ADMIN, PROFESSIONAL_SYNDIC e SYNDIC podem alterar roles
-      if (
-        !["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "SYNDIC"].includes(
-          currentUser.role
-        )
-      ) {
-        return reply.status(403).send({
-          error: "Forbidden",
-          message: "Você não tem permissão para alterar funções de usuários.",
-        });
-      }
-
-      // Não pode alterar próprio role
-      if (body.userId === currentUser.id) {
-        return reply.status(400).send({
-          error: "Invalid operation",
-          message: "Você não pode alterar sua própria função.",
-        });
+      // Validate
+      const validationError = validateUpdateUserRole(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
       try {
-        // Atualizar role no User
-        await prisma.user.update({
-          where: { id: body.userId },
-          data: { role: body.newRole },
-        });
-
-        // Atualizar role em todos os UserCondominium
-        await prisma.userCondominium.updateMany({
-          where: { userId: body.userId },
-          data: { role: body.newRole },
-        });
+        await userService.updateUserRole(
+          prisma,
+          fastify.log,
+          body,
+          currentUser.id
+        );
 
         return reply.send({
           message: "Função atualizada com sucesso",
           newRole: body.newRole,
         });
       } catch (error: any) {
-        fastify.log.error("Failed to update role:", error);
-        return reply.status(500).send({ error: "Failed to update role" });
+        return reply.status(400).send({ error: error.message });
       }
     }
   );
@@ -362,58 +176,32 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     "/users/remove",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireAdmin()],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
-      const body = removeUserSchema.parse(request.body);
+      const currentUser = request.user as AuthUser;
+      const body = request.body as RemoveUserRequest;
 
-      // Verificar permissão
-      if (
-        !["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(
-          currentUser.role
-        )
-      ) {
-        return reply.status(403).send({ error: "Forbidden" });
-      }
-
-      // Não pode remover a si mesmo
-      if (body.userId === currentUser.id) {
-        return reply.status(400).send({
-          error: "Invalid operation",
-          message: "Você não pode remover a si mesmo.",
-        });
+      // Validate
+      const validationError = validateRemoveUser(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
       try {
-        // Remover vínculo com o condomínio
-        await prisma.userCondominium.deleteMany({
-          where: {
-            userId: body.userId,
-            condominiumId: body.condominiumId,
-          },
-        });
-
-        // Verificar se o usuário ainda tem outros condomínios
-        const remainingCondos = await prisma.userCondominium.count({
-          where: { userId: body.userId },
-        });
-
-        // Se não tem mais condomínios, suspender o usuário
-        if (remainingCondos === 0) {
-          await prisma.user.update({
-            where: { id: body.userId },
-            data: { status: "SUSPENDED" },
-          });
-        }
+        const result = await userService.removeUserFromCondominium(
+          prisma,
+          fastify.log,
+          body,
+          currentUser.id
+        );
 
         return reply.send({
           message: "Usuário removido do condomínio",
-          userSuspended: remainingCondos === 0,
+          userSuspended: result.userSuspended,
         });
       } catch (error: any) {
-        fastify.log.error("Failed to remove user:", error);
-        return reply.status(500).send({ error: "Failed to remove user" });
+        return reply.status(400).send({ error: error.message });
       }
     }
   );
@@ -425,72 +213,32 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/invite",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireAdmin()],
     },
     async (request, reply) => {
-      const currentUser = request.user as any;
-      const body = z
-        .object({
-          email: z.string().email(),
-          condominiumId: z.string(),
-          role: z.enum(["ADMIN", "SYNDIC", "RESIDENT"]).default("ADMIN"),
-        })
-        .parse(request.body);
+      const body = request.body as InviteUserRequest;
 
-      // Verificar permissão
-      if (
-        !["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(
-          currentUser.role
-        )
-      ) {
-        return reply.status(403).send({ error: "Forbidden" });
+      // Validate
+      const validationError = validateInviteUser(body);
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
-      // Buscar usuário pelo email
-      const targetUser = await prisma.user.findUnique({
-        where: { email: body.email },
-      });
+      try {
+        const user = await userService.inviteUserToCondominium(
+          prisma,
+          fastify.log,
+          body
+        );
 
-      if (!targetUser) {
-        return reply.status(404).send({
-          error: "User not found",
-          message: "Usuário não encontrado. Crie um novo administrador.",
+        return reply.send({
+          message: "Usuário adicionado ao condomínio",
+          user,
         });
+      } catch (error: any) {
+        const status = error.message.includes("não encontrado") ? 404 : 400;
+        return reply.status(status).send({ error: error.message });
       }
-
-      // Verificar se já está no condomínio
-      const existingLink = await prisma.userCondominium.findFirst({
-        where: {
-          userId: targetUser.id,
-          condominiumId: body.condominiumId,
-        },
-      });
-
-      if (existingLink) {
-        return reply.status(400).send({
-          error: "Already linked",
-          message: "Este usuário já está vinculado ao condomínio.",
-        });
-      }
-
-      // Vincular ao condomínio
-      await prisma.userCondominium.create({
-        data: {
-          userId: targetUser.id,
-          condominiumId: body.condominiumId,
-          role: body.role,
-        },
-      });
-
-      return reply.send({
-        message: "Usuário adicionado ao condomínio",
-        user: {
-          id: targetUser.id,
-          name: targetUser.name,
-          email: targetUser.email,
-          role: body.role,
-        },
-      });
     }
   );
 };
