@@ -1,210 +1,78 @@
 import { Routes, Route } from "react-router-dom";
-import {
-  ProtectedRoute,
-  PermissionGuard,
-  AnyPermissionGuard,
-  InitialRedirect,
-  ApprovalGuard,
-} from "@/components/guards";
+import { ApprovalGuard, InitialRedirect, ProtectedRoute, PermissionGuard } from "@/components/guards";
 import { MainLayout } from "@/components/layout";
 import { Permissions } from "@/config/permissions";
-
-// Auth Pages
-import { LoginPage } from "@/features/auth/pages/LoginPage";
-import { RegisterPage } from "@/features/auth/pages/RegisterPage";
-
-// Dashboard Pages
-import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
-import { UnifiedDashboardPage } from "@/features/dashboard/pages/UnifiedDashboardPage";
-
-// Messages Pages
-import { MessagingPage } from "@/features/messages/pages/MessagingPage";
-
-// Residents Pages
-import { ResidentsPage } from "@/features/residents/pages/ResidentsPage";
-
-// Structure Pages
-import { StructurePage } from "@/features/structure/pages/StructurePage";
-
-// Complaints Pages
-import { ComplaintsPage } from "@/features/complaints/pages/ComplaintsPage";
-
-// History Pages
-import { HistoryPage } from "@/features/history/pages/HistoryPage";
-
-// Settings Page
+import { authRoutes } from "@/features/auth/routes";
+import { complaintsRoutes } from "@/features/complaints/routes";
+import { condominiumsRoutes } from "@/features/condominiums/routes";
+import { dashboardRoutes } from "@/features/dashboard/routes";
+import { historyRoutes } from "@/features/history/routes";
+import { messagesRoutes } from "@/features/messages/routes";
+import { residentsRoutes } from "@/features/residents/routes";
+import { structureRoutes } from "@/features/structure/routes";
+import { pendingApprovalRoute, userApprovalRoutes } from "@/features/user-approval/routes";
+import { userManagementRoutes } from "@/features/user-management/routes";
+import type { FeatureRoute } from "@/routes/types";
+import { AccessDeniedPage } from "@/pages/AccessDenied";
 import { SettingsPage } from "@/pages/SettingsPage";
 
-// Approval Pages
-import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
-import { UserApprovalPage } from "@/features/user-approval";
-
-// User Management Pages
-import { TeamManagementPage } from "@/features/user-management";
-
-// Condominiums Pages
-import { CondominiumsPage } from "@/features/condominiums";
-
-// Access Denied Page
-import { AccessDeniedPage } from "@/pages/AccessDenied";
-
 export function AppRoutes() {
+  const protectedRoutes: FeatureRoute[] = [
+    ...dashboardRoutes,
+    ...messagesRoutes,
+    ...residentsRoutes,
+    ...userApprovalRoutes,
+    ...userManagementRoutes,
+    ...condominiumsRoutes,
+    ...structureRoutes,
+    ...complaintsRoutes,
+    ...historyRoutes,
+  ];
+
   return (
     <Routes>
-        {/* Public Routes */}
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
+      {authRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
 
-        {/* Redirect old /login to /auth/login */}
-        <Route path="/login" element={<LoginPage />} />
+      <Route
+        path={pendingApprovalRoute.path}
+        element={pendingApprovalRoute.element}
+      />
 
-        {/* Pending Approval - Protected but no ApprovalGuard */}
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <ApprovalGuard>
+              <MainLayout />
+            </ApprovalGuard>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<InitialRedirect />} />
+
+        {protectedRoutes.map((route) => (
+          <Route
+            key={route.path}
+            path={route.path}
+            element={route.element}
+          />
+        ))}
+
         <Route
-          path="/pending-approval"
+          path="settings"
           element={
-            <ProtectedRoute>
-              <PendingApprovalPage />
-            </ProtectedRoute>
+            <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
+              <SettingsPage />
+            </PermissionGuard>
           }
         />
 
-        {/* Access Denied */}
-        <Route path="/access-denied" element={<AccessDeniedPage />} />
-
-        {/* Protected Routes with Layout */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <ApprovalGuard>
-                <MainLayout />
-              </ApprovalGuard>
-            </ProtectedRoute>
-          }
-        >
-          {/* Root - Redirect based on user role */}
-          <Route index element={<InitialRedirect />} />
-
-          {/* Unified Dashboard - Professional Syndics & Super Admins only */}
-          <Route
-            path="unified-dashboard"
-            element={
-              <PermissionGuard
-                permission={Permissions.VIEW_UNIFIED_DASHBOARD}
-              >
-                <UnifiedDashboardPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Dashboard - All management levels */}
-          <Route
-            path="dashboard"
-            element={
-              <PermissionGuard permission={Permissions.VIEW_DASHBOARD}>
-                <DashboardPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Messages */}
-          <Route
-            path="messages"
-            element={
-              <PermissionGuard permission={Permissions.SEND_MESSAGE}>
-                <MessagingPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Residents */}
-          <Route
-            path="residents"
-            element={
-              <PermissionGuard permission={Permissions.VIEW_RESIDENTS}>
-                <ResidentsPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* User Approval - Admins and Syndics only */}
-          <Route
-            path="user-approval"
-            element={
-              <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
-                <UserApprovalPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Team Management - Syndics and Admins */}
-          <Route
-            path="team"
-            element={
-              <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
-                <TeamManagementPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Condominiums Management - SUPER_ADMIN only */}
-          <Route
-            path="condominiums"
-            element={
-              <PermissionGuard permission={Permissions.CREATE_CONDOMINIUM}>
-                <CondominiumsPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Structure */}
-          <Route
-            path="structure"
-            element={
-              <PermissionGuard permission={Permissions.MANAGE_STRUCTURE}>
-                <StructurePage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Complaints */}
-          <Route
-            path="complaints"
-            element={
-              <AnyPermissionGuard
-                permissions={[
-                  Permissions.VIEW_COMPLAINTS,
-                  Permissions.VIEW_OWN_COMPLAINTS,
-                ]}
-              >
-                <ComplaintsPage />
-              </AnyPermissionGuard>
-            }
-          />
-
-          {/* History */}
-          <Route
-            path="history"
-            element={
-              <PermissionGuard permission={Permissions.VIEW_HISTORY}>
-                <HistoryPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Settings */}
-          <Route
-            path="settings"
-            element={
-              <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
-                <SettingsPage />
-              </PermissionGuard>
-            }
-          />
-
-          {/* Fallback - Redirect based on user role */}
-          <Route path="*" element={<InitialRedirect />} />
-        </Route>
-      </Routes>
+        <Route path="*" element={<InitialRedirect />} />
+      </Route>
+    </Routes>
   );
 }
