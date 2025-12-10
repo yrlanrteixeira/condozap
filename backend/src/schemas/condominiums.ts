@@ -4,11 +4,15 @@
  * Simple validation functions
  */
 
-import { isValidCnpj, isMinLength, isValidCondominiumStatus } from "../utils/validation.js";
+import {
+  isValidCnpj,
+  isMinLength,
+  isValidCondominiumStatus,
+} from "../shared/utils/validation";
 import type {
   CreateCondominiumRequest,
   UpdateCondominiumRequest,
-} from "../types/requests.js";
+} from "../types/requests";
 
 export function validateCreateCondominium(data: CreateCondominiumRequest): string | null {
   if (!isMinLength(data.name, 3)) {

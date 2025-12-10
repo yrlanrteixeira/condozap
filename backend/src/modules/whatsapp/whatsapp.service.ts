@@ -1,6 +1,9 @@
 import axios from "axios";
-import { config } from "../../config/env.js";
-import { evolutionService } from "../evolution/evolution.service.js";
+import type { PrismaClient, WhatsAppStatus } from "@prisma/client";
+import type { FastifyBaseLogger } from "fastify";
+import { config } from "../../config/env";
+import { evolutionService } from "../evolution/evolution.service";
+import type { WhatsAppWebhookBody } from "./whatsapp.schema";
 
 export interface WhatsAppMessage {
   to: string;
@@ -12,6 +15,22 @@ export interface BulkMessage {
   recipients: Array<{ phone: string; name: string }>;
   message: string;
 }
+
+const normalizeWhatsAppStatus = (status: string): WhatsAppStatus | null => {
+  if (status === "SENT") {
+    return "SENT";
+  }
+  if (status === "DELIVERED") {
+    return "DELIVERED";
+  }
+  if (status === "READ") {
+    return "READ";
+  }
+  if (status === "FAILED") {
+    return "FAILED";
+  }
+  return null;
+};
 
 export class WhatsAppService {
   private readonly baseUrl = config.WHATSAPP_API_URL;
@@ -207,5 +226,37 @@ export class WhatsAppService {
     }
   }
 }
+
+export const updateMessageStatuses = async (
+  prisma: PrismaClient,
+  body: WhatsAppWebhookBody,
+  logger: FastifyBaseLogger
+): Promise<void> => {
+  const statuses = body.entry?.[0]?.changes?.[0]?.value?.statuses ?? [];
+  if (statuses.length === 0) {
+    logger.info("No WhatsApp statuses to process");
+    return;
+  }
+  for (const status of statuses) {
+    const messageId = status.id;
+    const normalizedStatus = status.status
+      ? status.status.toUpperCase()
+      : undefined;
+    if (!messageId || !normalizedStatus) {
+      continue;
+    }
+    const allowedStatus = normalizeWhatsAppStatus(normalizedStatus);
+    if (!allowedStatus) {
+      continue;
+    }
+    await prisma.message.updateMany({
+      where: { whatsappMessageId: messageId },
+      data: {
+        whatsappStatus: allowedStatus,
+      },
+    });
+    logger.info(`Updated message ${messageId} status to ${allowedStatus}`);
+  }
+};
 
 export const whatsappService = new WhatsAppService();

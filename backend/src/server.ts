@@ -1,5 +1,5 @@
-import { config } from "./config/env.js";
-import { createApp } from "./app/app.js";
+import { config } from "./config/env";
+import { createApp } from "./app/app";
 
 const startServer = async (): Promise<void> => {
   const fastify = await createApp();

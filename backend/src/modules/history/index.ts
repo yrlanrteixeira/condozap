@@ -1,4 +1,5 @@
 export * from "./history.routes";
-export * from "./history.schemas";
-export * from "./history.types";
+export * from "./history.schema";
+export * from "./history.controller";
+export * from "./history.service";
 

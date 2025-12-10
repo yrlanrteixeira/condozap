@@ -1,4 +1,4 @@
-import { config } from "../../config/env.js";
+import { config } from "../../config/env";
 import type {
   SendTextInput,
   SendMediaInput,
@@ -9,7 +9,7 @@ import type {
   BatchMessageInput,
   BatchMessageResult,
   EvolutionError,
-} from "./evolution.types.js";
+} from "./evolution.schema";
 
 class EvolutionService {
   private readonly baseUrl: string;

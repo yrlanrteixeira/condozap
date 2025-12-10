@@ -6,7 +6,7 @@ import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import { config } from "../config/env";
 import authPlugin from "../plugins/auth";
-import { createErrorHandler } from "../middlewares/errorHandler";
+import { createErrorHandler } from "../shared/middlewares/errorHandler";
 import { authRoutes } from "../modules/auth";
 import { complaintsRoutes } from "../modules/complaints";
 import { residentsRoutes } from "../modules/residents/residents.routes";

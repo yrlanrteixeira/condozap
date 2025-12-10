@@ -1,20 +1,19 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ComplaintStatus } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
-import * as complaintDb from "./complaints.db";
 import { whatsappService } from "../whatsapp/whatsapp.service";
 import {
   buildComplaintCreatedMessage,
   buildComplaintStatusMessage,
   buildComplaintPriorityMessage,
   buildComplaintCommentMessage,
-} from "../../helpers/notifications.js";
-import { NotFoundError } from "../../lib/errors.js";
+} from "../../shared/utils/notifications";
+import { NotFoundError } from "../../shared/errors";
 import type {
   CreateComplaintRequest,
   UpdateComplaintStatusRequest,
   UpdateComplaintPriorityRequest,
   AddComplaintCommentRequest,
-} from "./complaints.types.js";
+} from "./complaints.schema";
 
 export async function createComplaint(
   prisma: PrismaClient,
@@ -26,7 +25,20 @@ export async function createComplaint(
     throw new NotFoundError("Resident");
   }
 
-  const complaint = await complaintDb.createComplaint(prisma, data);
+  const complaint = await prisma.complaint.create({
+    data: {
+      condominiumId: data.condominiumId,
+      residentId: data.residentId,
+      category: data.category,
+      content: data.content,
+      priority: data.priority || "MEDIUM",
+      isAnonymous: data.isAnonymous ?? false,
+    },
+    include: {
+      resident: true,
+      attachments: true,
+    },
+  });
 
   if (resident.consentWhatsapp && !data.isAnonymous) {
     const message = buildComplaintCreatedMessage(
@@ -54,24 +66,37 @@ export async function updateComplaintStatus(
   data: UpdateComplaintStatusRequest,
   userId: string
 ) {
-  const complaint = await complaintDb.findComplaintWithResident(prisma, id);
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true },
+  });
   if (!complaint) {
     throw new NotFoundError("Complaint");
   }
 
-  const updated = await complaintDb.updateComplaintStatus(
-    prisma,
-    id,
-    data.status,
-    userId
-  );
+  const updated = await prisma.complaint.update({
+    where: { id },
+    data: {
+      status: data.status as ComplaintStatus,
+      ...(data.status === "RESOLVED" && {
+        resolvedAt: new Date(),
+        resolvedBy: userId,
+      }),
+    },
+    include: {
+      resident: true,
+      statusHistory: true,
+    },
+  });
 
-  await complaintDb.createStatusHistory(prisma, {
-    complaintId: id,
-    fromStatus: complaint.status,
-    toStatus: data.status,
-    changedBy: userId,
-    notes: data.notes,
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId: id,
+      fromStatus: complaint.status,
+      toStatus: data.status as ComplaintStatus,
+      changedBy: userId,
+      notes: data.notes,
+    },
   });
 
   if (complaint.resident.consentWhatsapp) {
@@ -100,11 +125,11 @@ export async function updateComplaintPriority(
   id: number,
   data: UpdateComplaintPriorityRequest
 ) {
-  const complaint = await complaintDb.updateComplaintPriority(
-    prisma,
-    id,
-    data.priority
-  );
+  const complaint = await prisma.complaint.update({
+    where: { id },
+    data: { priority: data.priority },
+    include: { resident: true },
+  });
 
   if (!complaint) {
     throw new NotFoundError("Complaint");
@@ -136,20 +161,28 @@ export async function addComplaintComment(
   userId: string,
   userRole: string
 ) {
-  const complaint = await complaintDb.findComplaintWithResident(prisma, id);
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true },
+  });
   if (!complaint) {
     throw new NotFoundError("Complaint");
   }
 
-  const historyEntry = await complaintDb.createStatusHistory(prisma, {
-    complaintId: id,
-    fromStatus: complaint.status,
-    toStatus: complaint.status,
-    changedBy: userId,
-    notes: data.notes,
+  const historyEntry = await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId: id,
+      fromStatus: complaint.status,
+      toStatus: complaint.status,
+      changedBy: userId,
+      notes: data.notes,
+    },
   });
 
-  await complaintDb.updateComplaintTimestamp(prisma, id);
+  await prisma.complaint.update({
+    where: { id },
+    data: { updatedAt: new Date() },
+  });
 
   if (complaint.resident.consentWhatsapp) {
     const message = buildComplaintCommentMessage(
@@ -175,12 +208,23 @@ export async function deleteComplaint(
   logger: FastifyBaseLogger,
   id: number
 ) {
-  await complaintDb.deleteComplaint(prisma, id);
+  await prisma.complaint.delete({
+    where: { id },
+  });
   logger.info(`Complaint ${id} deleted`);
 }
 
 export async function getComplaintById(prisma: PrismaClient, id: number) {
-  return complaintDb.findComplaintById(prisma, id);
+  return prisma.complaint.findUnique({
+    where: { id },
+    include: {
+      resident: true,
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
 }
 
 export async function getAllComplaints(
@@ -192,7 +236,34 @@ export async function getAllComplaints(
     condominiumId?: string;
   }
 ) {
-  return complaintDb.findAllComplaints(prisma, filters);
+  return prisma.complaint.findMany({
+    where: {
+      ...(filters.condominiumId && { condominiumId: filters.condominiumId }),
+      ...(filters.status && { status: filters.status as ComplaintStatus }),
+      ...(filters.priority && { priority: filters.priority as any }),
+      ...(filters.category && { category: filters.category }),
+    },
+    include: {
+      condominium: {
+        select: { id: true, name: true },
+      },
+      resident: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          tower: true,
+          floor: true,
+          unit: true,
+        },
+      },
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+    orderBy: [{ condominium: { name: "asc" } }, { createdAt: "desc" }],
+  });
 }
 
 export async function getComplaintsByCondominium(
@@ -204,11 +275,33 @@ export async function getComplaintsByCondominium(
     category?: string;
   }
 ) {
-  return complaintDb.findComplaintsByCondominium(
-    prisma,
-    condominiumId,
-    filters
-  );
+  return prisma.complaint.findMany({
+    where: {
+      condominiumId,
+      ...(filters.status && { status: filters.status as ComplaintStatus }),
+      ...(filters.priority && { priority: filters.priority as any }),
+      ...(filters.category && { category: filters.category }),
+    },
+    include: {
+      resident: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          tower: true,
+          floor: true,
+          unit: true,
+        },
+      },
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
 async function findResidentById(prisma: PrismaClient, id: string) {

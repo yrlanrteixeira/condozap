@@ -1,16 +1,22 @@
 import { PrismaClient } from "@prisma/client";
-import { NotFoundError, BadRequestError } from "../../lib/errors";
-import {
-  findStructureByCondominium,
-  updateStructureByCondominium,
-} from "./structure.db";
-import type { UpdateStructureBody } from "./structure.types";
+import { NotFoundError, BadRequestError } from "../../shared/errors";
+import type {
+  CondominiumStructure,
+  UpdateStructureBody,
+} from "./structure.schema";
 
 export async function getStructure(
   prisma: PrismaClient,
   condominiumId: string
 ) {
-  const condominium = await findStructureByCondominium(prisma, condominiumId);
+  const condominium = await prisma.condominium.findUnique({
+    where: { id: condominiumId },
+    select: {
+      id: true,
+      name: true,
+      structure: true,
+    },
+  });
   if (!condominium) {
     throw new NotFoundError("Condomínio");
   }
@@ -29,16 +35,29 @@ export async function updateStructure(
 ) {
   validateStructure(body);
 
-  const condominium = await findStructureByCondominium(prisma, condominiumId);
+  const condominium = await prisma.condominium.findUnique({
+    where: { id: condominiumId },
+    select: {
+      id: true,
+      name: true,
+      structure: true,
+    },
+  });
   if (!condominium) {
     throw new NotFoundError("Condomínio");
   }
 
-  const updated = await updateStructureByCondominium(
-    prisma,
-    condominiumId,
-    body.structure
-  );
+  const updated = await prisma.condominium.update({
+    where: { id: condominiumId },
+    data: {
+      structure: body.structure as unknown as CondominiumStructure,
+    },
+    select: {
+      id: true,
+      name: true,
+      structure: true,
+    },
+  });
 
   return {
     condominiumId: updated.id,

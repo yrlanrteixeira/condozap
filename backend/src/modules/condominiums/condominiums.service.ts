@@ -1,10 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
-import * as condominiumDb from "./condominiums.db";
+import { ConflictError, NotFoundError } from "../../shared/errors";
 import type {
   CreateCondominiumRequest,
   UpdateCondominiumRequest,
-} from "./condominiums.types";
+} from "./condominiums.schema";
 
 export async function createCondominium(
   prisma: PrismaClient,
@@ -12,15 +12,22 @@ export async function createCondominium(
   data: CreateCondominiumRequest,
   userId: string
 ) {
-  const existingCondominium = await condominiumDb.findCondominiumByCnpj(
-    prisma,
-    data.cnpj
-  );
+  const existingCondominium = await prisma.condominium.findUnique({
+    where: { cnpj: data.cnpj },
+  });
   if (existingCondominium) {
-    throw new Error("CNPJ já cadastrado");
+    throw new ConflictError("CNPJ já cadastrado");
   }
 
-  const condominium = await condominiumDb.createCondominium(prisma, data);
+  const condominium = await prisma.condominium.create({
+    data: {
+      name: data.name,
+      cnpj: data.cnpj,
+      status: "TRIAL",
+      whatsappPhone: data.whatsappPhone,
+      whatsappBusinessId: data.whatsappBusinessId,
+    },
+  });
 
   logger.info(`Condominium ${condominium.id} created by ${userId}`);
 
@@ -34,22 +41,26 @@ export async function updateCondominium(
   data: UpdateCondominiumRequest,
   userId: string
 ) {
-  const existing = await condominiumDb.findCondominiumById(prisma, id);
+  const existing = await prisma.condominium.findUnique({
+    where: { id },
+  });
   if (!existing) {
-    throw new Error("Condomínio não encontrado");
+    throw new NotFoundError("Condomínio não encontrado");
   }
 
   if (data.cnpj && data.cnpj !== existing.cnpj) {
-    const cnpjInUse = await condominiumDb.findCondominiumByCnpj(
-      prisma,
-      data.cnpj
-    );
+    const cnpjInUse = await prisma.condominium.findUnique({
+      where: { cnpj: data.cnpj },
+    });
     if (cnpjInUse) {
-      throw new Error("CNPJ já cadastrado");
+      throw new ConflictError("CNPJ já cadastrado");
     }
   }
 
-  const condominium = await condominiumDb.updateCondominium(prisma, id, data);
+  const condominium = await prisma.condominium.update({
+    where: { id },
+    data,
+  });
 
   logger.info(`Condominium ${id} updated by ${userId}`);
 
@@ -62,30 +73,93 @@ export async function deleteCondominium(
   id: string,
   userId: string
 ) {
-  const existing = await condominiumDb.findCondominiumWithCounts(prisma, id);
+  const existing = await prisma.condominium.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          residents: true,
+          users: true,
+        },
+      },
+    },
+  });
   if (!existing) {
-    throw new Error("Condomínio não encontrado");
+    throw new NotFoundError("Condomínio não encontrado");
   }
 
   if (existing._count.residents > 0 || existing._count.users > 0) {
-    throw new Error(
+    throw new ConflictError(
       `Este condomínio possui ${existing._count.residents} moradores e ${existing._count.users} usuários vinculados. Remova-os primeiro.`
     );
   }
 
-  await condominiumDb.deleteCondominium(prisma, id);
+  await prisma.condominium.delete({
+    where: { id },
+  });
 
   logger.info(`Condominium ${id} deleted by ${userId}`);
 }
 
 export async function getCondominiumById(prisma: PrismaClient, id: string) {
-  return condominiumDb.findCondominiumById(prisma, id);
+  return prisma.condominium.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          residents: true,
+          users: true,
+          complaints: true,
+          messages: true,
+        },
+      },
+    },
+  });
 }
 
 export async function getAllCondominiums(prisma: PrismaClient) {
-  return condominiumDb.findAllCondominiums(prisma);
+  return prisma.condominium.findMany({
+    select: {
+      id: true,
+      name: true,
+      cnpj: true,
+      status: true,
+      whatsappPhone: true,
+      whatsappBusinessId: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          residents: true,
+          users: true,
+          complaints: true,
+        },
+      },
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
 }
 
 export async function getCondominiumStats(prisma: PrismaClient, id: string) {
-  return condominiumDb.getCondominiumStats(prisma, id);
+  const [residentsCount, complaintsOpen, complaintsResolved, messagesCount] =
+    await Promise.all([
+      prisma.resident.count({ where: { condominiumId: id } }),
+      prisma.complaint.count({ where: { condominiumId: id, status: "OPEN" } }),
+      prisma.complaint.count({
+        where: { condominiumId: id, status: "RESOLVED" },
+      }),
+      prisma.message.count({ where: { condominiumId: id } }),
+    ]);
+
+  return {
+    residents: residentsCount,
+    complaints: {
+      open: complaintsOpen,
+      resolved: complaintsResolved,
+      total: complaintsOpen + complaintsResolved,
+    },
+    messages: messagesCount,
+  };
 }

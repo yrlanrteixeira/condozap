@@ -1,17 +1,16 @@
 import { FastifyPluginAsync } from "fastify";
-import { prisma } from "../../lib/prisma.js";
 import {
   requireSuperAdmin,
   requireCondoAccess,
-} from "../../middlewares/index.js";
-import { AuthUser } from "../../types/auth.js";
-import * as condominiumService from "./condominiums.service.js";
+} from "../../shared/middlewares";
 import {
-  createCondominiumSchema,
-  updateCondominiumSchema,
-  type CreateCondominiumSchema,
-  type UpdateCondominiumSchema,
-} from "./condominiums.schemas.js";
+  listCondominiumsHandler,
+  getCondominiumHandler,
+  createCondominiumHandler,
+  updateCondominiumHandler,
+  deleteCondominiumHandler,
+  getCondominiumStatsHandler,
+} from "./condominiums.controller";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -19,10 +18,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (_request, reply) => {
-      const condominiums = await condominiumService.getAllCondominiums(prisma);
-      return reply.send(condominiums);
-    }
+    listCondominiumsHandler
   );
 
   fastify.get(
@@ -33,20 +29,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
         requireCondoAccess({ paramName: "id" }),
       ],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-
-      const condominium = await condominiumService.getCondominiumById(
-        prisma,
-        id
-      );
-
-      if (!condominium) {
-        return reply.status(404).send({ error: "Condomínio não encontrado" });
-      }
-
-      return reply.send(condominium);
-    }
+    getCondominiumHandler
   );
 
   fastify.post(
@@ -54,24 +37,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const user = request.user as AuthUser;
-      const body = createCondominiumSchema.parse(
-        request.body
-      ) as CreateCondominiumSchema;
-
-      try {
-        const condominium = await condominiumService.createCondominium(
-          prisma,
-          fastify.log,
-          body,
-          user.id
-        );
-        return reply.status(201).send(condominium);
-      } catch (error: any) {
-        return reply.status(400).send({ error: error.message });
-      }
-    }
+    createCondominiumHandler
   );
 
   fastify.patch(
@@ -79,27 +45,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const user = request.user as AuthUser;
-      const body = updateCondominiumSchema.parse(
-        request.body
-      ) as UpdateCondominiumSchema;
-
-      try {
-        const condominium = await condominiumService.updateCondominium(
-          prisma,
-          fastify.log,
-          id,
-          body,
-          user.id
-        );
-        return reply.send(condominium);
-      } catch (error: any) {
-        const status = error.message.includes("não encontrado") ? 404 : 400;
-        return reply.status(status).send({ error: error.message });
-      }
-    }
+    updateCondominiumHandler
   );
 
   fastify.delete(
@@ -107,23 +53,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const user = request.user as AuthUser;
-
-      try {
-        await condominiumService.deleteCondominium(
-          prisma,
-          fastify.log,
-          id,
-          user.id
-        );
-        return reply.status(204).send();
-      } catch (error: any) {
-        const status = error.message.includes("não encontrado") ? 404 : 400;
-        return reply.status(status).send({ error: error.message });
-      }
-    }
+    deleteCondominiumHandler
   );
 
   fastify.get(
@@ -134,12 +64,6 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
         requireCondoAccess({ paramName: "id" }),
       ],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-
-      const stats = await condominiumService.getCondominiumStats(prisma, id);
-
-      return reply.send(stats);
-    }
+    getCondominiumStatsHandler
   );
 };

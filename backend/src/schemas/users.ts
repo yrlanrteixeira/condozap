@@ -4,14 +4,14 @@
  * Simple validation functions
  */
 
-import { isValidEmail, isMinLength } from "../utils/validation.js";
+import { isValidEmail, isMinLength } from "../shared/utils/validation";
 import type {
   CreateAdminRequest,
   CreateSyndicRequest,
   UpdateUserRoleRequest,
   RemoveUserRequest,
   InviteUserRequest,
-} from "../types/requests.js";
+} from "../types/requests";
 
 export function validateCreateAdmin(data: CreateAdminRequest): string | null {
   if (!isValidEmail(data.email)) {

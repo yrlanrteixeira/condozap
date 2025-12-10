@@ -1,16 +1,12 @@
 import { FastifyPluginAsync } from "fastify";
-import { prisma } from "../../lib/prisma";
-import { requireSuperAdmin } from "../../middlewares";
-import * as residentService from "./residents.service";
+import { requireSuperAdmin } from "../../shared/middlewares";
 import {
-  createResidentSchema,
-  updateResidentSchema,
-} from "./residents.schemas";
-import type {
-  CreateResidentRequest,
-  ResidentFilters,
-  UpdateResidentRequest,
-} from "./residents.types";
+  createResidentHandler,
+  deleteResidentHandler,
+  listAllResidentsHandler,
+  listResidentsByCondoHandler,
+  updateResidentHandler,
+} from "./residents.controller";
 
 export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -18,10 +14,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
-    async (request) => {
-      const filters = request.query as ResidentFilters;
-      return residentService.getAllResidents(prisma, filters);
-    }
+    listAllResidentsHandler
   );
 
   fastify.get(
@@ -29,16 +22,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate],
     },
-    async (request) => {
-      const { condominiumId } = request.params as { condominiumId: string };
-      const filters = request.query as Omit<ResidentFilters, "condominiumId">;
-
-      return residentService.getResidentsByCondominium(
-        prisma,
-        condominiumId,
-        filters
-      );
-    }
+    listResidentsByCondoHandler
   );
 
   fastify.post(
@@ -46,18 +30,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate],
     },
-    async (request, reply) => {
-      const body = createResidentSchema.parse(
-        request.body
-      ) as CreateResidentRequest;
-
-      const resident = await residentService.createResident(
-        prisma,
-        fastify.log,
-        body
-      );
-      return reply.status(201).send(resident);
-    }
+    createResidentHandler
   );
 
   fastify.patch(
@@ -65,20 +38,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const body = updateResidentSchema.parse(
-        request.body
-      ) as UpdateResidentRequest;
-
-      const resident = await residentService.updateResident(
-        prisma,
-        fastify.log,
-        id,
-        body
-      );
-      return reply.send(resident);
-    }
+    updateResidentHandler
   );
 
   fastify.delete(
@@ -86,11 +46,6 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate],
     },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-
-      await residentService.deleteResident(prisma, fastify.log, id);
-      return reply.status(204).send();
-    }
+    deleteResidentHandler
   );
 };

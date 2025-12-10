@@ -4,5 +4,5 @@
  * Central export point for all validation schemas.
  */
 
-export * from "./complaints.schema.js";
-export * from "./residents.schema.js";
+export * from "./complaints.schema";
+export * from "./residents.schema";

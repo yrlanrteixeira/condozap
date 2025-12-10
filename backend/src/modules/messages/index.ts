@@ -1,4 +1,5 @@
 export * from "./messages.routes";
-export * from "./messages.schemas";
-export * from "./messages.types";
+export * from "./messages.schema";
+export * from "./messages.controller";
+export * from "./messages.service";
 

@@ -1,14 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import bcrypt from "bcryptjs";
-import * as userDb from "./user-management.db";
 import type {
   CreateAdminRequest,
   CreateSyndicRequest,
   UpdateUserRoleRequest,
   RemoveUserRequest,
   InviteUserRequest,
-} from "./user-management.types";
+  UserRole,
+} from "./user-management.schema";
 
 export async function createAdmin(
   prisma: PrismaClient,
@@ -16,30 +16,43 @@ export async function createAdmin(
   data: CreateAdminRequest,
   createdBy: string
 ) {
-  const existingUser = await userDb.findUserByEmail(prisma, data.email);
+  const existingUser = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
   if (existingUser) {
     throw new Error("Email já está cadastrado no sistema");
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  const newAdmin = await userDb.createUser(prisma, {
-    email: data.email,
-    password: hashedPassword,
-    name: data.name,
-    role: "ADMIN",
-    permissionScope: "LOCAL",
-    status: "APPROVED",
-    approvedAt: new Date(),
-    approvedBy: createdBy,
+  const newAdmin = await prisma.user.create({
+    data: {
+      email: data.email,
+      password: hashedPassword,
+      name: data.name,
+      role: "ADMIN",
+      permissionScope: "LOCAL",
+      status: "APPROVED",
+      approvedAt: new Date(),
+      approvedBy: createdBy,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    },
   });
 
-  await userDb.createUserCondominiumLink(
-    prisma,
-    newAdmin.id,
-    data.condominiumId,
-    "ADMIN"
-  );
+  await prisma.userCondominium.create({
+    data: {
+      userId: newAdmin.id,
+      condominiumId: data.condominiumId,
+      role: "ADMIN",
+    },
+  });
 
   logger.info(
     `Admin ${newAdmin.email} created by ${createdBy} for condominium ${data.condominiumId}`
@@ -54,22 +67,34 @@ export async function createSyndic(
   data: CreateSyndicRequest,
   createdBy: string
 ) {
-  const existingUser = await userDb.findUserByEmail(prisma, data.email);
+  const existingUser = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
   if (existingUser) {
     throw new Error("Email já está cadastrado no sistema");
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  const newSyndic = await userDb.createUser(prisma, {
-    email: data.email,
-    password: hashedPassword,
-    name: data.name,
-    role: "SYNDIC",
-    permissionScope: "LOCAL",
-    status: "APPROVED",
-    approvedAt: new Date(),
-    approvedBy: createdBy,
+  const newSyndic = await prisma.user.create({
+    data: {
+      email: data.email,
+      password: hashedPassword,
+      name: data.name,
+      role: "SYNDIC",
+      permissionScope: "LOCAL",
+      status: "APPROVED",
+      approvedAt: new Date(),
+      approvedBy: createdBy,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    },
   });
 
   const userCondominiumsData = data.condominiumIds.map((condoId) => ({
@@ -78,7 +103,9 @@ export async function createSyndic(
     role: "SYNDIC" as const,
   }));
 
-  await userDb.createManyUserCondominiumLinks(prisma, userCondominiumsData);
+  await prisma.userCondominium.createMany({
+    data: userCondominiumsData,
+  });
 
   logger.info(
     `Syndic ${newSyndic.email} created by ${createdBy} for ${data.condominiumIds.length} condominiums`
@@ -94,7 +121,25 @@ export async function getUsersByCondominium(
   prisma: PrismaClient,
   condominiumId: string
 ) {
-  const users = await userDb.findUsersByCondominium(prisma, condominiumId);
+  const users = await prisma.userCondominium.findMany({
+    where: { condominiumId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          approvedAt: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
   return users.map((uc) => ({
     id: uc.user.id,
@@ -118,7 +163,15 @@ export async function updateUserRole(
     throw new Error("Você não pode alterar sua própria função");
   }
 
-  await userDb.updateUserRole(prisma, data.userId, data.newRole);
+  await prisma.user.update({
+    where: { id: data.userId },
+    data: { role: data.newRole as UserRole },
+  });
+
+  await prisma.userCondominium.updateMany({
+    where: { userId: data.userId },
+    data: { role: data.newRole as UserRole },
+  });
 
   logger.info(`User ${data.userId} role updated to ${data.newRole}`);
 }
@@ -133,17 +186,23 @@ export async function removeUserFromCondominium(
     throw new Error("Você não pode remover a si mesmo");
   }
 
-  await userDb.deleteUserCondominiumLink(
-    prisma,
-    data.userId,
-    data.condominiumId
-  );
+  await prisma.userCondominium.deleteMany({
+    where: {
+      userId: data.userId,
+      condominiumId: data.condominiumId,
+    },
+  });
 
-  const remainingCondos = await userDb.countUserCondominiums(prisma, data.userId);
+  const remainingCondos = await prisma.userCondominium.count({
+    where: { userId: data.userId },
+  });
 
   let userSuspended = false;
   if (remainingCondos === 0) {
-    await userDb.updateUserStatus(prisma, data.userId, "SUSPENDED");
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { status: "SUSPENDED" },
+    });
     userSuspended = true;
   }
 
@@ -159,26 +218,30 @@ export async function inviteUserToCondominium(
   logger: FastifyBaseLogger,
   data: InviteUserRequest
 ) {
-  const targetUser = await userDb.findUserByEmail(prisma, data.email);
+  const targetUser = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
   if (!targetUser) {
     throw new Error("Usuário não encontrado. Crie um novo administrador.");
   }
 
-  const existingLink = await userDb.findUserCondominiumLink(
-    prisma,
-    targetUser.id,
-    data.condominiumId
-  );
+  const existingLink = await prisma.userCondominium.findFirst({
+    where: {
+      userId: targetUser.id,
+      condominiumId: data.condominiumId,
+    },
+  });
   if (existingLink) {
     throw new Error("Este usuário já está vinculado ao condomínio");
   }
 
-  await userDb.createUserCondominiumLink(
-    prisma,
-    targetUser.id,
-    data.condominiumId,
-    data.role
-  );
+  await prisma.userCondominium.create({
+    data: {
+      userId: targetUser.id,
+      condominiumId: data.condominiumId,
+      role: data.role,
+    },
+  });
 
   logger.info(
     `User ${targetUser.email} invited to condominium ${data.condominiumId}`
@@ -191,4 +254,3 @@ export async function inviteUserToCondominium(
     role: data.role,
   };
 }
-

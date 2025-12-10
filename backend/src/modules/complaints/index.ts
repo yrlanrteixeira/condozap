@@ -1,6 +1,5 @@
 export * from "./complaints.routes";
-export * from "./complaints.schemas";
-export * from "./complaints.types";
+export * from "./complaints.schema";
+export * from "./complaints.controller";
 export * from "./complaints.service";
-export * from "./complaints.db";
 

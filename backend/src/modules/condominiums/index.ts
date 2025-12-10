@@ -1,4 +1,4 @@
 export * from "./condominiums.routes";
-export * from "./condominiums.schemas";
-export * from "./condominiums.types";
+export * from "./condominiums.schema";
+export * from "./condominiums.controller";
 export * from "./condominiums.service";

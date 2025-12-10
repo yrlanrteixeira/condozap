@@ -3,32 +3,49 @@ import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
-} from "../../lib/errors";
+} from "../../shared/errors";
 import type { AuthUser } from "../../types/auth";
-import {
-  listCondominiums,
-  listPendingUsers,
-  listPendingUsersByCondo,
-  findPendingUser,
-  findCondominium,
-  findUserCondoAccess,
-  updateUserStatusApproved,
-  updateUserStatusRejected,
-  findResidentByUnit,
-  updateResidentWithUser,
-  createResidentForUser,
-  findUserCondominiumLink,
-  createUserCondominiumLink,
-  getUserStatus,
-} from "./user-approval.db";
-import type { ApproveUserBody, RejectUserBody } from "./user-approval.types";
+import type {
+  ApproveUserBody,
+  RejectUserBody,
+  ResidentType,
+} from "./user-approval.schema";
 
 export async function getCondominiumsList(prisma: PrismaClient) {
-  return listCondominiums(prisma);
+  return prisma.condominium.findMany({
+    select: {
+      id: true,
+      name: true,
+      status: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
 }
 
 export async function getPendingUsers(prisma: PrismaClient) {
-  return listPendingUsers(prisma);
+  return prisma.user.findMany({
+    where: {
+      status: "PENDING",
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      requestedCondominiumId: true,
+      requestedTower: true,
+      requestedFloor: true,
+      requestedUnit: true,
+      requestedPhone: true,
+      consentWhatsapp: true,
+      consentDataProcessing: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
 export async function getPendingUsersByCondominium(
@@ -45,17 +62,38 @@ export async function getPendingUsersByCondominium(
   }
 
   if (currentUser.role !== "SUPER_ADMIN") {
-    const access = await findUserCondoAccess(
-      prisma,
-      currentUser.id,
-      condominiumId
-    );
+    const access = await prisma.userCondominium.findFirst({
+      where: {
+        userId: currentUser.id,
+        condominiumId,
+      },
+    });
     if (!access) {
       throw new ForbiddenError("Você não tem acesso a este condomínio.");
     }
   }
 
-  return listPendingUsersByCondo(prisma, condominiumId);
+  return prisma.user.findMany({
+    where: {
+      status: "PENDING",
+      requestedCondominiumId: condominiumId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      requestedTower: true,
+      requestedFloor: true,
+      requestedUnit: true,
+      requestedPhone: true,
+      consentWhatsapp: true,
+      consentDataProcessing: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
 export async function approveUser(
@@ -63,12 +101,19 @@ export async function approveUser(
   approver: AuthUser,
   body: ApproveUserBody
 ) {
-  const pendingUser = await findPendingUser(prisma, body.userId);
+  const pendingUser = await prisma.user.findFirst({
+    where: {
+      id: body.userId,
+      status: "PENDING",
+    },
+  });
   if (!pendingUser) {
     throw new BadRequestError("Usuário não encontrado ou não está pendente.");
   }
 
-  const condominium = await findCondominium(prisma, body.condominiumId);
+  const condominium = await prisma.condominium.findUnique({
+    where: { id: body.condominiumId },
+  });
   if (!condominium) {
     throw new BadRequestError(
       "Condomínio não encontrado. Verifique o ID informado."
@@ -76,61 +121,74 @@ export async function approveUser(
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const approvedUser = await updateUserStatusApproved(
-      tx,
-      body.userId,
-      approver.id
-    );
+    const approvedUser = await tx.user.update({
+      where: { id: body.userId },
+      data: {
+        status: "APPROVED",
+        approvedAt: new Date(),
+        approvedBy: approver.id,
+      },
+    });
 
-    const existingResident = await findResidentByUnit(
-      tx,
-      body.condominiumId,
-      body.tower,
-      body.floor,
-      body.unit
-    );
+    const existingResident = await tx.resident.findFirst({
+      where: {
+        condominiumId: body.condominiumId,
+        tower: body.tower,
+        floor: body.floor,
+        unit: body.unit,
+      },
+    });
 
     const phone = pendingUser.requestedPhone || "5500000000000";
 
     if (existingResident) {
-      await updateResidentWithUser(tx, existingResident.id, {
-        userId: body.userId,
-        name: approvedUser.name,
-        email: approvedUser.email,
-        phone: pendingUser.requestedPhone || existingResident.phone,
-        type: body.type || "OWNER",
-        consentWhatsapp: pendingUser.consentWhatsapp,
-        consentDataProcessing: pendingUser.consentDataProcessing,
+      await tx.resident.update({
+        where: { id: existingResident.id },
+        data: {
+          userId: body.userId,
+          name: approvedUser.name,
+          email: approvedUser.email,
+          phone: pendingUser.requestedPhone || existingResident.phone,
+          type: (body.type as ResidentType) || "OWNER",
+          consentWhatsapp: pendingUser.consentWhatsapp,
+          consentDataProcessing: pendingUser.consentDataProcessing,
+        },
       });
     } else {
-      await createResidentForUser(tx, {
-        condominiumId: body.condominiumId,
-        userId: body.userId,
-        name: approvedUser.name,
-        email: approvedUser.email,
-        phone,
-        tower: body.tower,
-        floor: body.floor,
-        unit: body.unit,
-        type: body.type || "OWNER",
-        consentWhatsapp: pendingUser.consentWhatsapp,
-        consentDataProcessing: pendingUser.consentDataProcessing,
+      await tx.resident.create({
+        data: {
+          condominiumId: body.condominiumId,
+          userId: body.userId,
+          name: approvedUser.name,
+          email: approvedUser.email,
+          phone,
+          tower: body.tower,
+          floor: body.floor,
+          unit: body.unit,
+          type: (body.type as ResidentType) || "OWNER",
+          consentWhatsapp: pendingUser.consentWhatsapp,
+          consentDataProcessing: pendingUser.consentDataProcessing,
+        },
       });
     }
 
-    const existingLink = await findUserCondominiumLink(
-      tx,
-      body.userId,
-      body.condominiumId
-    );
+    const existingLink = await tx.userCondominium.findUnique({
+      where: {
+        userId_condominiumId: {
+          userId: body.userId,
+          condominiumId: body.condominiumId,
+        },
+      },
+    });
 
     if (!existingLink) {
-      await createUserCondominiumLink(
-        tx,
-        body.userId,
-        body.condominiumId,
-        "RESIDENT"
-      );
+      await tx.userCondominium.create({
+        data: {
+          userId: body.userId,
+          condominiumId: body.condominiumId,
+          role: "RESIDENT",
+        },
+      });
     }
 
     return approvedUser;
@@ -144,7 +202,12 @@ export async function rejectUser(
   currentUser: AuthUser,
   body: RejectUserBody
 ) {
-  const pendingUser = await findPendingUser(prisma, body.userId);
+  const pendingUser = await prisma.user.findFirst({
+    where: {
+      id: body.userId,
+      status: "PENDING",
+    },
+  });
   if (!pendingUser) {
     throw new BadRequestError("Usuário não encontrado ou não está pendente.");
   }
@@ -161,11 +224,12 @@ export async function rejectUser(
     currentUser.role !== "SUPER_ADMIN" &&
     pendingUser.requestedCondominiumId
   ) {
-    const access = await findUserCondoAccess(
-      prisma,
-      currentUser.id,
-      pendingUser.requestedCondominiumId
-    );
+    const access = await prisma.userCondominium.findFirst({
+      where: {
+        userId: currentUser.id,
+        condominiumId: pendingUser.requestedCondominiumId,
+      },
+    });
     if (!access) {
       throw new ForbiddenError(
         "Você não tem permissão para rejeitar usuários deste condomínio."
@@ -173,16 +237,31 @@ export async function rejectUser(
     }
   }
 
-  return updateUserStatusRejected(
-    prisma,
-    body.userId,
-    body.reason,
-    currentUser.id
-  );
+  return prisma.user.update({
+    where: { id: body.userId },
+    data: {
+      status: "REJECTED",
+      rejectionReason: body.reason,
+      approvedBy: currentUser.id,
+    },
+  });
 }
 
 export async function getMyStatus(prisma: PrismaClient, userId: string) {
-  const status = await getUserStatus(prisma, userId);
+  const status = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+      approvedAt: true,
+      rejectionReason: true,
+      requestedTower: true,
+      requestedFloor: true,
+      requestedUnit: true,
+    },
+  });
   if (!status) {
     throw new NotFoundError("Usuário");
   }

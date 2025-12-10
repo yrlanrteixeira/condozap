@@ -1,13 +1,13 @@
 import { FastifyPluginAsync } from "fastify";
 import bcrypt from "bcryptjs";
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "../../shared/db/prisma";
 import {
   loginSchema,
   registerSchema,
   type LoginBody,
   type RegisterBody,
-} from "./auth.schemas.js";
-import type { AuthUser } from "../../types/auth.ts";
+} from "./auth.schemas";
+import type { AuthUser } from "../../types/auth";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/register", async (request, reply) => {
