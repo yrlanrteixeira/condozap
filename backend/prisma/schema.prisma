@@ -132,8 +132,9 @@ model User {
   requestedPhone         String?  @map("requested_phone")
 
   // LGPD Consent (coletado no cadastro, transferido para Resident na aprovação)
-  consentWhatsapp       Boolean @default(false) @map("consent_whatsapp")
-  consentDataProcessing Boolean @default(false) @map("consent_data_processing")
+  // Consentimento WhatsApp é OBRIGATÓRIO para se cadastrar na plataforma
+  consentWhatsapp       Boolean @default(true) @map("consent_whatsapp")
+  consentDataProcessing Boolean @default(true) @map("consent_data_processing")
 
   // MFA
   mfaEnabled Boolean @default(false) @map("mfa_enabled")
@@ -179,8 +180,8 @@ model Resident {
   type           ResidentType @default(OWNER)
   createdAt      DateTime     @default(now()) @map("created_at")
 
-  // LGPD Compliance
-  consentWhatsapp        Boolean @default(true) @map("consent_whatsapp")
+  // LGPD Compliance - Consentimento WhatsApp é OBRIGATÓRIO para cadastro
+  consentWhatsapp        Boolean @default(true) @map("consent_whatsapp") // Obrigatório - sem isso não recebe mensagens
   consentDataProcessing  Boolean @default(true) @map("consent_data_processing")
 
   // Relations

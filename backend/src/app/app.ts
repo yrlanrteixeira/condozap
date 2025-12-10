@@ -1,0 +1,89 @@
+import Fastify, { FastifyInstance } from "fastify";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import jwt from "@fastify/jwt";
+import multipart from "@fastify/multipart";
+import { config } from "../config/env";
+import authPlugin from "../plugins/auth";
+import { createErrorHandler } from "../middlewares/errorHandler";
+import { authRoutes } from "../modules/auth";
+import { complaintsRoutes } from "../modules/complaints";
+import { residentsRoutes } from "../modules/residents/residents.routes";
+import { messagesRoutes } from "../modules/messages/messages.routes";
+import { whatsappRoutes } from "../modules/whatsapp/whatsapp.routes";
+import { dashboardRoutes } from "../modules/dashboard";
+import { userApprovalRoutes } from "../modules/user-approval/user-approval.routes";
+import { userManagementRoutes } from "../modules/user-management/user-management.routes";
+import { evolutionRoutes } from "../modules/evolution";
+import { condominiumsRoutes } from "../modules/condominiums";
+import { historyRoutes } from "../modules/history/history.routes";
+import { structureRoutes } from "../modules/structure/structure.routes";
+
+export const createApp = async (): Promise<FastifyInstance> => {
+  const fastify = Fastify({
+    logger: {
+      level: config.LOG_LEVEL,
+      transport: config.isDev
+        ? {
+            target: "pino-pretty",
+            options: {
+              translateTime: "HH:MM:ss Z",
+              ignore: "pid,hostname",
+            },
+          }
+        : undefined,
+    },
+  });
+
+  await fastify.register(cors, {
+    origin: config.CORS_ORIGIN,
+    credentials: true,
+  });
+
+  await fastify.register(helmet, {
+    contentSecurityPolicy: config.isDev ? false : undefined,
+  });
+
+  await fastify.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+  });
+
+  await fastify.register(jwt, {
+    secret: config.JWT_SECRET,
+  });
+
+  await fastify.register(authPlugin);
+
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
+
+  fastify.get("/health", async () => {
+    return {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+    };
+  });
+
+  await fastify.register(authRoutes, { prefix: "/api/auth" });
+  await fastify.register(userApprovalRoutes, { prefix: "/api" });
+  await fastify.register(userManagementRoutes, { prefix: "/api" });
+  await fastify.register(complaintsRoutes, { prefix: "/api/complaints" });
+  await fastify.register(residentsRoutes, { prefix: "/api/residents" });
+  await fastify.register(messagesRoutes, { prefix: "/api/messages" });
+  await fastify.register(whatsappRoutes, { prefix: "/api/whatsapp" });
+  await fastify.register(evolutionRoutes, { prefix: "/api/evolution" });
+  await fastify.register(dashboardRoutes, { prefix: "/api/dashboard" });
+  await fastify.register(condominiumsRoutes, { prefix: "/api/condominiums" });
+  await fastify.register(historyRoutes, { prefix: "/api/history" });
+  await fastify.register(structureRoutes, { prefix: "/api/structure" });
+
+  fastify.setErrorHandler(createErrorHandler(fastify.log));
+
+  return fastify;
+};

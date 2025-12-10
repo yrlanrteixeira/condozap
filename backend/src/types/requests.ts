@@ -34,32 +34,6 @@ export interface UpdateResidentRequest {
 }
 
 // ============================================
-// Complaint Requests
-// ============================================
-
-export interface CreateComplaintRequest {
-  condominiumId: string;
-  residentId: string;
-  category: string;
-  content: string;
-  priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-  isAnonymous?: boolean;
-}
-
-export interface UpdateComplaintStatusRequest {
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
-  notes?: string;
-}
-
-export interface UpdateComplaintPriorityRequest {
-  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-}
-
-export interface AddComplaintCommentRequest {
-  notes: string;
-}
-
-// ============================================
 // Condominium Requests
 // ============================================
 

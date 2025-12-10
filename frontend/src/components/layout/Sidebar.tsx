@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { useRole } from "@/hooks/useRole";
+// import { useRole } from "@/hooks/useRole";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permissions } from "@/config/permissions";
 import { useState, useEffect, useCallback } from "react";
@@ -12,7 +12,7 @@ import {
   Building2,
   AlertTriangle,
   Users,
-  History,
+  // History,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -106,12 +106,12 @@ export const Sidebar = ({
       // Both admins (VIEW_COMPLAINTS) and residents (VIEW_OWN_COMPLAINTS) can access
       badge: openComplaintsCount,
     },
-    {
-      title: "Histórico",
-      href: "/history",
-      icon: History,
-      permission: Permissions.VIEW_HISTORY,
-    },
+    // {
+    //   title: "Histórico",
+    //   href: "/history",
+    //   icon: History,
+    //   permission: Permissions.VIEW_HISTORY,
+    // },
   ];
 
   // Dashboard Unificado para quem gerencia múltiplos condomínios
