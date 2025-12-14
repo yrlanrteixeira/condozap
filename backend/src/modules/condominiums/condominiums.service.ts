@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { ComplaintStatus, PrismaClient } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import { ConflictError, NotFoundError } from "../../shared/errors";
 import type {
@@ -143,12 +143,28 @@ export async function getAllCondominiums(prisma: PrismaClient) {
 }
 
 export async function getCondominiumStats(prisma: PrismaClient, id: string) {
+  const activeStatuses = [
+    "NEW",
+    "TRIAGE",
+    "IN_PROGRESS",
+    "WAITING_USER",
+    "WAITING_THIRD_PARTY",
+  ];
+  const resolvedStatuses = ["RESOLVED", "CLOSED"];
   const [residentsCount, complaintsOpen, complaintsResolved, messagesCount] =
     await Promise.all([
       prisma.resident.count({ where: { condominiumId: id } }),
-      prisma.complaint.count({ where: { condominiumId: id, status: "OPEN" } }),
       prisma.complaint.count({
-        where: { condominiumId: id, status: "RESOLVED" },
+        where: {
+          condominiumId: id,
+          status: { in: activeStatuses as ComplaintStatus[] },
+        },
+      }),
+      prisma.complaint.count({
+        where: {
+          condominiumId: id,
+          status: { in: resolvedStatuses as ComplaintStatus[] },
+        },
       }),
       prisma.message.count({ where: { condominiumId: id } }),
     ]);

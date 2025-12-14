@@ -185,9 +185,14 @@ export function ComplaintsPage() {
   // Helper function to get status label
   const getStatusLabel = (status: ComplaintStatus): string => {
     const labels: Record<ComplaintStatus, string> = {
-      OPEN: "Aberto",
-      IN_PROGRESS: "Em Andamento",
+      NEW: "Novo",
+      TRIAGE: "Triagem",
+      IN_PROGRESS: "Em andamento",
+      WAITING_USER: "Aguardando usuário",
+      WAITING_THIRD_PARTY: "Aguardando terceiro",
       RESOLVED: "Resolvido",
+      CLOSED: "Encerrado",
+      CANCELLED: "Cancelado",
     };
     return labels[status] || status;
   };

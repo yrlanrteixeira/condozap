@@ -130,3 +130,19 @@ export interface StructureNavigation {
   currentFloor?: string;
   currentUnit?: string;
 }
+
+export interface SectorMember {
+  userId: string;
+  name?: string;
+  email?: string;
+  order?: number;
+  workload?: number;
+}
+
+export interface Sector {
+  id: string;
+  condominiumId: string;
+  name: string;
+  categories: string[];
+  members: SectorMember[];
+}

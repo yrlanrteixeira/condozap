@@ -5,7 +5,16 @@ export const registerSchema = z.object({
   password: z.string().min(8),
   name: z.string().min(3),
   role: z
-    .enum(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "RESIDENT"])
+    .enum([
+      "SUPER_ADMIN",
+      "PROFESSIONAL_SYNDIC",
+      "ADMIN",
+      "SYNDIC",
+      "TRIAGE",
+      "SETOR_MANAGER",
+      "SETOR_MEMBER",
+      "RESIDENT",
+    ])
     .optional(),
   requestedCondominiumId: z.string().optional(),
   requestedTower: z.string().optional(),

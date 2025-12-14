@@ -19,6 +19,7 @@ import { evolutionRoutes } from "../modules/evolution";
 import { condominiumsRoutes } from "../modules/condominiums";
 import { historyRoutes } from "../modules/history/history.routes";
 import { structureRoutes } from "../modules/structure/structure.routes";
+import { uploadRoutes } from "../modules/uploads/upload.routes";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const fastify = Fastify({
@@ -82,6 +83,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(condominiumsRoutes, { prefix: "/api/condominiums" });
   await fastify.register(historyRoutes, { prefix: "/api/history" });
   await fastify.register(structureRoutes, { prefix: "/api/structure" });
+  await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
 
   fastify.setErrorHandler(createErrorHandler(fastify.log));
 

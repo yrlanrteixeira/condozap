@@ -1,17 +1,28 @@
 import { FastifyPluginAsync } from "fastify";
-import { prisma } from "../../shared/db/prisma";
 import { requireSuperAdmin } from "../../shared/middlewares";
 import {
+  requireAttachmentUpload,
+  requireCondoAccess,
+  requirePauseOrResume,
+  requireTicketAssign,
+  requireTicketModify,
+  requireTicketView,
+} from "../../auth/authorize";
+import {
   addComplaintCommentHandler,
+  addComplaintAttachmentHandler,
+  assignComplaintHandler,
   createComplaintHandler,
   deleteComplaintHandler,
   getAllComplaintsHandler,
   getComplaintsByCondominiumHandler,
+  getComplaintDetailHandler,
+  pauseComplaintSlaHandler,
+  resumeComplaintSlaHandler,
+  runSlaScanHandler,
   updateComplaintPriorityHandler,
   updateComplaintStatusHandler,
 } from "./complaints.controller";
-import * as complaintService from "./complaints.service";
-import { complaintIdParamSchema } from "./complaints.schema";
 
 export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -23,34 +34,28 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   fastify.get(
-    "/:condominiumId",
+    "/detail/:id",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireTicketView()],
     },
-    getComplaintsByCondominiumHandler
+    getComplaintDetailHandler
   );
 
   fastify.get(
-    "/detail/:id",
+    "/:condominiumId",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
-    async (request, reply) => {
-      const { id } = complaintIdParamSchema.parse(request.params);
-      const complaint = await complaintService.getComplaintById(prisma, id);
-
-      if (!complaint) {
-        return reply.status(404).send({ error: "Complaint not found" });
-      }
-
-      return reply.send(complaint);
-    }
+    getComplaintsByCondominiumHandler
   );
 
   fastify.post(
     "/",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess("condominiumId", "body"),
+      ],
     },
     createComplaintHandler
   );
@@ -58,7 +63,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:id/status",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireTicketModify()],
     },
     updateComplaintStatusHandler
   );
@@ -66,7 +71,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:id/priority",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireTicketModify()],
     },
     updateComplaintPriorityHandler
   );
@@ -74,9 +79,49 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:id/comment",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireTicketModify()],
     },
     addComplaintCommentHandler
+  );
+
+  fastify.post(
+    "/:id/assign",
+    {
+      onRequest: [fastify.authenticate, requireTicketAssign()],
+    },
+    assignComplaintHandler
+  );
+
+  fastify.post(
+    "/:id/pause",
+    {
+      onRequest: [fastify.authenticate, requirePauseOrResume()],
+    },
+    pauseComplaintSlaHandler
+  );
+
+  fastify.post(
+    "/:id/resume",
+    {
+      onRequest: [fastify.authenticate, requirePauseOrResume()],
+    },
+    resumeComplaintSlaHandler
+  );
+
+  fastify.post(
+    "/:id/attachments",
+    {
+      onRequest: [fastify.authenticate, requireAttachmentUpload()],
+    },
+    addComplaintAttachmentHandler
+  );
+
+  fastify.post(
+    "/sla/scan",
+    {
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
+    },
+    runSlaScanHandler
   );
 
   fastify.delete(

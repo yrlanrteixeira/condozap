@@ -23,13 +23,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
-    const userRole = body.role || "RESIDENT";
+    const userRole = (body.role || "RESIDENT") as string;
     const user = await prisma.user.create({
       data: {
         email: body.email,
         password: hashedPassword,
         name: body.name,
-        role: userRole,
+        role: userRole as any,
         status: userRole === "RESIDENT" ? "PENDING" : "APPROVED",
         requestedCondominiumId: body.requestedCondominiumId,
         requestedTower: body.requestedTower,
@@ -58,6 +58,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       email: user.email,
       role: user.role,
       status: user.status,
+      name: user.name,
+      permissionScope: user.permissionScope,
     });
 
     return reply.send({
@@ -102,6 +104,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       email: user.email,
       role: user.role,
       status: user.status,
+      name: user.name,
+      permissionScope: user.permissionScope,
       residentId: user.resident?.id,
     });
 

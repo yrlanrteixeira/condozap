@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireCondoAccess } from "../../auth/authorize";
 import {
   getAllMetricsHandler,
   getCondominiumMetricsHandler,
@@ -18,7 +19,7 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/metrics/:condominiumId",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     getCondominiumMetricsHandler
   );

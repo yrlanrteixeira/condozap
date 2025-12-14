@@ -37,12 +37,20 @@ export function getComplaintStatusMessage(
   newStatus: ComplaintStatus
 ): string {
   switch (newStatus) {
+    case "TRIAGE":
+      return `Sua denúncia sobre "${complaint.category}" está em triagem e será direcionada ao setor responsável.`;
     case "IN_PROGRESS":
       return `Olá. Sua denúncia sobre "${complaint.category}" foi recebida e já está em análise pelo síndico/ronda.`;
+    case "WAITING_USER":
+      return `Precisamos de mais informações para a denúncia "${complaint.category}". Responda para retomarmos o atendimento.`;
+    case "WAITING_THIRD_PARTY":
+      return `A denúncia "${complaint.category}" está aguardando retorno de um terceiro. Avisaremos sobre novos avanços.`;
     case "RESOLVED":
       return `Olá. Boas notícias! A denúncia sobre "${complaint.category}" foi finalizada/resolvida.`;
-    case "OPEN":
-      return `Sua denúncia sobre "${complaint.category}" foi reaberta para análise.`;
+    case "CLOSED":
+      return `A denúncia "${complaint.category}" foi encerrada. Obrigado pelo retorno.`;
+    case "CANCELLED":
+      return `A denúncia "${complaint.category}" foi cancelada.`;
     default:
       return "";
   }
@@ -54,9 +62,20 @@ export function canTransitionStatus(
   newStatus: ComplaintStatus
 ): boolean {
   const transitions: Record<ComplaintStatus, ComplaintStatus[]> = {
-    OPEN: ["IN_PROGRESS"],
-    IN_PROGRESS: ["RESOLVED", "OPEN"],
-    RESOLVED: [],
+    NEW: ["TRIAGE", "CANCELLED"],
+    TRIAGE: ["IN_PROGRESS", "WAITING_USER", "WAITING_THIRD_PARTY", "CANCELLED"],
+    IN_PROGRESS: [
+      "WAITING_USER",
+      "WAITING_THIRD_PARTY",
+      "RESOLVED",
+      "CLOSED",
+      "CANCELLED",
+    ],
+    WAITING_USER: ["IN_PROGRESS", "CANCELLED"],
+    WAITING_THIRD_PARTY: ["IN_PROGRESS", "CANCELLED"],
+    RESOLVED: ["CLOSED"],
+    CLOSED: [],
+    CANCELLED: [],
   };
 
   return transitions[currentStatus]?.includes(newStatus) || false;

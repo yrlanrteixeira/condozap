@@ -1,4 +1,4 @@
-import type { Complaint } from '@/types';
+import type { Complaint } from '@/features/complaints/types';
 import { ComplaintForm, ComplaintHistoryList } from '../components';
 import { useAuth } from '@/hooks/useAuth';
 

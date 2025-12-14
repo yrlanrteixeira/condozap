@@ -1,7 +1,7 @@
 import { History, Clock, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Complaint, ComplaintStatus } from '@/types';
+import type { Complaint, ComplaintStatus } from '@/features/complaints/types';
 import { ComplaintStatusBadge } from './ComplaintStatusBadge';
 
 interface ComplaintHistoryListProps {

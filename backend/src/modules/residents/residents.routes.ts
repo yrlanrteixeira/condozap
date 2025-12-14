@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireCondoAccess } from "../../auth/authorize";
 import {
   createResidentHandler,
   deleteResidentHandler,
@@ -20,7 +21,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     listResidentsByCondoHandler
   );
@@ -28,7 +29,10 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess("condominiumId", "body"),
+      ],
     },
     createResidentHandler
   );

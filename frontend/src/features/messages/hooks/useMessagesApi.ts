@@ -23,8 +23,8 @@ export function useMessages(condominiumId: string, filters?: MessageFilters) {
   return useQuery({
     queryKey: queryKeys.list(condominiumId, filters),
     queryFn: async () => {
-      const { data } = await api.get('/messages', {
-        params: { condominiumId, ...filters }
+      const { data } = await api.get(`/messages/${condominiumId}`, {
+        params: filters,
       })
       return data.map((message: Message) => MessageSchema.parse(message))
     },

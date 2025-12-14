@@ -152,19 +152,31 @@ export function AdminComplaintsTablePage({
                           <SelectValue placeholder="Alterar status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="OPEN">
+                          <SelectItem value="TRIAGE">
                             <div className="flex items-center gap-2">
                               <AlertTriangle
                                 size={14}
-                                className="text-red-500"
+                                className="text-amber-500"
                               />
-                              Em Fila
+                              Triagem
                             </div>
                           </SelectItem>
                           <SelectItem value="IN_PROGRESS">
                             <div className="flex items-center gap-2">
-                              <Clock size={14} className="text-yellow-500" />
-                              Averiguando
+                              <Clock size={14} className="text-blue-500" />
+                              Em atendimento
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="WAITING_USER">
+                            <div className="flex items-center gap-2">
+                              <Clock size={14} className="text-amber-500" />
+                              Aguardando usuário
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="WAITING_THIRD_PARTY">
+                            <div className="flex items-center gap-2">
+                              <Clock size={14} className="text-amber-500" />
+                              Aguardando terceiro
                             </div>
                           </SelectItem>
                           <SelectItem value="RESOLVED">
@@ -174,6 +186,24 @@ export function AdminComplaintsTablePage({
                                 className="text-green-500"
                               />
                               Resolvido
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="CLOSED">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle
+                                size={14}
+                                className="text-emerald-500"
+                              />
+                              Encerrado
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="CANCELLED">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle
+                                size={14}
+                                className="text-gray-500"
+                              />
+                              Cancelado
                             </div>
                           </SelectItem>
                         </SelectContent>

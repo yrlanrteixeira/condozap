@@ -14,6 +14,9 @@ import {
   getAllMetricsData,
   getCondominiumMetricsData,
 } from "./dashboard.service";
+import { AuthUser } from "../../types/auth";
+import { isCondominiumAllowed, resolveAccessContext } from "../../auth/context";
+import { isSuperAdmin } from "../../auth/roles";
 
 export async function getAllMetricsHandler(
   _request: FastifyRequest,
@@ -31,6 +34,15 @@ export async function getCondominiumMetricsHandler(
   const { condominiumId } = condoMetricsParamsSchema.parse(
     request.params
   ) as CondoMetricsParams;
+  const user = request.user as AuthUser;
+  const context = await resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role,
+    permissionScope: user.permissionScope as any,
+  });
+  if (!isCondominiumAllowed(context, condominiumId)) {
+    return reply.status(403).send({ error: "Acesso negado ao condomínio" });
+  }
 
   const [complaints, residents, messages] = await getCondominiumMetricsData(
     prisma,
@@ -48,6 +60,12 @@ export async function getUnifiedDashboardHandler(
   const { condominiumIds } = unifiedQuerySchema.parse(
     request.query
   ) as UnifiedQuery;
+  const user = request.user as AuthUser;
+  const context = await resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role,
+    permissionScope: user.permissionScope as any,
+  });
 
   const condoIds = condominiumIds
     .split(",")
@@ -61,7 +79,16 @@ export async function getUnifiedDashboardHandler(
     });
   }
 
-  const condominiums = await findCondominiumsByIds(prisma, condoIds);
+  const filteredCondoIds = isSuperAdmin(context.role)
+    ? condoIds
+    : condoIds.filter((id) => isCondominiumAllowed(context, id));
+  if (!filteredCondoIds.length) {
+    return reply
+      .status(403)
+      .send({ error: "Acesso negado aos condomínios solicitados" });
+  }
+
+  const condominiums = await findCondominiumsByIds(prisma, filteredCondoIds);
 
   if (condominiums.length === 0) {
     return reply.send({
@@ -75,7 +102,10 @@ export async function getUnifiedDashboardHandler(
     });
   }
 
-  const complaints = await findComplaintsByCondominiumIds(prisma, condoIds);
+  const complaints = await findComplaintsByCondominiumIds(
+    prisma,
+    filteredCondoIds
+  );
 
   const dashboard = buildUnifiedDashboard(condominiums, complaints);
   return reply.send(dashboard);
