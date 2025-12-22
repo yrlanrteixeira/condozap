@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import { ApprovalGuard, InitialRedirect, ProtectedRoute, PermissionGuard } from "@/components/guards";
-import { MainLayout } from "@/components/layout";
+import { ApprovalGuard, InitialRedirect, ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
+import { MainLayout } from "@/shared/components/layout";
 import { Permissions } from "@/config/permissions";
 import { authRoutes } from "@/features/auth/routes";
 import { complaintsRoutes } from "@/features/complaints/routes";

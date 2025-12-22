@@ -1,20 +1,20 @@
 import { Menu, PanelLeftClose, PanelLeft, Building2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/shared/components/ui/button";
+import { ModeToggle } from "@/shared/components/mode-toggle";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector, useAppDispatch } from "@/hooks";
+} from "@/shared/components/ui/select";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAppSelector, useAppDispatch } from "@/shared/hooks";
 import {
   selectCurrentCondominiumId,
   selectCondominiums,
   setCurrentCondominium,
-} from "@/store/slices/condominiumSlice";
+} from "@/shared/store/slices/condominiumSlice";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 
 interface HeaderProps {

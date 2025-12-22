@@ -7,17 +7,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+} from "@/shared/components/ui/table";
+import { Badge } from "@/shared/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { PaginationTable } from "@/components/ui/pagination-table";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+} from "@/shared/components/ui/select";
+import { PaginationTable } from "@/shared/components/ui/pagination-table";
+import { ConfirmDialog } from "@/shared/components/ui/confirm-dialog";
 import type { Complaint, ComplaintStatus } from "@/features/complaints/types";
 import type { Resident } from "@/features/residents/types";
 import { ComplaintStatusBadge } from "../components";

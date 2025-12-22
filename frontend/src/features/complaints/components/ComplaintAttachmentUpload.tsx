@@ -3,7 +3,7 @@ import { FileUpload } from "@/shared/components/FileUpload";
 import { useComplaintAttachmentUpload } from "@/shared/hooks/useFileUpload";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { Image, Music, Trash2, Download } from "lucide-react";
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/shared/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

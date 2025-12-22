@@ -1,5 +1,5 @@
-import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Logo } from '@/components/Logo'
+import { CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
+import { Logo } from '@/shared/components/Logo'
 
 interface AuthHeaderProps {
   title: string

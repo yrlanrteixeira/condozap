@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CheckCircle2, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { AuthCard } from './AuthCard'
 
 interface RegisterSuccessCardProps {

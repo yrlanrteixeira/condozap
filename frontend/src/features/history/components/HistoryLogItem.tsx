@@ -1,7 +1,7 @@
 import { Clock, Phone, FileJson } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/shared/components/ui/badge';
 import type { Message } from '@/types';
-import { formatDateTime } from '@/utils/helpers';
+import { formatDateTime } from '@/shared/utils/helpers';
 
 interface HistoryLogItemProps {
   log: Message;

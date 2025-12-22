@@ -9,7 +9,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppSelector } from './useAppSelector';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
+import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
 
 export function useCondominiumSync() {
   const queryClient = useQueryClient();

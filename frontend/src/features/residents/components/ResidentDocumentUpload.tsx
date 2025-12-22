@@ -3,24 +3,24 @@ import { FileUpload } from "@/shared/components/FileUpload";
 import { useResidentDocumentUpload } from "@/shared/hooks/useFileUpload";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/shared/components/ui/button";
+import { Label } from "@/shared/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/shared/components/ui/select";
+import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/shared/components/ui/dialog";
 import { FileText, Trash2, Download, CheckCircle, XCircle, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";

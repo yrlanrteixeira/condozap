@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
-import { useAppSelector } from "@/hooks/useAppSelector";
-import { selectUserRole } from "@/store/slices/authSlice";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { selectUserRole } from "@/shared/store/slices/authSlice";
 import { UserRoles } from "@/config/permissions";
 
 /**

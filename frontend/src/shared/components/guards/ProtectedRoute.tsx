@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { isValidUserRole } from '@/config/permissions';
 import {
   Dialog,
@@ -8,8 +8,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@/shared/components/ui/dialog';
+import { Button } from '@/shared/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

@@ -7,16 +7,16 @@ import {
   type ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "@/hooks";
+import { useAppDispatch } from "@/shared/hooks";
 import {
   login as loginAction,
   logout as logoutAction,
-} from "@/store/slices/authSlice";
+} from "@/shared/store/slices/authSlice";
 import {
   setCondominiums,
   setCurrentCondominium,
   clearCondominiums,
-} from "@/store/slices/condominiumSlice";
+} from "@/shared/store/slices/condominiumSlice";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 

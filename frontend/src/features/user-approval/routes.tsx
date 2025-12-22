@@ -1,4 +1,4 @@
-import { ProtectedRoute, PermissionGuard } from "@/components/guards";
+import { ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PendingApprovalPage } from "@/pages/PendingApprovalPage";

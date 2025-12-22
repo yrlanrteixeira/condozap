@@ -5,8 +5,8 @@ import {
   type ReactNode,
 } from "react";
 import type { View, UserRole, User, Condominium } from "@/types";
-import { NOTIFICATION_DURATION_MS } from "@/utils/constants";
-import { useAppDispatch, useAppSelector } from "@/hooks";
+import { NOTIFICATION_DURATION_MS } from "@/shared/utils/constants";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import {
   setView as setViewAction,
   setMobileMenuOpen as setMobileMenuOpenAction,
@@ -17,20 +17,20 @@ import {
   selectMobileMenuOpen,
   selectSidebarCollapsed,
   selectNotification,
-} from "@/store/slices/uiSlice";
+} from "@/shared/store/slices/uiSlice";
 import {
   setCurrentUser as setCurrentUserAction,
   setUserRole as setUserRoleAction,
   selectCurrentUser,
   selectUserRole,
   selectIsProfessionalSyndic,
-} from "@/store/slices/userSlice";
+} from "@/shared/store/slices/userSlice";
 import {
   setCurrentCondominiumId as setCurrentCondominiumIdAction,
   selectCurrentCondominiumId,
   selectCurrentCondominium,
   selectAccessibleCondominiums,
-} from "@/store/slices/condominiumSlice";
+} from "@/shared/store/slices/condominiumSlice";
 
 interface AppContextType {
   view: View;

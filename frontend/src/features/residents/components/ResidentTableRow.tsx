@@ -1,9 +1,9 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/shared/components/ui/button";
+import { TableCell, TableRow } from "@/shared/components/ui/table";
+import { ConfirmDialog } from "@/shared/components/ui/confirm-dialog";
+import { useToast } from "@/shared/components/ui/use-toast";
 import { useDeleteResident } from "../hooks/useResidentsApi";
 import type { Resident } from "../types";
 

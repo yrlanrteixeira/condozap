@@ -4,7 +4,7 @@
  */
 
 import { useAppSelector } from "./useAppSelector";
-import { selectUserRole } from "@/store/slices/authSlice";
+import { selectUserRole } from "@/shared/store/slices/authSlice";
 import type { UserRole } from "@/types/user";
 import {
   UserRoles,

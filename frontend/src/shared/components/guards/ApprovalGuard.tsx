@@ -6,8 +6,8 @@
  */
 
 import { Navigate } from 'react-router-dom';
-import { useAppSelector } from '@/hooks';
-import { selectUser } from '@/store/slices/authSlice';
+import { useAppSelector } from '@/shared/hooks';
+import { selectUser } from '@/shared/store/slices/authSlice';
 
 interface ApprovalGuardProps {
   children: React.ReactNode;

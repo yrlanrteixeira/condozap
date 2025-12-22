@@ -5,13 +5,13 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Loader2, Wifi, WifiOff, RefreshCw, QrCode, LogOut, Smartphone } from 'lucide-react';
 import { useEvolutionStatus, useEvolutionQRCode, useEvolutionDisconnect, useEvolutionRestart } from '../hooks/useEvolutionApi';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export function WhatsAppConnectionStatus() {
   const [showQRDialog, setShowQRDialog] = useState(false);

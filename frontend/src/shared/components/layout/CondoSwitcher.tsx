@@ -1,5 +1,5 @@
 import { Building2, Check, ChevronsUpDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/shared/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useApp } from '@/contexts'
+} from '@/shared/components/ui/dropdown-menu'
+import { useApp } from '@/shared/contexts'
 import { cn } from '@/lib/utils'
 
 export function CondoSwitcher() {

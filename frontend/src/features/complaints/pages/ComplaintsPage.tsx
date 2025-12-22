@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { Complaint, ComplaintStatus } from "../types";
 import { ComplaintViewModeToggle } from "../components";
 import { ResidentComplaintsPage } from "./ResidentComplaintsPage";
 import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
 import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
-import { useRole } from "@/hooks/useRole";
-import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector, useIsMobile } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useRole } from "@/shared/hooks/useRole";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAppSelector, useIsMobile } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import {
   useComplaints,

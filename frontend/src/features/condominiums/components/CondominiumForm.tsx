@@ -5,8 +5,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import {
   Form,
   FormControl,
@@ -15,14 +15,14 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form";
+} from "@/shared/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/shared/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/shared/components/ui/dialog";
 import {
   CreateCondominiumSchema,
   type CreateCondominiumInput,

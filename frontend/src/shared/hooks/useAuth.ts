@@ -7,7 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectUserRole,
-} from "@/store/slices/authSlice";
+} from "@/shared/store/slices/authSlice";
 import type { LoginRequest } from "@/types/user";
 
 /**

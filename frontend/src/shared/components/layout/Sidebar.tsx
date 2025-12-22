@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-// import { useRole } from "@/hooks/useRole";
-import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/shared/hooks/useAuth";
+// import { useRole } from "@/shared/hooks/useRole";
+import { usePermissions } from "@/shared/hooks/usePermissions";
 import { Permissions } from "@/config/permissions";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -21,9 +21,9 @@ import {
   UsersRound,
 } from "lucide-react";
 // Avatar será implementado inline por enquanto
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Logo } from "@/components/Logo";
+import { Separator } from "@/shared/components/ui/separator";
+import { Badge } from "@/shared/components/ui/badge";
+import { Logo } from "@/shared/components/Logo";
 
 interface SubNavItem {
   title: string;

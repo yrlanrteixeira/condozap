@@ -1,7 +1,7 @@
 import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useApp } from "@/contexts";
-import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/shared/components/ui/button";
+import { useApp } from "@/shared/contexts";
+import { ModeToggle } from "@/shared/components/mode-toggle";
 import type { View } from "@/types";
 
 const VIEW_LABELS: Record<View, string> = {

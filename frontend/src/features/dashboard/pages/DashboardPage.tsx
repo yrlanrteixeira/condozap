@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Users, MessageSquare, AlertTriangle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatsCardSkeleton, CardSkeleton } from "@/components/ui/skeleton";
-import { useAppSelector } from "@/hooks";
-import { useAuth } from "@/hooks/useAuth";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
+import { useAppSelector } from "@/shared/hooks";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useDashboardMetrics } from "../hooks/useDashboardApi";
 import {
   DashboardStatCard,

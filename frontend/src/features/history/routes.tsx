@@ -1,4 +1,4 @@
-import { PermissionGuard } from "@/components/guards";
+import { PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { HistoryPage } from "./pages/HistoryPage";

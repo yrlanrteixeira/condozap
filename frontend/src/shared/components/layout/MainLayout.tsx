@@ -6,10 +6,10 @@ import { NotificationToast } from "./NotificationToast";
 import {
   Sheet,
   SheetContent,
-} from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector, useCondominiumSync } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+} from "@/shared/components/ui/sheet";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAppSelector, useCondominiumSync } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useComplaints } from "@/features/complaints/hooks/useComplaintsApi";
 
 export function MainLayout() {

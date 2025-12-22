@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { useApp } from '@/contexts'
+import { useApp } from '@/shared/contexts'
 import { CheckCircle2, XCircle } from 'lucide-react'
 
 export function NotificationToast() {

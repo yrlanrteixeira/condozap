@@ -1,6 +1,6 @@
 import type { Complaint } from '@/features/complaints/types';
 import { ComplaintForm, ComplaintHistoryList } from '../components';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface ResidentComplaintsPageProps {
   complaints: Complaint[];

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/shared/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {

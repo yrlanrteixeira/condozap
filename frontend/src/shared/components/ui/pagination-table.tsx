@@ -10,7 +10,7 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-} from "@/components/ui/pagination";
+} from "@/shared/components/ui/pagination";
 
 interface PaginationTableProps {
   currentPage: number;

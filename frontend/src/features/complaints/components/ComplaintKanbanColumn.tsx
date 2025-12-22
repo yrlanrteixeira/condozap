@@ -1,5 +1,5 @@
 import { LucideIcon, Inbox } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Complaint } from '@/features/complaints/types';
 import type { Resident } from '@/features/residents/types';

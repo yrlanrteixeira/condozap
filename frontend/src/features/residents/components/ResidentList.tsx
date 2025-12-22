@@ -1,8 +1,8 @@
-import { useIsMobile } from "@/hooks";
+import { useIsMobile } from "@/shared/hooks";
 import type { Resident } from "../types";
 import { ResidentTable } from "./ResidentTable";
 import { ResidentMobileCard } from "./ResidentMobileCard";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/shared/hooks/useAuth";
 
 interface ResidentListProps {
   residents: Resident[];

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload, X, FileImage, FileAudio, File, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/shared/components/ui/button";
+import { Progress } from "@/shared/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {

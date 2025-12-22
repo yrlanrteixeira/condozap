@@ -1,15 +1,15 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { FormSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { FormSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { TargetData } from "@/features/messages/types";
 import { TEMPLATES } from "@/config/constants";
-import { filterResidentsByTarget } from "@/utils/helpers";
+import { filterResidentsByTarget } from "@/shared/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { useSendMessage } from "../hooks/useMessagesApi";
-import { useAppSelector } from "@/hooks";
-import { useAuth } from "@/hooks/useAuth";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useAppSelector } from "@/shared/hooks";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import {
   MessageHeader,
   MessageRecipientSelector,

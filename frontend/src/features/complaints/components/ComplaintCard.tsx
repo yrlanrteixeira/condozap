@@ -1,9 +1,9 @@
 import { ArrowRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
 import type { Complaint } from '@/features/complaints/types';
 import type { Resident } from '@/features/residents/types';
-import { formatDate, formatDateTime } from '@/utils/helpers';
+import { formatDate, formatDateTime } from '@/shared/utils/helpers';
 
 interface ComplaintCardProps {
   complaint: Complaint;

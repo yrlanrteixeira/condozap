@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useRole } from '@/hooks/useRole';
-import { useAuth } from '@/hooks/useAuth';
+import { useRole } from '@/shared/hooks/useRole';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { auditLogger } from '@/lib/audit-logger';
 import { useEffect } from 'react';
 

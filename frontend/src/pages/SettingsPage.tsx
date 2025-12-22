@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Settings, User, Building, Shield, Bell, MessageSquare } from "lucide-react";
-import { useRole } from "@/hooks/useRole";
+import { useRole } from "@/shared/hooks/useRole";
 import { UserRoles } from "@/config/permissions";
 import { WhatsAppConnectionStatus } from "@/features/whatsapp";
 
