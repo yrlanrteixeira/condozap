@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CardContent } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { CardContent } from "@/shared/components/ui/card";
 import {
   Form,
   FormControl,
@@ -13,8 +13,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { useAuth } from "@/contexts/AuthContext";
+} from "@/shared/components/ui/form";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { LoginSchema, type LoginInput } from "../schemas";
 import {
   AuthCard,

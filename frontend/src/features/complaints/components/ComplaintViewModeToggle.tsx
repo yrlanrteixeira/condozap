@@ -1,5 +1,5 @@
 import { LayoutGrid, Table as TableIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 type ViewMode = 'kanban' | 'table';
 
@@ -18,19 +18,19 @@ export const ComplaintViewModeToggle = ({
         variant={viewMode === 'kanban' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewModeChange('kanban')}
-        className="gap-2"
+        className="gap-1 sm:gap-2"
       >
-        <LayoutGrid size={16} />
-        Kanban
+        <LayoutGrid className="h-4 w-4" />
+        <span className="hidden sm:inline">Kanban</span>
       </Button>
       <Button
         variant={viewMode === 'table' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewModeChange('table')}
-        className="gap-2"
+        className="gap-1 sm:gap-2"
       >
-        <TableIcon size={16} />
-        Tabela
+        <TableIcon className="h-4 w-4" />
+        <span className="hidden sm:inline">Tabela</span>
       </Button>
     </div>
   );

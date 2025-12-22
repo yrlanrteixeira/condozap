@@ -5,15 +5,15 @@
  */
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
 import { Loader2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useCreateAdmin } from '../hooks/useUserManagementApi';
-import { useToast } from '@/components/ui/use-toast';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
+import { useToast } from '@/shared/components/ui/use-toast';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
 
 interface CreateAdminDialogProps {
   open: boolean;

@@ -1,14 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAppSelector } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+} from "@/shared/components/ui/select";
+import { useAppSelector } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useTowers } from "@/features/residents/hooks/useResidentsApi";
 
 type Scope = "unit" | "floor" | "tower" | "all";

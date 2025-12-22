@@ -149,6 +149,14 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Erro 403: acesso negado
+    if (error.response?.status === 403) {
+      if (!window.location.pathname.includes("/access-denied")) {
+        window.location.href = "/access-denied";
+      }
+      return Promise.reject(error);
+    }
+
     // Erro 401: Token inválido ou expirado
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Se não tem store configurado, redireciona para login

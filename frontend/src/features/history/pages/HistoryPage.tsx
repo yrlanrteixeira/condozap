@@ -1,11 +1,11 @@
 import { History, FileText } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { PageHeaderSkeleton, ListItemSkeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/shared/components/ui/card';
+import { PageHeaderSkeleton, ListItemSkeleton } from '@/shared/components/ui/skeleton';
 import { HistoryHeader, HistoryLogList } from '../components';
 import { useHistory } from '../hooks/useHistoryApi';
-import { useAuth } from '@/hooks/useAuth';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
 
 export function HistoryPage() {
   const { user } = useAuth();

@@ -25,11 +25,36 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/shared": ["./src/shared"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/shared/components": ["./src/shared/components"],
+      "@/shared/components/*": ["./src/shared/components/*"],
+      "@/shared/hooks": ["./src/shared/hooks"],
+      "@/shared/hooks/*": ["./src/shared/hooks/*"],
+      "@/shared/utils": ["./src/shared/utils"],
+      "@/shared/utils/*": ["./src/shared/utils/*"],
+      "@/shared/styles": ["./src/shared/styles"],
+      "@/shared/styles/*": ["./src/shared/styles/*"],
+      "@/shared/contexts": ["./src/shared/contexts"],
+      "@/shared/contexts/*": ["./src/shared/contexts/*"],
+      "@/shared/store": ["./src/shared/store"],
+      "@/shared/store/*": ["./src/shared/store/*"],
+      "@/components": ["./src/shared/components"],
+      "@/components/*": ["./src/shared/components/*"],
+      "@/hooks": ["./src/shared/hooks"],
+      "@/hooks/*": ["./src/shared/hooks/*"],
+      "@/utils": ["./src/shared/utils"],
+      "@/utils/*": ["./src/shared/utils/*"],
+      "@/styles": ["./src/shared/styles"],
+      "@/styles/*": ["./src/shared/styles/*"],
+      "@/contexts": ["./src/shared/contexts"],
+      "@/contexts/*": ["./src/shared/contexts/*"],
+      "@/store": ["./src/shared/store"],
+      "@/store/*": ["./src/shared/store/*"],
+      "@/types": ["./src/@types"],
+      "@/types/*": ["./src/@types/*"]
     }
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }
-

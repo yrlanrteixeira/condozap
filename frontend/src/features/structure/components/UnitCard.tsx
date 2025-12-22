@@ -1,5 +1,5 @@
 import { Home, User, Phone, Crown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/shared/components/ui/badge';
 import type { Resident } from '@/features/residents/types';
 
 interface UnitCardProps {

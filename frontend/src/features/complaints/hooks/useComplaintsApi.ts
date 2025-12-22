@@ -11,6 +11,7 @@ import type {
   CreateComplaintInput,
   UpdateComplaintInput,
   ComplaintFilters,
+  ComplaintStatus,
 } from "../types";
 
 // =====================================================
@@ -44,7 +45,7 @@ export function useComplaint(complaintId: number) {
   return useQuery({
     queryKey: queryKeys.detail(complaintId),
     queryFn: async () => {
-      const { data } = await api.get(`/complaints/${complaintId}`);
+      const { data } = await api.get(`/complaints/detail/${complaintId}`);
       return ComplaintSchema.parse(data);
     },
   });
@@ -112,7 +113,7 @@ export function useUpdateComplaintStatus() {
       notes,
     }: {
       id: number;
-      status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
+      status: ComplaintStatus;
       notes?: string;
     }) => {
       const { data } = await api.patch(`/complaints/${id}/status`, {
@@ -177,6 +178,145 @@ export function useAddComplaintComment() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.detail(variables.id),
       });
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Assign Complaint to Sector/Assignee
+// =====================================================
+
+export function useAssignComplaint() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      sectorId,
+      assigneeId,
+      reason,
+    }: {
+      id: number;
+      sectorId: string;
+      assigneeId?: string;
+      reason?: string;
+    }) => {
+      const { data } = await api.post(`/complaints/${id}/assign`, {
+        sectorId,
+        assigneeId,
+        reason,
+      });
+      return ComplaintSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
+      }
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Pause SLA
+// =====================================================
+
+export function usePauseComplaintSla() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      reason,
+      pausedUntil,
+    }: {
+      id: number;
+      status: "WAITING_USER" | "WAITING_THIRD_PARTY";
+      reason: string;
+      pausedUntil?: string;
+    }) => {
+      const { data } = await api.post(`/complaints/${id}/pause`, {
+        status,
+        reason,
+        pausedUntil,
+      });
+      return ComplaintSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
+      }
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Resume SLA
+// =====================================================
+
+export function useResumeComplaintSla() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      const { data } = await api.post(`/complaints/${id}/resume`, { notes });
+      return ComplaintSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
+      }
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Add Attachment
+// =====================================================
+
+export function useAddComplaintAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      fileUrl,
+      fileName,
+      fileType,
+      fileSize,
+    }: {
+      id: number;
+      fileUrl: string;
+      fileName: string;
+      fileType: string;
+      fileSize: number;
+    }) => {
+      const { data } = await api.post(`/complaints/${id}/attachments`, {
+        fileUrl,
+        fileName,
+        fileType,
+        fileSize,
+      });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.detail(variables.id) });
+    },
+  });
+}
+
+// =====================================================
+// Mutation: Run SLA Scan (admin)
+// =====================================================
+
+export function useRunSlaScan() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/complaints/sla/scan");
+      return data;
     },
   });
 }

@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CardContent } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { CardContent } from "@/shared/components/ui/card";
 import {
   Form,
   FormControl,
@@ -15,8 +15,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { useAuth } from "@/contexts/AuthContext";
+} from "@/shared/components/ui/form";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
 import {
   AuthCard,
@@ -50,7 +50,7 @@ export function RegisterPage() {
       confirmPassword: "",
       role: "RESIDENT",
       consentDataProcessing: false,
-      consentWhatsapp: false,
+      consentWhatsapp: false, // Será obrigatório marcar true
     },
   });
 
@@ -92,11 +92,14 @@ export function RegisterPage() {
   };
 
   const handleWhatsappConsentClick = () => {
+    // Consentimento WhatsApp é OBRIGATÓRIO - não pode desmarcar
     if (!form.getValues("consentWhatsapp")) {
       setShowWhatsappDialog(true);
-    } else {
-      form.setValue("consentWhatsapp", false);
     }
+    // Não permite desmarcar - comentado propositalmente
+    // else {
+    //   form.setValue("consentWhatsapp", false);
+    // }
   };
 
   const handleDataConsentAccept = () => {
@@ -313,7 +316,7 @@ export function RegisterPage() {
                       )}
                     />
 
-                    {/* WhatsApp Consent - Optional */}
+                    {/* WhatsApp Consent - OBRIGATÓRIO */}
                     <FormField
                       control={form.control}
                       name="consentWhatsapp"
@@ -327,18 +330,18 @@ export function RegisterPage() {
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="cursor-pointer">
-                              Desejo receber{" "}
+                              Aceito receber{" "}
                               <button
                                 type="button"
                                 onClick={() => setShowWhatsappDialog(true)}
                                 className="text-green-600 underline hover:no-underline"
                               >
                                 notificações via WhatsApp
-                              </button>
+                              </button>{" "}
+                              <span className="text-red-500">*</span>
                             </FormLabel>
-                            <FormDescription>
-                              Atualizações sobre ocorrências e comunicados
-                              (opcional)
+                            <FormDescription className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                              Obrigatório. As notificações WhatsApp são essenciais para o funcionamento da plataforma.
                             </FormDescription>
                           </div>
                         </FormItem>
@@ -362,7 +365,7 @@ export function RegisterPage() {
                       type="submit"
                       className="flex-1"
                       size="lg"
-                      disabled={isSubmitting || !consentDataProcessing}
+                      disabled={isSubmitting || !consentDataProcessing || !consentWhatsapp}
                     >
                       {isSubmitting ? (
                         <>

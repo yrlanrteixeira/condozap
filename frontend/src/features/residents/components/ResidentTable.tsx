@@ -5,8 +5,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useAuth } from "@/hooks/useAuth";
+} from "@/shared/components/ui/table";
+import { useAuth } from "@/shared/hooks/useAuth";
 import type { Resident } from "../types";
 import { ResidentTableRow } from "./ResidentTableRow";
 

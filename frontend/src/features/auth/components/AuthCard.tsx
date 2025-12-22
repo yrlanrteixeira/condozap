@@ -1,5 +1,5 @@
-import { Card } from '@/components/ui/card'
-import { Logo } from '@/components/Logo'
+import { Card } from '@/shared/components/ui/card'
+import { Logo } from '@/shared/components/Logo'
 
 interface AuthCardProps {
   children: React.ReactNode

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,13 +7,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+} from "@/shared/components/ui/dialog";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { Resident } from "../types";
 import { ResidentForm, type ResidentFormData } from "./ResidentForm";
 import { useCreateResident, useUpdateResident } from "../hooks/useResidentsApi";
-import { useAppSelector } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useAppSelector } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 
 interface ResidentDialogProps {
   open: boolean;

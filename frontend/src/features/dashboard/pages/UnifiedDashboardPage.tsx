@@ -1,11 +1,11 @@
 import { AlertTriangle, Building2, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useApp } from '@/contexts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { useApp } from '@/shared/contexts';
 import type { UrgentFeedItem, ComplaintPriority } from '@/types';
 import { useUnifiedDashboard } from '../hooks/useDashboardApi';
-import { PageHeaderSkeleton, CardSkeleton } from '@/components/ui/skeleton';
+import { PageHeaderSkeleton, CardSkeleton } from '@/shared/components/ui/skeleton';
 
 
 

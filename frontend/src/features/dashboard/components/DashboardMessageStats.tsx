@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { MessageSquare, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 interface MessageStats {

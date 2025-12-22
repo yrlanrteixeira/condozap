@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Building2, ChevronDown, ChevronRight, Users } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
 import { FloorSection } from './FloorSection';
 import type { Resident } from '@/features/residents/types';
 
