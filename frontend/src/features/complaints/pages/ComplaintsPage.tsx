@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { Complaint, ComplaintStatus } from "../types";
 import { ComplaintViewModeToggle } from "../components";
 import { ResidentComplaintsPage } from "./ResidentComplaintsPage";
 import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
 import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
-import { useRole } from "@/hooks/useRole";
-import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector, useIsMobile } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { useRole } from "@/shared/hooks/useRole";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAppSelector, useIsMobile } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import {
   useComplaints,
@@ -185,9 +185,14 @@ export function ComplaintsPage() {
   // Helper function to get status label
   const getStatusLabel = (status: ComplaintStatus): string => {
     const labels: Record<ComplaintStatus, string> = {
-      OPEN: "Aberto",
-      IN_PROGRESS: "Em Andamento",
+      NEW: "Novo",
+      TRIAGE: "Triagem",
+      IN_PROGRESS: "Em andamento",
+      WAITING_USER: "Aguardando usuário",
+      WAITING_THIRD_PARTY: "Aguardando terceiro",
       RESOLVED: "Resolvido",
+      CLOSED: "Encerrado",
+      CANCELLED: "Cancelado",
     };
     return labels[status] || status;
   };

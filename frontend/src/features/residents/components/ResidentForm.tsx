@@ -1,18 +1,18 @@
 import { User, Phone, Building2, MapPin, Mail } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/shared/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
-import { useAppSelector } from "@/hooks";
+} from "@/shared/components/ui/select";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { useAppSelector } from "@/shared/hooks";
 import {
   selectCurrentCondominiumId,
   selectCondominiums,
-} from "@/store/slices/condominiumSlice";
+} from "@/shared/store/slices/condominiumSlice";
 import { useTowers } from "../hooks/useResidentsApi";
 import { useStructure } from "@/features/structure/hooks/useStructureApi";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";

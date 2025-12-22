@@ -7,16 +7,16 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+} from '@/shared/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/shared/components/ui/alert-dialog';
 import {
   Users,
   UserPlus,
@@ -38,14 +38,14 @@ import {
   Loader2,
   Crown,
 } from 'lucide-react';
-import { PageHeaderSkeleton, ListItemSkeleton } from '@/components/ui/skeleton';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentCondominiumId } from '@/store/slices/condominiumSlice';
+import { PageHeaderSkeleton, ListItemSkeleton } from '@/shared/components/ui/skeleton';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
 import { useCondominiumUsers, useRemoveUser, useUpdateUserRole } from '../hooks/useUserManagementApi';
 import { CreateAdminDialog } from '../components/CreateAdminDialog';
 import { CreateSyndicDialog } from '../components/CreateSyndicDialog';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/shared/components/ui/use-toast';
+import { useAuth } from '@/shared/hooks/useAuth';
 import type { CondominiumUser } from '../types';
 
 const roleLabels: Record<string, string> = {

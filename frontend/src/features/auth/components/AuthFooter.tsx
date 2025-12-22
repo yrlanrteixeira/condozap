@@ -1,5 +1,5 @@
 import { Building2 } from 'lucide-react'
-import { CardFooter } from '@/components/ui/card'
+import { CardFooter } from '@/shared/components/ui/card'
 
 interface AuthFooterProps {
   children?: React.ReactNode

@@ -6,8 +6,8 @@
 
 import { useState } from "react";
 import { Building2, Plus, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +17,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from "@/components/ui/use-toast";
+} from "@/shared/components/ui/alert-dialog";
+import { useToast } from "@/shared/components/ui/use-toast";
 import {
   useCondominiums,
   useCreateCondominium,

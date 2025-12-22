@@ -1,0 +1,862 @@
+import {
+  PrismaClient,
+  ComplaintStatus,
+  ComplaintPriority,
+  SlaConfig,
+} from "@prisma/client";
+import { FastifyBaseLogger } from "fastify";
+import { whatsappService } from "../whatsapp/whatsapp.service";
+import {
+  buildComplaintCreatedMessage,
+  buildComplaintStatusMessage,
+  buildComplaintPriorityMessage,
+  buildComplaintCommentMessage,
+} from "../../shared/utils/notifications";
+import { BadRequestError, NotFoundError } from "../../shared/errors";
+import type {
+  AddComplaintAttachmentRequest,
+  AddComplaintCommentRequest,
+  AssignComplaintRequest,
+  CreateComplaintRequest,
+  PauseComplaintSlaRequest,
+  ResumeComplaintSlaRequest,
+  UpdateComplaintPriorityRequest,
+  UpdateComplaintStatusRequest,
+} from "./complaints.schema";
+
+const DEFAULT_SLA_BY_PRIORITY: Record<
+  ComplaintPriority,
+  {
+    responseMinutes: number;
+    resolutionMinutes: number;
+    escalationBuffer: number;
+  }
+> = {
+  CRITICAL: {
+    responseMinutes: 15,
+    resolutionMinutes: 240,
+    escalationBuffer: 30,
+  },
+  HIGH: { responseMinutes: 60, resolutionMinutes: 480, escalationBuffer: 60 },
+  MEDIUM: {
+    responseMinutes: 240,
+    resolutionMinutes: 1440,
+    escalationBuffer: 60,
+  },
+  LOW: { responseMinutes: 480, resolutionMinutes: 4320, escalationBuffer: 120 },
+};
+
+const SLA_ACTIONS = {
+  STATUS_CHANGE: "STATUS_CHANGE",
+  SLA_PAUSE: "SLA_PAUSE",
+  SLA_RESUME: "SLA_RESUME",
+  ASSIGNMENT: "ASSIGNMENT",
+  ESCALATION: "SLA_ESCALATION",
+  COMMENT: "COMMENT",
+} as const;
+
+const VALID_TRANSITIONS: Record<ComplaintStatus, ComplaintStatus[]> = {
+  NEW: [
+    ComplaintStatus.TRIAGE,
+    ComplaintStatus.IN_PROGRESS,
+    ComplaintStatus.CANCELLED,
+  ],
+  TRIAGE: [ComplaintStatus.IN_PROGRESS, ComplaintStatus.CANCELLED],
+  IN_PROGRESS: [
+    ComplaintStatus.WAITING_USER,
+    ComplaintStatus.WAITING_THIRD_PARTY,
+    ComplaintStatus.RESOLVED,
+    ComplaintStatus.CANCELLED,
+  ],
+  WAITING_USER: [ComplaintStatus.IN_PROGRESS],
+  WAITING_THIRD_PARTY: [ComplaintStatus.IN_PROGRESS],
+  RESOLVED: [ComplaintStatus.CLOSED],
+  CLOSED: [],
+  CANCELLED: [],
+};
+
+const assertValidTransition = (
+  fromStatus: ComplaintStatus,
+  toStatus: ComplaintStatus
+) => {
+  const allowed = VALID_TRANSITIONS[fromStatus] || [];
+  if (!allowed.includes(toStatus)) {
+    throw new BadRequestError(
+      `Transição de ${fromStatus} para ${toStatus} não é permitida`
+    );
+  }
+};
+
+export async function createComplaint(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  data: CreateComplaintRequest
+) {
+  const resident = await findResidentById(prisma, data.residentId);
+  if (!resident) {
+    throw new NotFoundError("Resident");
+  }
+
+  const now = new Date();
+  const slaConfig = await findSlaConfig(
+    prisma,
+    data.condominiumId,
+    (data.priority as ComplaintPriority) || "MEDIUM"
+  );
+
+  const responseDueAt = addMinutes(now, slaConfig.responseMinutes);
+  const resolutionDueAt = addMinutes(now, slaConfig.resolutionMinutes);
+
+  const complaint = await prisma.complaint.create({
+    data: {
+      condominiumId: data.condominiumId,
+      residentId: data.residentId,
+      category: data.category,
+      content: data.content,
+      priority: (data.priority as ComplaintPriority) || "MEDIUM",
+      isAnonymous: data.isAnonymous ?? false,
+      status: ComplaintStatus.NEW,
+      sectorId: data.sectorId ?? null,
+      responseDueAt,
+      resolutionDueAt,
+    },
+    include: {
+      resident: true,
+      attachments: true,
+      sector: true,
+      assignee: true,
+    },
+  });
+
+  if (data.sectorId) {
+    await assignComplaint(
+      prisma,
+      logger,
+      complaint.id,
+      {
+        sectorId: data.sectorId,
+        assigneeId: undefined,
+        reason: "Auto-assignment on creation",
+      },
+      true
+    );
+  }
+
+  if (resident.consentWhatsapp && !data.isAnonymous) {
+    const message = buildComplaintCreatedMessage(
+      resident.name,
+      complaint.id,
+      data.category,
+      complaint.priority
+    );
+    whatsappService
+      .sendTextMessage(resident.phone, message)
+      .catch((error: unknown) => {
+        logger.error({ error }, "Failed to send WhatsApp notification");
+      });
+  }
+
+  logger.info(`Complaint ${complaint.id} created`);
+
+  return complaint;
+}
+
+export async function updateComplaintStatus(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: number,
+  data: UpdateComplaintStatusRequest,
+  userId: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+  const now = new Date();
+  const nextStatus = data.status as ComplaintStatus;
+  assertValidTransition(complaint.status, nextStatus);
+  const updated = await prisma.complaint.update({
+    where: { id },
+    data: {
+      status: nextStatus,
+      ...(nextStatus === ComplaintStatus.RESOLVED && {
+        resolvedAt: now,
+        resolvedBy: userId,
+      }),
+      ...(nextStatus === ComplaintStatus.CLOSED &&
+        !complaint.resolvedAt && {
+          resolvedAt: now,
+          resolvedBy: userId,
+        }),
+      ...(nextStatus === ComplaintStatus.IN_PROGRESS && {
+        responseAt: complaint.responseAt ?? now,
+        pausedUntil: null,
+        pauseReason: null,
+      }),
+      ...(nextStatus === ComplaintStatus.CANCELLED && {
+        pausedUntil: null,
+        pauseReason: null,
+      }),
+    },
+    include: {
+      resident: true,
+      statusHistory: true,
+    },
+  });
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId: id,
+      fromStatus: complaint.status,
+      toStatus: data.status as ComplaintStatus,
+      changedBy: userId,
+      notes: data.notes,
+      action: SLA_ACTIONS.STATUS_CHANGE,
+      metadata: { reason: data.notes },
+    },
+  });
+
+  if (complaint.resident.consentWhatsapp) {
+    const message = buildComplaintStatusMessage(
+      complaint.resident.name,
+      complaint.id,
+      complaint.category,
+      data.status,
+      data.notes
+    );
+    whatsappService
+      .sendTextMessage(complaint.resident.phone, message)
+      .catch((error: unknown) => {
+        logger.error({ error }, "Failed to send WhatsApp notification");
+      });
+  }
+
+  logger.info(`Complaint ${id} status updated to ${data.status}`);
+
+  return updated;
+}
+
+export async function updateComplaintPriority(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: number,
+  data: UpdateComplaintPriorityRequest
+) {
+  const complaint = await prisma.complaint.update({
+    where: { id },
+    data: { priority: data.priority },
+    include: { resident: true },
+  });
+
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+
+  if (complaint.resident.consentWhatsapp) {
+    const message = buildComplaintPriorityMessage(
+      complaint.resident.name,
+      complaint.id,
+      data.priority
+    );
+    whatsappService
+      .sendTextMessage(complaint.resident.phone, message)
+      .catch((error: unknown) => {
+        logger.error({ error }, "Failed to send WhatsApp notification");
+      });
+  }
+
+  logger.info(`Complaint ${id} priority updated to ${data.priority}`);
+
+  return complaint;
+}
+
+export async function addComplaintComment(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: number,
+  data: AddComplaintCommentRequest,
+  userId: string,
+  userRole: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+
+  const historyEntry = await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId: id,
+      fromStatus: complaint.status,
+      toStatus: complaint.status,
+      changedBy: userId,
+      notes: data.notes,
+      action: SLA_ACTIONS.COMMENT,
+    },
+  });
+
+  await prisma.complaint.update({
+    where: { id },
+    data: { updatedAt: new Date() },
+  });
+
+  if (complaint.resident.consentWhatsapp) {
+    const message = buildComplaintCommentMessage(
+      complaint.resident.name,
+      complaint.id,
+      userRole,
+      data.notes
+    );
+    whatsappService
+      .sendTextMessage(complaint.resident.phone, message)
+      .catch((error: unknown) => {
+        logger.error({ error }, "Failed to send WhatsApp notification");
+      });
+  }
+
+  logger.info(`Comment added to complaint ${id}`);
+
+  return historyEntry;
+}
+
+export async function deleteComplaint(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: number
+) {
+  await prisma.complaint.delete({
+    where: { id },
+  });
+  logger.info(`Complaint ${id} deleted`);
+}
+
+export async function getComplaintById(prisma: PrismaClient, id: number) {
+  return prisma.complaint.findUnique({
+    where: { id },
+    include: {
+      resident: true,
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+      sector: true,
+      assignee: true,
+      assignments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          assignee: true,
+          assignedByUser: true,
+          sector: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getAllComplaints(
+  prisma: PrismaClient,
+  filters: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    condominiumId?: string;
+    sectorId?: string;
+    assigneeId?: string;
+  }
+) {
+  return prisma.complaint.findMany({
+    where: {
+      ...(filters.condominiumId && { condominiumId: filters.condominiumId }),
+      ...(filters.status && { status: filters.status as ComplaintStatus }),
+      ...(filters.priority && { priority: filters.priority as any }),
+      ...(filters.category && { category: filters.category }),
+      ...(filters.sectorId && { sectorId: filters.sectorId }),
+      ...(filters.assigneeId && { assigneeId: filters.assigneeId }),
+    },
+    include: {
+      condominium: {
+        select: { id: true, name: true },
+      },
+      resident: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          tower: true,
+          floor: true,
+          unit: true,
+        },
+      },
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+      sector: true,
+      assignee: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+    orderBy: [{ condominium: { name: "asc" } }, { createdAt: "desc" }],
+  });
+}
+
+export async function getComplaintsByCondominium(
+  prisma: PrismaClient,
+  condominiumId: string,
+  filters: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    sectorId?: string;
+    assigneeId?: string;
+  }
+) {
+  return prisma.complaint.findMany({
+    where: {
+      condominiumId,
+      ...(filters.status && { status: filters.status as ComplaintStatus }),
+      ...(filters.priority && { priority: filters.priority as any }),
+      ...(filters.category && { category: filters.category }),
+      ...(filters.sectorId && { sectorId: filters.sectorId }),
+      ...(filters.assigneeId && { assigneeId: filters.assigneeId }),
+    },
+    include: {
+      resident: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          tower: true,
+          floor: true,
+          unit: true,
+        },
+      },
+      attachments: true,
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+      sector: true,
+      assignee: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
+export async function assignComplaint(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  complaintId: number,
+  data: AssignComplaintRequest,
+  isAuto = false,
+  actorId?: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id: complaintId },
+    include: { sector: true },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+
+  const assigneeId = await resolveAssignee(
+    prisma,
+    data.sectorId,
+    data.assigneeId
+  );
+
+  const updated = await prisma.complaint.update({
+    where: { id: complaintId },
+    data: {
+      sectorId: data.sectorId,
+      assigneeId,
+      status: ComplaintStatus.IN_PROGRESS,
+      responseAt: complaint.responseAt ?? new Date(),
+    },
+    include: {
+      resident: true,
+      assignee: true,
+      sector: true,
+    },
+  });
+
+  await prisma.complaintAssignment.create({
+    data: {
+      complaintId,
+      sectorId: data.sectorId,
+      assigneeId: assigneeId ?? null,
+      assignedBy: actorId,
+      reason: data.reason ?? (isAuto ? "Auto-assignment" : "Manual assignment"),
+    },
+  });
+
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId,
+      fromStatus: complaint.status,
+      toStatus: ComplaintStatus.IN_PROGRESS,
+      changedBy: actorId ?? "system",
+      notes: data.reason,
+      action: SLA_ACTIONS.ASSIGNMENT,
+      metadata: {
+        sectorId: data.sectorId,
+        assigneeId,
+        isAuto,
+      },
+    },
+  });
+
+  logger.info(
+    {
+      complaintId,
+      sectorId: data.sectorId,
+      assigneeId,
+      isAuto,
+    },
+    "Complaint assigned"
+  );
+  return updated;
+}
+
+export async function pauseComplaintSla(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  complaintId: number,
+  data: PauseComplaintSlaRequest,
+  actorId: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id: complaintId },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+  if (complaint.status !== ComplaintStatus.IN_PROGRESS) {
+    throw new BadRequestError(
+      "A pausa de SLA só é permitida quando o chamado está em atendimento"
+    );
+  }
+  const pausedUntil = data.pausedUntil ?? null;
+  const updated = await prisma.complaint.update({
+    where: { id: complaintId },
+    data: {
+      status: data.status as ComplaintStatus,
+      pauseReason: data.reason,
+      pausedUntil,
+    },
+  });
+
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId,
+      fromStatus: complaint.status,
+      toStatus: data.status as ComplaintStatus,
+      changedBy: actorId,
+      notes: data.reason,
+      action: SLA_ACTIONS.SLA_PAUSE,
+      metadata: { pausedUntil },
+    },
+  });
+
+  logger.info(`Complaint ${complaintId} paused with status ${data.status}`);
+  return updated;
+}
+
+export async function resumeComplaintSla(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  complaintId: number,
+  data: ResumeComplaintSlaRequest,
+  actorId: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id: complaintId },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+  if (
+    complaint.status !== ComplaintStatus.WAITING_USER &&
+    complaint.status !== ComplaintStatus.WAITING_THIRD_PARTY
+  ) {
+    throw new BadRequestError("O chamado não está pausado");
+  }
+  const now = new Date();
+  const lastPause = await prisma.complaintStatusHistory.findFirst({
+    where: {
+      complaintId,
+      action: SLA_ACTIONS.SLA_PAUSE,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const pausedSince = lastPause?.createdAt ?? complaint.updatedAt ?? now;
+  const pausedUntilTarget = complaint.pausedUntil?.getTime() ?? now.getTime();
+  const pauseDurationMs = Math.max(
+    0,
+    now.getTime() - pausedSince.getTime(),
+    pausedUntilTarget - pausedSince.getTime()
+  );
+  const updated = await prisma.complaint.update({
+    where: { id: complaintId },
+    data: {
+      status: ComplaintStatus.IN_PROGRESS,
+      pausedUntil: null,
+      pauseReason: null,
+      resolutionDueAt:
+        complaint.resolutionDueAt && pauseDurationMs > 0
+          ? new Date(complaint.resolutionDueAt.getTime() + pauseDurationMs)
+          : complaint.resolutionDueAt,
+    },
+  });
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId,
+      fromStatus: complaint.status,
+      toStatus: ComplaintStatus.IN_PROGRESS,
+      changedBy: actorId,
+      notes: data.notes,
+      action: SLA_ACTIONS.SLA_RESUME,
+    },
+  });
+
+  logger.info(`Complaint ${complaintId} resumed to IN_PROGRESS`);
+  return updated;
+}
+
+export async function addComplaintAttachment(
+  prisma: PrismaClient,
+  complaintId: number,
+  data: AddComplaintAttachmentRequest,
+  actorId: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id: complaintId },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+
+  const attachment = await prisma.complaintAttachment.create({
+    data: {
+      complaintId,
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
+      fileType: data.fileType,
+      fileSize: data.fileSize,
+    },
+  });
+
+  await prisma.complaintStatusHistory.create({
+    data: {
+      complaintId,
+      fromStatus: complaint.status,
+      toStatus: complaint.status,
+      changedBy: actorId,
+      action: SLA_ACTIONS.COMMENT,
+      metadata: {
+        attachmentId: attachment.id,
+        fileName: data.fileName,
+        fileType: data.fileType,
+      },
+    },
+  });
+
+  return attachment;
+}
+
+export async function runSlaEscalationScan(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger
+) {
+  const now = new Date();
+  const overdueComplaints = await prisma.complaint.findMany({
+    where: {
+      escalatedAt: null,
+      OR: [
+        { responseDueAt: { lt: now }, responseAt: null },
+        {
+          resolutionDueAt: { lt: now },
+          status: {
+            notIn: [
+              ComplaintStatus.RESOLVED,
+              ComplaintStatus.CLOSED,
+              ComplaintStatus.CANCELLED,
+            ],
+          },
+        },
+      ],
+    },
+    include: {
+      condominium: true,
+    },
+  });
+
+  for (const complaint of overdueComplaints) {
+    const slaConfig = await findSlaConfig(
+      prisma,
+      complaint.condominiumId,
+      complaint.priority as ComplaintPriority
+    );
+
+    const responseDeadlineWithBuffer =
+      complaint.responseDueAt &&
+      addMinutes(complaint.responseDueAt, slaConfig.escalationBuffer);
+    const resolutionDeadlineWithBuffer =
+      complaint.resolutionDueAt &&
+      addMinutes(complaint.resolutionDueAt, slaConfig.escalationBuffer);
+
+    if (
+      (responseDeadlineWithBuffer &&
+        responseDeadlineWithBuffer > now &&
+        !complaint.responseAt) ||
+      (resolutionDeadlineWithBuffer &&
+        resolutionDeadlineWithBuffer > now &&
+        !(
+          [
+            ComplaintStatus.RESOLVED,
+            ComplaintStatus.CLOSED,
+            ComplaintStatus.CANCELLED,
+          ] as ComplaintStatus[]
+        ).includes(complaint.status))
+    ) {
+      continue;
+    }
+
+    const syndic = await prisma.userCondominium.findFirst({
+      where: {
+        condominiumId: complaint.condominiumId,
+        role: { in: ["SYNDIC", "PROFESSIONAL_SYNDIC"] },
+      },
+      include: { user: true },
+    });
+
+    const escalationTargetId = syndic?.userId;
+
+    await prisma.complaint.update({
+      where: { id: complaint.id },
+      data: {
+        assigneeId: escalationTargetId ?? null,
+        escalationTargetId: escalationTargetId ?? null,
+        escalatedAt: now,
+        status: ComplaintStatus.IN_PROGRESS,
+      },
+    });
+    if (complaint.sectorId) {
+      await prisma.complaintAssignment.create({
+        data: {
+          complaintId: complaint.id,
+          sectorId: complaint.sectorId,
+          assigneeId: escalationTargetId ?? null,
+          assignedBy: "system",
+          reason: "SLA escalonada para o síndico",
+        },
+      });
+    }
+    await prisma.complaintStatusHistory.create({
+      data: {
+        complaintId: complaint.id,
+        fromStatus: complaint.status,
+        toStatus: ComplaintStatus.IN_PROGRESS,
+        changedBy: "system",
+        notes: "SLA estourado - escalonado ao síndico",
+        action: SLA_ACTIONS.ESCALATION,
+        metadata: {
+          responseDueAt: complaint.responseDueAt,
+          resolutionDueAt: complaint.resolutionDueAt,
+        },
+      },
+    });
+
+    logger.warn(
+      { complaintId: complaint.id },
+      "Complaint escalated to syndic due to SLA breach"
+    );
+  }
+
+  return { processed: overdueComplaints.length };
+}
+
+async function findResidentById(prisma: PrismaClient, id: string) {
+  return prisma.resident.findUnique({
+    where: { id },
+    include: { condominium: true },
+  });
+}
+
+async function findSlaConfig(
+  prisma: PrismaClient,
+  condominiumId: string,
+  priority: ComplaintPriority
+): Promise<
+  Pick<SlaConfig, "responseMinutes" | "resolutionMinutes"> & {
+    escalationBuffer: number;
+  }
+> {
+  const config = await prisma.slaConfig.findUnique({
+    where: {
+      condominiumId_priority: {
+        condominiumId,
+        priority,
+      },
+    },
+  });
+
+  if (config) {
+    return {
+      responseMinutes: config.responseMinutes,
+      resolutionMinutes: config.resolutionMinutes,
+      escalationBuffer: config.escalationBufferMinutes,
+    };
+  }
+
+  return DEFAULT_SLA_BY_PRIORITY[priority];
+}
+
+async function resolveAssignee(
+  prisma: PrismaClient,
+  sectorId: string,
+  explicitAssignee?: string
+) {
+  if (explicitAssignee) {
+    const member = await prisma.sectorMember.findFirst({
+      where: { sectorId, userId: explicitAssignee, isActive: true },
+    });
+    if (!member) {
+      throw new NotFoundError("Assignee not active in sector");
+    }
+    await prisma.sectorMember.update({
+      where: { id: member.id },
+      data: { workload: { increment: 1 } },
+    });
+    return explicitAssignee;
+  }
+
+  const member = await prisma.sectorMember.findFirst({
+    where: { sectorId, isActive: true },
+    orderBy: [{ workload: "asc" }, { order: "asc" }, { createdAt: "asc" }],
+  });
+
+  if (!member) {
+    return null;
+  }
+
+  await prisma.sectorMember.update({
+    where: { id: member.id },
+    data: { workload: { increment: 1 } },
+  });
+
+  return member.userId;
+}
+
+function addMinutes(date: Date, minutes: number) {
+  const result = new Date(date);
+  result.setMinutes(result.getMinutes() + minutes);
+  return result;
+}

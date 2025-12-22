@@ -6,10 +6,10 @@
  */
 
 import { UserCheck, Loader2, Users } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useAppSelector } from "@/hooks";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
-import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { useAppSelector } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import {
   usePendingUsers,
   useAllPendingUsers,
@@ -18,7 +18,7 @@ import {
   useCondominiums,
 } from "../hooks/useUserApprovalApi";
 import { PendingUserCard } from "../components/PendingUserCard";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { ApproveUserInput } from "../types";
 
 export function UserApprovalPage() {

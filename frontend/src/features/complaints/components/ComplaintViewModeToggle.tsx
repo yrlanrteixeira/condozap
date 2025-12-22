@@ -1,5 +1,5 @@
 import { LayoutGrid, Table as TableIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 
 type ViewMode = 'kanban' | 'table';
 

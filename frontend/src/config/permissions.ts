@@ -15,6 +15,9 @@ export const UserRoles = {
   PROFESSIONAL_SYNDIC: "PROFESSIONAL_SYNDIC",
   ADMIN: "ADMIN",
   SYNDIC: "SYNDIC",
+  TRIAGE: "TRIAGE",
+  SETOR_MANAGER: "SETOR_MANAGER",
+  SETOR_MEMBER: "SETOR_MEMBER",
   RESIDENT: "RESIDENT",
 } as const;
 
@@ -25,6 +28,9 @@ export const UserRoleLabels: Record<UserRole, string> = {
   [UserRoles.PROFESSIONAL_SYNDIC]: "Síndico Profissional",
   [UserRoles.ADMIN]: "Administrador",
   [UserRoles.SYNDIC]: "Síndico",
+  [UserRoles.TRIAGE]: "Triagem",
+  [UserRoles.SETOR_MANAGER]: "Gestor de Setor",
+  [UserRoles.SETOR_MEMBER]: "Membro de Setor",
   [UserRoles.RESIDENT]: "Morador",
 };
 
@@ -383,6 +389,49 @@ export const RolePermissions: Record<UserRole, string[]> = {
     // Configurações
     Permissions.VIEW_SETTINGS,
   ],
+  // TRIAGE: gestor local de triagem
+  [UserRoles.TRIAGE]: [
+    Permissions.VIEW_DASHBOARD,
+    Permissions.VIEW_METRICS,
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.VIEW_STRUCTURE,
+    Permissions.VIEW_RESIDENTS,
+    Permissions.VIEW_COMPLAINTS,
+    Permissions.VIEW_ALL_COMPLAINTS,
+    Permissions.CREATE_COMPLAINT,
+    Permissions.EDIT_COMPLAINT,
+    Permissions.UPDATE_COMPLAINT_STATUS,
+    Permissions.UPDATE_COMPLAINT_PRIORITY,
+    Permissions.SEND_MESSAGE,
+    Permissions.SEND_BULK_MESSAGE,
+    Permissions.VIEW_MESSAGES,
+    Permissions.VIEW_MESSAGE_HISTORY,
+  ],
+  // Gestor de setor
+  [UserRoles.SETOR_MANAGER]: [
+    Permissions.VIEW_DASHBOARD,
+    Permissions.VIEW_METRICS,
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.VIEW_STRUCTURE,
+    Permissions.VIEW_RESIDENTS,
+    Permissions.VIEW_COMPLAINTS,
+    Permissions.CREATE_COMPLAINT,
+    Permissions.EDIT_COMPLAINT,
+    Permissions.UPDATE_COMPLAINT_STATUS,
+    Permissions.UPDATE_COMPLAINT_PRIORITY,
+    Permissions.VIEW_MESSAGES,
+    Permissions.SEND_MESSAGE,
+  ],
+  // Membro de setor
+  [UserRoles.SETOR_MEMBER]: [
+    Permissions.VIEW_DASHBOARD,
+    Permissions.VIEW_METRICS,
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.VIEW_STRUCTURE,
+    Permissions.VIEW_COMPLAINTS,
+    Permissions.CREATE_COMPLAINT,
+    Permissions.VIEW_MESSAGES,
+  ],
 
   // RESIDENT: Morador (acesso limitado)
   [UserRoles.RESIDENT]: [
@@ -512,6 +561,9 @@ export function hasRoleHierarchy(
     [UserRoles.PROFESSIONAL_SYNDIC]: 4,
     [UserRoles.ADMIN]: 3,
     [UserRoles.SYNDIC]: 2,
+    [UserRoles.TRIAGE]: 2,
+    [UserRoles.SETOR_MANAGER]: 2,
+    [UserRoles.SETOR_MEMBER]: 2,
     [UserRoles.RESIDENT]: 1,
   };
 
@@ -527,6 +579,9 @@ export function getRoleHierarchyLevel(userRole: UserRole): number {
     [UserRoles.PROFESSIONAL_SYNDIC]: 4,
     [UserRoles.ADMIN]: 3,
     [UserRoles.SYNDIC]: 2,
+    [UserRoles.TRIAGE]: 2,
+    [UserRoles.SETOR_MANAGER]: 2,
+    [UserRoles.SETOR_MEMBER]: 2,
     [UserRoles.RESIDENT]: 1,
   };
 

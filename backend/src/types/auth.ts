@@ -1,4 +1,5 @@
-import { UserRole } from "@prisma/client";
+import { PermissionScope } from "@prisma/client";
+import { Role, Scope } from "../auth/roles";
 
 /**
  * User information decoded from JWT token
@@ -7,10 +8,12 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: Role;
+  permissionScope?: PermissionScope | Scope;
+  residentId?: string;
   condominiums?: Array<{
     condominiumId: string;
-    role: UserRole;
+    role: Role;
   }>;
 }
 

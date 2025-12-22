@@ -28,9 +28,14 @@ enum PermissionScope {
 }
 
 enum ComplaintStatus {
-  OPEN
+  NEW
+  TRIAGE
   IN_PROGRESS
+  WAITING_USER
+  WAITING_THIRD_PARTY
   RESOLVED
+  CLOSED
+  CANCELLED
 }
 
 enum ComplaintPriority {
@@ -38,6 +43,13 @@ enum ComplaintPriority {
   HIGH
   MEDIUM
   LOW
+}
+
+enum DocumentStatus {
+  PENDING
+  VALIDATING
+  APPROVED
+  REJECTED
 }
 
 enum ResidentType {
@@ -72,10 +84,10 @@ enum WhatsAppStatus {
 }
 
 enum UserStatus {
-  PENDING       // Aguardando aprovação
-  APPROVED      // Aprovado e pode usar o sistema
-  REJECTED      // Cadastro rejeitado
-  SUSPENDED     // Suspenso temporariamente
+  PENDING // Aguardando aprovação
+  APPROVED // Aprovado e pode usar o sistema
+  REJECTED // Cadastro rejeitado
+  SUSPENDED // Suspenso temporariamente
 }
 
 // =====================================================
@@ -83,12 +95,12 @@ enum UserStatus {
 // =====================================================
 
 model Condominium {
-  id        String             @id @default(cuid())
+  id        String            @id @default(cuid())
   name      String
-  cnpj      String             @unique
-  status    CondominiumStatus  @default(TRIAL)
-  createdAt DateTime           @default(now()) @map("created_at")
-  updatedAt DateTime           @updatedAt @map("updated_at")
+  cnpj      String            @unique
+  status    CondominiumStatus @default(TRIAL)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
 
   // WhatsApp configuration
   whatsappPhone      String? @map("whatsapp_phone")
@@ -99,10 +111,12 @@ model Condominium {
   structure Json? @db.JsonB
 
   // Relations
-  users              UserCondominium[]
-  residents          Resident[]
-  complaints         Complaint[]
-  messages           Message[]
+  users      UserCondominium[]
+  residents  Resident[]
+  complaints Complaint[]
+  messages   Message[]
+  sectors    Sector[]
+  slaConfigs SlaConfig[]
 
   @@index([cnpj])
   @@map("condominiums")
@@ -119,29 +133,35 @@ model User {
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   // Approval System
-  status              UserStatus  @default(PENDING)
-  approvedAt          DateTime?   @map("approved_at")
-  approvedBy          String?     @map("approved_by")
-  rejectionReason     String?     @map("rejection_reason") @db.Text
-  
+  status          UserStatus @default(PENDING)
+  approvedAt      DateTime?  @map("approved_at")
+  approvedBy      String?    @map("approved_by")
+  rejectionReason String?    @map("rejection_reason") @db.Text
+
   // Pending Allocation (dados informados no cadastro, antes da aprovação)
-  requestedCondominiumId String?  @map("requested_condominium_id")
-  requestedTower         String?  @map("requested_tower")
-  requestedFloor         String?  @map("requested_floor")
-  requestedUnit          String?  @map("requested_unit")
-  requestedPhone         String?  @map("requested_phone")
+  requestedCondominiumId String? @map("requested_condominium_id")
+  requestedTower         String? @map("requested_tower")
+  requestedFloor         String? @map("requested_floor")
+  requestedUnit          String? @map("requested_unit")
+  requestedPhone         String? @map("requested_phone")
 
   // LGPD Consent (coletado no cadastro, transferido para Resident na aprovação)
-  consentWhatsapp       Boolean @default(false) @map("consent_whatsapp")
-  consentDataProcessing Boolean @default(false) @map("consent_data_processing")
+  // Consentimento WhatsApp é OBRIGATÓRIO para se cadastrar na plataforma
+  consentWhatsapp       Boolean @default(true) @map("consent_whatsapp")
+  consentDataProcessing Boolean @default(true) @map("consent_data_processing")
 
   // MFA
   mfaEnabled Boolean @default(false) @map("mfa_enabled")
   mfaSecret  String? @map("mfa_secret")
 
   // Relations
-  condominiums UserCondominium[]
-  resident     Resident?
+  condominiums         UserCondominium[]
+  resident             Resident?
+  sectorMembers        SectorMember[]
+  assigneeComplaints   Complaint[]           @relation("ComplaintAssignee")
+  escalatedComplaints  Complaint[]           @relation("ComplaintEscalationTarget")
+  assignedComplaints   ComplaintAssignment[] @relation("ComplaintAssignmentAssignedBy")
+  assignedToComplaints ComplaintAssignment[] @relation("ComplaintAssignmentAssignee")
 
   @@index([email])
   @@index([status])
@@ -150,15 +170,15 @@ model User {
 }
 
 model UserCondominium {
-  id             String      @id @default(cuid())
-  userId         String      @map("user_id")
-  condominiumId  String      @map("condominium_id")
-  role           UserRole
-  createdAt      DateTime    @default(now()) @map("created_at")
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  condominiumId String   @map("condominium_id")
+  role          UserRole
+  createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  condominium    Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
 
   @@unique([userId, condominiumId])
   @@index([userId])
@@ -167,26 +187,27 @@ model UserCondominium {
 }
 
 model Resident {
-  id             String       @id @default(cuid())
-  condominiumId  String       @map("condominium_id")
-  userId         String?      @unique @map("user_id")
-  name           String
-  email          String       @default("pendente@condozap.com")
-  phone          String
-  tower          String
-  floor          String
-  unit           String
-  type           ResidentType @default(OWNER)
-  createdAt      DateTime     @default(now()) @map("created_at")
+  id            String       @id @default(cuid())
+  condominiumId String       @map("condominium_id")
+  userId        String?      @unique @map("user_id")
+  name          String
+  email         String       @default("pendente@condozap.com")
+  phone         String
+  tower         String
+  floor         String
+  unit          String
+  type          ResidentType @default(OWNER)
+  createdAt     DateTime     @default(now()) @map("created_at")
 
-  // LGPD Compliance
-  consentWhatsapp        Boolean @default(true) @map("consent_whatsapp")
-  consentDataProcessing  Boolean @default(true) @map("consent_data_processing")
+  // LGPD Compliance - Consentimento WhatsApp é OBRIGATÓRIO para cadastro
+  consentWhatsapp       Boolean @default(true) @map("consent_whatsapp") // Obrigatório - sem isso não recebe mensagens
+  consentDataProcessing Boolean @default(true) @map("consent_data_processing")
 
   // Relations
-  condominium  Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
-  user         User?       @relation(fields: [userId], references: [id])
-  complaints   Complaint[]
+  condominium Condominium        @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  user        User?              @relation(fields: [userId], references: [id])
+  complaints  Complaint[]
+  documents   ResidentDocument[]
 
   @@unique([condominiumId, tower, floor, unit])
   @@index([condominiumId, phone])
@@ -195,27 +216,42 @@ model Resident {
 }
 
 model Complaint {
-  id            Int               @id @default(autoincrement())
-  condominiumId String            @map("condominium_id")
-  residentId    String            @map("resident_id")
-  category      String
-  content       String            @db.Text
-  status        ComplaintStatus   @default(OPEN)
-  priority      ComplaintPriority @default(MEDIUM)
-  isAnonymous   Boolean           @default(false) @map("is_anonymous")
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
-  resolvedAt    DateTime?         @map("resolved_at")
-  resolvedBy    String?           @map("resolved_by")
+  id                 Int               @id @default(autoincrement())
+  condominiumId      String            @map("condominium_id")
+  residentId         String            @map("resident_id")
+  sectorId           String?           @map("sector_id")
+  assigneeId         String?           @map("assignee_id")
+  category           String
+  content            String            @db.Text
+  status             ComplaintStatus   @default(TRIAGE)
+  priority           ComplaintPriority @default(MEDIUM)
+  isAnonymous        Boolean           @default(false) @map("is_anonymous")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  resolvedAt         DateTime?         @map("resolved_at")
+  resolvedBy         String?           @map("resolved_by")
+  responseDueAt      DateTime?         @map("response_due_at")
+  resolutionDueAt    DateTime?         @map("resolution_due_at")
+  responseAt         DateTime?         @map("response_at")
+  pausedUntil        DateTime?         @map("paused_until")
+  pauseReason        String?           @map("pause_reason") @db.Text
+  escalatedAt        DateTime?         @map("escalated_at")
+  escalationTargetId String?           @map("escalation_target_id")
 
   // Relations
-  condominium      Condominium               @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
-  resident         Resident                  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  resident         Resident                 @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  sector           Sector?                  @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  assignee         User?                    @relation("ComplaintAssignee", fields: [assigneeId], references: [id])
+  escalationTarget User?                    @relation("ComplaintEscalationTarget", fields: [escalationTargetId], references: [id])
   attachments      ComplaintAttachment[]
   statusHistory    ComplaintStatusHistory[]
+  assignments      ComplaintAssignment[]
 
   @@index([condominiumId, status])
   @@index([condominiumId, priority])
+  @@index([condominiumId, sectorId])
+  @@index([assigneeId])
   @@map("complaints")
 }
 
@@ -241,6 +277,8 @@ model ComplaintStatusHistory {
   toStatus    ComplaintStatus @map("to_status")
   changedBy   String          @map("changed_by")
   notes       String?         @db.Text
+  action      String          @default("STATUS_CHANGE")
+  metadata    Json?           @db.JsonB
   createdAt   DateTime        @default(now()) @map("created_at")
 
   // Relations
@@ -249,21 +287,109 @@ model ComplaintStatusHistory {
   @@map("complaint_status_history")
 }
 
+model Sector {
+  id            String   @id @default(cuid())
+  condominiumId String   @map("condominium_id")
+  name          String
+  categories    String[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  condominium          Condominium           @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  members              SectorMember[]
+  complaints           Complaint[]
+  complaintAssignments ComplaintAssignment[]
+
+  @@unique([condominiumId, name])
+  @@index([condominiumId])
+  @@map("sectors")
+}
+
+model SectorMember {
+  id        String   @id @default(cuid())
+  sectorId  String   @map("sector_id")
+  userId    String   @map("user_id")
+  order     Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  workload  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sector Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, userId])
+  @@index([sectorId])
+  @@map("sector_members")
+}
+
+model ComplaintAssignment {
+  id          String   @id @default(cuid())
+  complaintId Int      @map("complaint_id")
+  sectorId    String   @map("sector_id")
+  assigneeId  String?  @map("assignee_id")
+  assignedBy  String?  @map("assigned_by")
+  reason      String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  complaint      Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  sector         Sector    @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  assignee       User?     @relation("ComplaintAssignmentAssignee", fields: [assigneeId], references: [id])
+  assignedByUser User?     @relation("ComplaintAssignmentAssignedBy", fields: [assignedBy], references: [id])
+
+  @@index([complaintId, sectorId])
+  @@map("complaint_assignments")
+}
+
+model SlaConfig {
+  id                      String            @id @default(cuid())
+  condominiumId           String?           @map("condominium_id")
+  priority                ComplaintPriority
+  responseMinutes         Int               @map("response_minutes")
+  resolutionMinutes       Int               @map("resolution_minutes")
+  escalationBufferMinutes Int               @default(30) @map("escalation_buffer_minutes")
+  workingHours            Json?             @db.JsonB
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+
+  condominium Condominium? @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+
+  @@unique([condominiumId, priority])
+  @@index([priority])
+  @@map("sla_config")
+}
+
+model ResidentDocument {
+  id          String         @id @default(cuid())
+  residentId  String         @map("resident_id")
+  type        String
+  number      String?
+  status      DocumentStatus @default(PENDING)
+  observation String?        @db.Text
+  fileUrl     String?        @map("file_url")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([residentId, status])
+  @@map("resident_documents")
+}
+
 model Message {
-  id                 String         @id @default(cuid())
-  condominiumId      String         @map("condominium_id")
-  type               MessageType
-  scope              MessageScope
-  targetTower        String?        @map("target_tower")
-  targetFloor        String?        @map("target_floor")
-  targetUnit         String?        @map("target_unit")
-  content            String         @db.Text
-  whatsappMessageId  String?        @map("whatsapp_message_id")
-  whatsappStatus     WhatsAppStatus @default(SENT) @map("whatsapp_status")
-  batchId            String?        @map("batch_id")
-  recipientCount     Int            @default(0) @map("recipient_count")
-  sentBy             String         @map("sent_by")
-  sentAt             DateTime       @default(now()) @map("sent_at")
+  id                String         @id @default(cuid())
+  condominiumId     String         @map("condominium_id")
+  type              MessageType
+  scope             MessageScope
+  targetTower       String?        @map("target_tower")
+  targetFloor       String?        @map("target_floor")
+  targetUnit        String?        @map("target_unit")
+  content           String         @db.Text
+  whatsappMessageId String?        @map("whatsapp_message_id")
+  whatsappStatus    WhatsAppStatus @default(SENT) @map("whatsapp_status")
+  batchId           String?        @map("batch_id")
+  recipientCount    Int            @default(0) @map("recipient_count")
+  sentBy            String         @map("sent_by")
+  sentAt            DateTime       @default(now()) @map("sent_at")
 
   // Relations
   condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)

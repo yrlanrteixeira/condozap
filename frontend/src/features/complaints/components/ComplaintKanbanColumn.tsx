@@ -1,7 +1,8 @@
 import { LucideIcon, Inbox } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Complaint, Resident } from '@/types';
+import type { Complaint } from '@/features/complaints/types';
+import type { Resident } from '@/features/residents/types';
 import { ComplaintCard } from './ComplaintCard';
 
 interface ComplaintKanbanColumnProps {

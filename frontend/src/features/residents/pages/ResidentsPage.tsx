@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Users } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PageHeaderSkeleton, TableRowSkeleton } from "@/components/ui/skeleton";
-import { useAppSelector } from "@/hooks";
-import { useAuth } from "@/hooks/useAuth";
-import { selectCurrentCondominiumId } from "@/store/slices/condominiumSlice";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeaderSkeleton, TableRowSkeleton } from "@/shared/components/ui/skeleton";
+import { useAppSelector } from "@/shared/hooks";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import {
   ResidentPageHeader,
   ResidentList,

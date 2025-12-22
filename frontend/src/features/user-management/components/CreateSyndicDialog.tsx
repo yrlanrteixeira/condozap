@@ -5,15 +5,15 @@
  */
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Loader2, UserPlus, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useCreateSyndic } from '../hooks/useUserManagementApi';
 import { useCondominiums } from '@/features/condominiums/hooks/useCondominiumsApi';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface CreateSyndicDialogProps {
   open: boolean;

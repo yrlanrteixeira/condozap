@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/shared/components/ui/select";
 import { TEMPLATES } from "@/config/constants";
 
 interface MessageTemplateSelectorProps {

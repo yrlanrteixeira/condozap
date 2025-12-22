@@ -1,7 +1,6 @@
 {
   "name": "@condozap/backend",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -17,7 +16,9 @@
     "db:clear": "tsx prisma/clear.ts",
     "db:reset": "npm run db:clear && npm run prisma:seed",
     "db:fresh": "prisma migrate reset --force",
-    "db:update-consent": "tsx prisma/update-consent.ts"
+    "db:update-consent": "tsx prisma/update-consent.ts",
+    "storage:create-buckets": "tsx scripts/create-storage-buckets.ts",
+    "storage:test": "tsx scripts/test-storage.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
