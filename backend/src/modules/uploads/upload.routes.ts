@@ -1,5 +1,4 @@
 import { FastifyInstance } from "fastify";
-import { authMiddleware } from "../../middleware/auth";
 import {
   uploadComplaintAttachment,
   uploadResidentDocument,
@@ -25,10 +24,9 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.post(
     "/complaints/:complaintId/attachments",
     {
-      preHandler: [authMiddleware],
+      onRequest: [app.authenticate],
       schema: {
         params: uploadComplaintAttachmentParamsSchema,
-        tags: ["Uploads"],
         description: "Upload attachment to complaint",
       },
     },
@@ -94,9 +92,8 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.post(
     "/documents",
     {
-      preHandler: [authMiddleware],
+      onRequest: [app.authenticate],
       schema: {
-        tags: ["Uploads"],
         description: "Upload resident document",
       },
     },
@@ -147,7 +144,7 @@ export async function uploadRoutes(app: FastifyInstance) {
 
       // Upload to Supabase Storage
       const fileBuffer = await fileData.toBuffer();
-      const { publicUrl, filename, fileSize } = await uploadResidentDocument(
+      const { publicUrl } = await uploadResidentDocument(
         app.log,
         fileBuffer,
         fileData.filename,
@@ -182,9 +179,8 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.delete(
     "/complaints/attachments/:attachmentId",
     {
-      preHandler: [authMiddleware],
+      onRequest: [app.authenticate],
       schema: {
-        tags: ["Uploads"],
         description: "Delete complaint attachment",
       },
     },
@@ -238,9 +234,8 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.delete(
     "/documents/:documentId",
     {
-      preHandler: [authMiddleware],
+      onRequest: [app.authenticate],
       schema: {
-        tags: ["Uploads"],
         description: "Delete resident document",
       },
     },

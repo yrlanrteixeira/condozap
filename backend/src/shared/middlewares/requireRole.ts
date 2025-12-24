@@ -29,7 +29,7 @@ export const requireRole = (roles: UserRole[]) => {
       });
     }
 
-    if (!roles.includes(user.role)) {
+    if (!roles.includes(user.role as UserRole)) {
       return reply.status(403).send({
         error: "Forbidden",
         message: `Acesso negado. Roles permitidos: ${roles.join(", ")}`,
