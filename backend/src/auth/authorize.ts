@@ -9,7 +9,6 @@ import {
 import { roleCanExecute, TicketAction, TicketActions } from "./permissions";
 import {
   Role,
-  Roles,
   isResident,
   isSectorRole,
   isSuperAdmin,

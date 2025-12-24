@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { Role, Scope, Roles, isGlobalScope, isSuperAdmin } from "./roles";
+import { Role, Scope, isGlobalScope, isSuperAdmin } from "./roles";
 
 export interface AccessContext {
   role: Role;
