@@ -73,7 +73,7 @@ export const requireCondoAccess = (config: CondoAccessConfig = {}) => {
     }
 
     // Bypass check for certain roles (e.g., SUPER_ADMIN)
-    if (bypassRoles.includes(user.role)) {
+    if (bypassRoles.includes(user.role as UserRole)) {
       return;
     }
 

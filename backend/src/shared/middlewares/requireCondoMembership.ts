@@ -38,7 +38,7 @@ export const requireCondoMembership = (
     }
 
     // Bypass check for certain roles
-    if (bypassRoles.includes(user.role)) {
+    if (bypassRoles.includes(user.role as UserRole)) {
       return;
     }
 
