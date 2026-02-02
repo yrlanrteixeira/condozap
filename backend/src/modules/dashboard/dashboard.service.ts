@@ -159,7 +159,7 @@ export function buildMetrics(
   return {
     complaints: {
       total: complaints.length,
-      open: complaints.filter((c) => c.status === "OPEN").length,
+      open: complaints.filter((c) => c.status === "NEW").length,
       inProgress: complaints.filter((c) => c.status === "IN_PROGRESS").length,
       resolved: complaints.filter((c) => c.status === "RESOLVED").length,
       byPriority: {
@@ -228,7 +228,7 @@ export function buildUnifiedDashboard(
 ) {
   const totalCondos = condominiums.length;
   const totalComplaints = complaints.length;
-  const openComplaints = complaints.filter((c) => c.status === "OPEN").length;
+  const openComplaints = complaints.filter((c) => c.status === "NEW").length;
   const inProgressComplaints = complaints.filter(
     (c) => c.status === "IN_PROGRESS"
   ).length;
@@ -240,7 +240,7 @@ export function buildUnifiedDashboard(
     .filter(
       (c) =>
         (c.priority === "CRITICAL" || c.priority === "HIGH") &&
-        (c.status === "OPEN" || c.status === "IN_PROGRESS")
+        (c.status === "NEW" || c.status === "IN_PROGRESS")
     )
     .slice(0, 20)
     .map((c) => ({
