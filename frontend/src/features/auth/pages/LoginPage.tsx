@@ -50,7 +50,7 @@ export function LoginPage() {
       </div>
       
       <AuthHeader
-        title="Bem-vindo ao CondoZap"
+        title="Bem-vindo ao TalkZap"
         description="Acesse sua conta para gerenciar seu condomínio"
       />
 
