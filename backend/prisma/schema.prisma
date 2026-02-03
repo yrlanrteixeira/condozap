@@ -29,6 +29,7 @@ enum PermissionScope {
 }
 
 enum ComplaintStatus {
+  OPEN       // legado (init); tratar como TRIAGE na UI
   NEW
   TRIAGE
   IN_PROGRESS
