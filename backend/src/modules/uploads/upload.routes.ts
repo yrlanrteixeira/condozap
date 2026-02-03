@@ -25,13 +25,10 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/complaints/:complaintId/attachments",
     {
       onRequest: [app.authenticate],
-      schema: {
-        params: uploadComplaintAttachmentParamsSchema,
-        description: "Upload attachment to complaint",
-      },
     },
     async (request, reply) => {
-      const { complaintId } = request.params as { complaintId: number };
+      const params = uploadComplaintAttachmentParamsSchema.parse(request.params);
+      const { complaintId } = params;
       const user = request.user;
 
       if (!user) {

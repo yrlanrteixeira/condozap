@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireSuperAdmin, requireRole } from "../../shared/middlewares";
 import {
   requireAttachmentUpload,
   requireCondoAccess,
@@ -119,7 +119,10 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/sla/scan",
     {
-      onRequest: [fastify.authenticate, requireSuperAdmin()],
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
+      ],
     },
     runSlaScanHandler
   );

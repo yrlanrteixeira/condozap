@@ -4,109 +4,109 @@
 
 @layer base {
   :root {
-    /* --- TEMA LIGHT (Baseado no seu pedido) --- */
-    --background: 317 64% 98%;
-    --foreground: 0 0% 11%;
+    /* --- TEMA LIGHT --- */
+    --background: 0 0% 97%;
+    --foreground: 220 38% 11%;
 
-    --card: 317 28% 95%;
-    --card-foreground: 0 0% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 38% 11%;
 
-    --popover: 283 23% 94%;
-    --popover-foreground: 273 14% 30%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 38% 11%;
 
-    --primary: 253 63% 55%;
+    --primary: 216 99% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 12% 41%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 217 19% 26%;
 
-    --muted: 317 28% 95%;
-    --muted-foreground: 0 0% 4%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 264 78% 93%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 217 78% 95%;
+    --accent-foreground: 216 99% 40%;
 
-    --destructive: 1 94% 45%;
-    --destructive-foreground: 0 0% 98%; /* Ajustado para branco para contraste */
+    --destructive: 359 75% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 270 13% 80%;
-    --input: 272 5% 48%;
-    --ring: 256 34% 48%;
+    --border: 218 26% 92%;
+    --input: 218 26% 92%;
+    --ring: 216 99% 40%;
 
-    --radius: 1rem; /* Raio arredondado do seu pedido original */
-    
+    --radius: 0.375rem;
+
     /* Overlay para modais */
     --overlay: 0 0% 0%;
     --overlay-opacity: 0.5;
 
     /* Gráficos */
-    --chart-1: 242 96% 70%;
-    --chart-2: 151 54% 49%;
-    --chart-3: 295 49% 61%;
-    --chart-4: 85 56% 61%;
-    --chart-5: 216 100% 66%;
+    --chart-1: 216 99% 40%;
+    --chart-2: 216 98% 50%;
+    --chart-3: 215 100% 30%;
+    --chart-4: 216 85% 35%;
+    --chart-5: 219 56% 20%;
 
-    /* Sidebar (Novo padrão Shadcn) */
-    --sidebar: 0 0% 99%;
-    --sidebar-foreground: 0 0% 4%;
-    --sidebar-primary: 194 100% 33%;
-    --sidebar-primary-foreground: 0 0% 97%;
-    --sidebar-accent: 0 0% 93%;
-    --sidebar-accent-foreground: 0 0% 13%;
-    --sidebar-border: 0 0% 87%;
-    --sidebar-ring: 194 100% 33%;
+    /* Sidebar */
+    --sidebar: 0 0% 96%;
+    --sidebar-foreground: 220 38% 11%;
+    --sidebar-primary: 216 99% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 78% 95%;
+    --sidebar-accent-foreground: 216 99% 40%;
+    --sidebar-border: 218 26% 92%;
+    --sidebar-ring: 216 99% 40%;
   }
 
   .dark {
-    /* --- TEMA DARK (Baseado no seu pedido) --- */
-    --background: 285 17% 5%;
-    --foreground: 291 23% 94%;
+    /* --- TEMA DARK --- */
+    --background: 219 29% 15%;
+    --foreground: 218 26% 92%;
 
-    --card: 293 14% 11%;
-    --card-foreground: 291 23% 94%;
+    --card: 218 24% 19%;
+    --card-foreground: 218 26% 92%;
 
-    --popover: 293 14% 11%;
-    --popover-foreground: 291 23% 94%;
+    --popover: 218 24% 19%;
+    --popover-foreground: 218 26% 92%;
 
-    --primary: 243 99% 70%;
-    --primary-foreground: 291 64% 98%;
+    --primary: 216 98% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 253 10% 36%;
-    --secondary-foreground: 291 23% 94%;
+    --secondary: 218 26% 25%;
+    --secondary-foreground: 218 26% 92%;
 
-    --muted: 288 9% 11%;
-    --muted-foreground: 290 3% 62%;
+    --muted: 218 24% 19%;
+    --muted-foreground: 218 10% 65%;
 
-    --accent: 261 25% 27%;
-    --accent-foreground: 291 23% 94%;
+    --accent: 221 26% 23%;
+    --accent-foreground: 218 26% 92%;
 
-    --destructive: 1 94% 45%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --destructive: 0 86% 61%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 273 8% 15%;
-    --input: 273 8% 15%;
-    --ring: 259 39% 49%;
+    --border: 218 26% 25%;
+    --input: 218 26% 25%;
+    --ring: 216 98% 50%;
 
     /* Overlay para modais Dark */
     --overlay: 0 0% 0%;
     --overlay-opacity: 0.7;
 
     /* Gráficos Dark */
-    --chart-1: 243 83% 58%;
-    --chart-2: 141 61% 37%;
-    --chart-3: 276 74% 65%;
-    --chart-4: 86 100% 29%;
-    --chart-5: 209 100% 48%;
+    --chart-1: 216 98% 50%;
+    --chart-2: 216 99% 40%;
+    --chart-3: 214 100% 65%;
+    --chart-4: 216 85% 35%;
+    --chart-5: 219 56% 20%;
 
     /* Sidebar Dark */
-    --sidebar: 285 9% 9%;
-    --sidebar-foreground: 291 23% 94%;
-    --sidebar-primary: 194 85% 37%;
-    --sidebar-primary-foreground: 291 23% 94%;
-    --sidebar-accent: 288 5% 18%;
-    --sidebar-accent-foreground: 291 23% 94%;
-    --sidebar-border: 288 4% 12%;
-    --sidebar-ring: 194 85% 37%;
+    --sidebar: 219 29% 15%;
+    --sidebar-foreground: 218 26% 92%;
+    --sidebar-primary: 216 98% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 26% 23%;
+    --sidebar-accent-foreground: 218 26% 92%;
+    --sidebar-border: 218 26% 25%;
+    --sidebar-ring: 216 98% 50%;
   }
 
   /* Focus visível para acessibilidade */

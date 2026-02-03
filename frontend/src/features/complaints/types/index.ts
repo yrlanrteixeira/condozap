@@ -40,6 +40,10 @@ export interface Complaint {
     unit: string;
     tower: string;
   };
+  sector?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface CreateComplaintInput {

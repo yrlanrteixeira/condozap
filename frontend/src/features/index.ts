@@ -20,3 +20,6 @@ export * from "./structure";
 
 // History Feature
 export * from "./history";
+
+// Settings Feature
+export * from "./settings";

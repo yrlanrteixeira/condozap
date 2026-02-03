@@ -9,4 +9,7 @@ export { AuthErrorAlert } from './AuthErrorAlert'
 export { RegisterSuccessCard } from './RegisterSuccessCard'
 export { LoginForm } from './LoginForm'
 export { ConsentDialog } from './ConsentDialog'
+export { GlassInputWrapper } from './GlassInputWrapper'
+export { PasswordInput } from './PasswordInput'
+export { TextInput } from './TextInput'
 

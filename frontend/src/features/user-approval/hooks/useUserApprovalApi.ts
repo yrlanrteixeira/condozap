@@ -29,9 +29,10 @@ export function useCondominiums(options?: { enabled?: boolean }) {
 }
 
 /**
- * Hook to fetch ALL pending users (SUPER_ADMIN only)
+ * Hook to fetch ALL pending users (SUPER_ADMIN / PROFESSIONAL_SYNDIC)
+ * Use enabled: false para ADMIN/SYNDIC para não chamar a API e evitar 403.
  */
-export function useAllPendingUsers() {
+export function useAllPendingUsers(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.pendingAll(),
     queryFn: async (): Promise<PendingUser[]> => {
@@ -39,6 +40,7 @@ export function useAllPendingUsers() {
       return data;
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled: options?.enabled !== false,
   });
 }
 

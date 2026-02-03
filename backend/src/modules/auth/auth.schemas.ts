@@ -33,5 +33,24 @@ export const loginSchema = z.object({
   password: z.string(),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(3).optional(),
+  consentWhatsapp: z.boolean().optional(),
+  consentDataProcessing: z.boolean().optional(),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+    newPassword: z.string().min(8, "Nova senha deve ter no mínimo 8 caracteres"),
+    confirmNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmNewPassword"],
+  });
+
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
+export type UpdateProfileBody = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;

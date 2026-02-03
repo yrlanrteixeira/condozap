@@ -1,24 +1,20 @@
-import { CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
-import { Logo } from '@/shared/components/Logo'
+import React from 'react'
 
 interface AuthHeaderProps {
-  title: string
+  title: string | React.ReactNode
   description: string
 }
 
 export function AuthHeader({ title, description }: AuthHeaderProps) {
   return (
-    <CardHeader className="space-y-4 text-center pb-6">
-      <div className="flex justify-center">
-        <div className="p-3 bg-primary rounded-2xl">
-          <Logo className="h-12 w-auto" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </div>
-    </CardHeader>
+    <div>
+      <h1 className="text-4xl md:text-5xl font-semibold leading-tight tracking-tight text-foreground">
+        {typeof title === 'string' ? <span className="font-light">{title}</span> : title}
+      </h1>
+      <p className="mt-2 text-muted-foreground">
+        {description}
+      </p>
+    </div>
   )
 }
 
