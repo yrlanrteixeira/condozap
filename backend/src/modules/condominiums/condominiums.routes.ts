@@ -10,7 +10,9 @@ import {
   updateCondominiumHandler,
   deleteCondominiumHandler,
   getCondominiumStatsHandler,
+  updateCondominiumSettingsHandler,
 } from "./condominiums.controller";
+import { requireRole } from "../../shared/middlewares";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -46,6 +48,18 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     updateCondominiumHandler
+  );
+
+  fastify.patch(
+    "/:id/settings",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess({ paramName: "id" }),
+        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
+      ],
+    },
+    updateCondominiumSettingsHandler
   );
 
   fastify.delete(

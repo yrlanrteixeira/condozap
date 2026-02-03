@@ -192,9 +192,12 @@ export async function runSlaScanHandler(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
+  const condominiumId = (request.query as { condominiumId?: string })
+    ?.condominiumId;
   const result = await complaintService.runSlaEscalationScan(
     prisma,
-    request.log
+    request.log,
+    condominiumId
   );
   return reply.send(result);
 }

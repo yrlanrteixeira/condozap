@@ -3,6 +3,12 @@ import { Settings, User, Building, Shield, Bell, MessageSquare } from "lucide-re
 import { useRole } from "@/shared/hooks/useRole";
 import { UserRoles } from "@/config/permissions";
 import { WhatsAppConnectionStatus } from "@/features/whatsapp";
+import {
+  SettingsProfileCard,
+  SettingsCondominiumCard,
+  SettingsNotificationsCard,
+  SettingsSecurityCard,
+} from "@/features/settings";
 
 export function SettingsPage() {
   const { userRole } = useRole();
@@ -25,6 +31,7 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
         UserRoles.RESIDENT,
       ],
+      component: SettingsProfileCard,
     },
     {
       icon: Building,
@@ -36,6 +43,7 @@ export function SettingsPage() {
         UserRoles.ADMIN,
         UserRoles.SYNDIC,
       ],
+      component: SettingsCondominiumCard,
     },
     {
       icon: Bell,
@@ -48,6 +56,7 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
         UserRoles.RESIDENT,
       ],
+      component: SettingsNotificationsCard,
     },
     {
       icon: Shield,
@@ -60,6 +69,7 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
         UserRoles.RESIDENT,
       ],
+      component: SettingsSecurityCard,
     },
     {
       icon: MessageSquare,

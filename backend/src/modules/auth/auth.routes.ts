@@ -4,8 +4,12 @@ import { prisma } from "../../shared/db/prisma";
 import {
   loginSchema,
   registerSchema,
+  updateProfileSchema,
+  changePasswordSchema,
   type LoginBody,
   type RegisterBody,
+  type UpdateProfileBody,
+  type ChangePasswordBody,
 } from "./auth.schemas";
 import type { AuthUser } from "../../types/auth";
 
@@ -178,6 +182,99 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         condominiums: userCondominiums,
         residentId: resident?.id,
       });
+    }
+  );
+
+  fastify.patch(
+    "/me",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const userId = (request.user as AuthUser).id;
+      const body = updateProfileSchema.parse(request.body) as UpdateProfileBody;
+
+      const updateData: Record<string, unknown> = {};
+      if (body.name !== undefined) updateData.name = body.name;
+      if (body.consentWhatsapp !== undefined)
+        updateData.consentWhatsapp = body.consentWhatsapp;
+      if (body.consentDataProcessing !== undefined)
+        updateData.consentDataProcessing = body.consentDataProcessing;
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+          condominiums: {
+            include: {
+              condominium: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          resident: true,
+        },
+      });
+
+      const {
+        password: _,
+        condominiums,
+        resident,
+        ...userWithoutPassword
+      } = user;
+
+      const userCondominiums = condominiums.map((uc) => ({
+        id: uc.condominium.id,
+        name: uc.condominium.name,
+      }));
+
+      return reply.send({
+        ...userWithoutPassword,
+        condominiums: userCondominiums,
+        residentId: resident?.id,
+      });
+    }
+  );
+
+  fastify.patch(
+    "/change-password",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const userId = (request.user as AuthUser).id;
+      const body = changePasswordSchema.parse(request.body) as ChangePasswordBody;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return reply.status(404).send({ error: "Usuário não encontrado" });
+      }
+
+      const validPassword = await bcrypt.compare(
+        body.currentPassword,
+        user.password
+      );
+
+      if (!validPassword) {
+        return reply
+          .status(400)
+          .send({ error: "Senha atual incorreta" });
+      }
+
+      const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+      });
+
+      return reply.send({ message: "Senha alterada com sucesso" });
     }
   );
 };

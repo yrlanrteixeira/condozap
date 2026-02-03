@@ -29,30 +29,49 @@ export const ComplaintHistoryList = ({ complaints }: ComplaintHistoryListProps) 
           </div>
         )}
 
-        {complaints.map((complaint) => (
-          <Card key={complaint.id} className="hover:shadow-md transition">
-            <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="secondary" className="text-[10px] uppercase">
-                    {complaint.category}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock size={10} />
-                    {new Date(complaint.timestamp).toLocaleDateString()} às{' '}
-                    {new Date(complaint.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+        {complaints.map((complaint) => {
+          const dateStr = complaint.timestamp ?? complaint.createdAt;
+          return (
+            <Card key={complaint.id} className="hover:shadow-md transition">
+              <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <Badge variant="secondary" className="text-[10px] uppercase">
+                      {complaint.category}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock size={10} />
+                      {dateStr
+                        ? `${new Date(dateStr).toLocaleDateString()} às ${new Date(dateStr).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}`
+                        : '-'}
+                    </span>
+                  </div>
+                  <p className="text-foreground font-medium">{complaint.content}</p>
+                  {complaint.sector && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Setor: {complaint.sector.name}
+                    </p>
+                  )}
+                  {(complaint.responseDueAt || complaint.resolutionDueAt) && (
+                    <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                      {complaint.responseDueAt && (
+                        <div>Resposta até: {new Date(complaint.responseDueAt).toLocaleString('pt-BR')}</div>
+                      )}
+                      {complaint.resolutionDueAt && (
+                        <div>Resolução prevista: {new Date(complaint.resolutionDueAt).toLocaleString('pt-BR')}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <p className="text-foreground font-medium">{complaint.content}</p>
-              </div>
 
-              <ComplaintStatusBadge status={complaint.status as ComplaintStatus} size="sm" />
-            </CardContent>
-          </Card>
-        ))}
+                <ComplaintStatusBadge status={complaint.status as ComplaintStatus} size="sm" />
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

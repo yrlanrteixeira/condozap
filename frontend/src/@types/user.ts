@@ -47,6 +47,8 @@ export interface User {
   condominiums?: Condominium[]; // Lista de condomínios que o usuário tem acesso
   currentCondominiumId?: string; // ID do condomínio ativo no momento
   residentId?: string; // ID do cadastro de morador (para role RESIDENT)
+  consentWhatsapp?: boolean;
+  consentDataProcessing?: boolean;
 }
 
 /**
