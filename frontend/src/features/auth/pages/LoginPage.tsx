@@ -2,18 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { CardContent } from "@/shared/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/shared/components/ui/form";
+import { Loader2, Building2 } from "lucide-react";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { LoginSchema, type LoginInput } from "../schemas";
 import {
@@ -21,12 +10,13 @@ import {
   AuthHeader,
   AuthFooter,
   AuthErrorAlert,
+  TextInput,
+  PasswordInput
 } from "../components";
 
 export function LoginPage() {
   const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
@@ -51,109 +41,78 @@ export function LoginPage() {
 
   return (
     <AuthCard>
+      {/* Logo CondoZap - visível apenas em mobile */}
+      <div className="flex items-center gap-2 md:hidden mb-2">
+        <div className="p-2 bg-primary/10 rounded-lg">
+          <Building2 className="h-6 w-6 text-primary" />
+        </div>
+        <span className="text-xl font-bold text-foreground">CondoZap</span>
+      </div>
+      
       <AuthHeader
         title="Bem-vindo ao TalkZap"
-        description="Entre com sua conta para acessar o painel de gestão"
+        description="Acesse sua conta para gerenciar seu condomínio"
       />
 
-      <CardContent className="space-y-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <TextInput
+          type="email"
+          label="E-mail"
+          placeholder="exemplo@email.com"
+          autoComplete="email"
+          error={form.formState.errors.email?.message}
+          {...form.register("email")}
+        />
+
+        <PasswordInput
+          placeholder="Digite sua senha"
+          autoComplete="current-password"
+          error={form.formState.errors.password?.message}
+          {...form.register("password")}
+        />
+
+        <div className="flex items-center justify-between text-sm">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Senha</FormLabel>
-                  </div>
-                  <div>
-                    <Link
-                      to="/auth/forgot-password"
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        {...field}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={
-                          showPassword ? "Ocultar senha" : "Mostrar senha"
-                        }
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <AuthErrorAlert message={error} />
-
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-
-      <AuthFooter>
-        <div className="text-sm text-center text-muted-foreground">
-          Não tem uma conta?{" "}
+            <span className="text-foreground/90">Manter conectado</span>
+          </label>
           <Link
-            to="/auth/register"
-            className="text-primary hover:underline font-medium"
+            to="/auth/reset-password"
+            className="hover:underline text-primary transition-colors"
           >
-            Criar conta
+            Esqueceu a senha?
           </Link>
         </div>
+
+        <AuthErrorAlert message={error} />
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Entrando...
+            </span>
+          ) : (
+            "Entrar"
+          )}
+        </button>
+      </form>
+
+      <AuthFooter>
+        Não tem uma conta?{" "}
+        <Link
+          to="/auth/register"
+          className="text-primary hover:underline transition-colors font-medium"
+        >
+          Criar conta
+        </Link>
       </AuthFooter>
     </AuthCard>
   );

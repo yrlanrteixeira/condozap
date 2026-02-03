@@ -26,20 +26,22 @@ export function UserApprovalPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // SUPER_ADMIN e PROFESSIONAL_SYNDIC veem todos os pendentes; demais veem por condomínio
+  const canSeeAllPending =
+    user?.role === "SUPER_ADMIN" || user?.role === "PROFESSIONAL_SYNDIC";
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
-  // SUPER_ADMIN sees all pending users, others see by condominium
-  const allPendingQuery = useAllPendingUsers();
+  const allPendingQuery = useAllPendingUsers({ enabled: canSeeAllPending });
   const condoPendingQuery = usePendingUsers(currentCondominiumId || "");
   const { data: condominiums = [] } = useCondominiums({
-    enabled: isSuperAdmin,
+    enabled: canSeeAllPending,
   });
 
   const {
     data: pendingUsers = [],
     isLoading,
     isError,
-  } = isSuperAdmin ? allPendingQuery : condoPendingQuery;
+  } = canSeeAllPending ? allPendingQuery : condoPendingQuery;
 
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
@@ -116,12 +118,12 @@ export function UserApprovalPage() {
     );
   }
 
-  if (isError || (!isSuperAdmin && !currentCondominiumId)) {
+  if (isError || (!canSeeAllPending && !currentCondominiumId)) {
     return (
       <Card className="border-border">
         <CardContent className="p-6">
           <p className="text-muted-foreground">
-            {!currentCondominiumId && !isSuperAdmin
+            {!currentCondominiumId && !canSeeAllPending
               ? "Selecione um condomínio para visualizar cadastros pendentes."
               : "Erro ao carregar cadastros pendentes."}
           </p>
@@ -143,10 +145,10 @@ export function UserApprovalPage() {
               Aprovação de Cadastros
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isSuperAdmin
-                ? "Todos os cadastros pendentes do sistema"
-                : "Revise e aprove novos moradores do condomínio"}
-            </p>
+                {canSeeAllPending
+                  ? "Todos os cadastros pendentes do sistema"
+                  : "Revise e aprove novos moradores do condomínio"}
+              </p>
           </div>
         </div>
 
@@ -175,7 +177,7 @@ export function UserApprovalPage() {
               isLoading={
                 approveUserMutation.isPending || rejectUserMutation.isPending
               }
-              showCondominiumInfo={isSuperAdmin}
+              showCondominiumInfo={canSeeAllPending}
               condominiums={condominiums}
             />
           ))}

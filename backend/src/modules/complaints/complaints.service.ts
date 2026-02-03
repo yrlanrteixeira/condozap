@@ -56,6 +56,11 @@ const SLA_ACTIONS = {
 } as const;
 
 const VALID_TRANSITIONS: Record<ComplaintStatus, ComplaintStatus[]> = {
+  OPEN: [
+    ComplaintStatus.TRIAGE,
+    ComplaintStatus.IN_PROGRESS,
+    ComplaintStatus.CANCELLED,
+  ],
   NEW: [
     ComplaintStatus.TRIAGE,
     ComplaintStatus.IN_PROGRESS,
@@ -128,13 +133,52 @@ export async function createComplaint(
     },
   });
 
+  let effectiveSectorId = data.sectorId ?? null;
+
+  // Auto-triage: find sector by category (e.g. "Manutenção" → setor Manutenção)
+  if (!effectiveSectorId && data.category) {
+    const sectorByCategory = await prisma.sector.findFirst({
+      where: {
+        condominiumId: data.condominiumId,
+        categories: { has: data.category.trim() },
+      },
+    });
+    if (sectorByCategory) {
+      effectiveSectorId = sectorByCategory.id;
+      await prisma.complaint.update({
+        where: { id: complaint.id },
+        data: {
+          sectorId: effectiveSectorId,
+          status: ComplaintStatus.TRIAGE,
+        },
+      });
+      await prisma.complaintStatusHistory.create({
+        data: {
+          complaintId: complaint.id,
+          fromStatus: ComplaintStatus.NEW,
+          toStatus: ComplaintStatus.TRIAGE,
+          changedBy: "system",
+          notes: "Triagem automática por categoria",
+          action: SLA_ACTIONS.STATUS_CHANGE,
+          metadata: { sectorId: effectiveSectorId, category: data.category },
+        },
+      });
+      logger.info(
+        { complaintId: complaint.id, sectorId: effectiveSectorId, category: data.category },
+        "Auto-triage: complaint assigned to sector by category"
+      );
+    }
+  }
+
+  // Só faz assign (IN_PROGRESS + assignee) quando o setor foi informado na criação.
+  // Em auto-triage mantemos TRIAGE para o residente ver "em triagem" e o setor já definido.
   if (data.sectorId) {
     await assignComplaint(
       prisma,
       logger,
       complaint.id,
       {
-        sectorId: data.sectorId,
+        sectorId: effectiveSectorId!,
         assigneeId: undefined,
         reason: "Auto-assignment on creation",
       },
@@ -158,7 +202,17 @@ export async function createComplaint(
 
   logger.info(`Complaint ${complaint.id} created`);
 
-  return complaint;
+  // Retorna o complaint atualizado (pode ter sectorId e TRIAGE após auto-triage)
+  const final = await prisma.complaint.findUnique({
+    where: { id: complaint.id },
+    include: {
+      resident: true,
+      attachments: true,
+      sector: true,
+      assignee: true,
+    },
+  });
+  return final ?? complaint;
 }
 
 export async function updateComplaintStatus(
@@ -673,11 +727,13 @@ export async function addComplaintAttachment(
 
 export async function runSlaEscalationScan(
   prisma: PrismaClient,
-  logger: FastifyBaseLogger
+  logger: FastifyBaseLogger,
+  condominiumId?: string
 ) {
   const now = new Date();
   const overdueComplaints = await prisma.complaint.findMany({
     where: {
+      ...(condominiumId && { condominiumId }),
       escalatedAt: null,
       OR: [
         { responseDueAt: { lt: now }, responseAt: null },

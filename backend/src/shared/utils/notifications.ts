@@ -37,13 +37,13 @@ export function buildComplaintStatusMessage(
   notes?: string
 ): string {
   const statusEmoji = {
-    OPEN: "🔵",
+    NEW: "🔵",
     IN_PROGRESS: "🟡",
     RESOLVED: "✅",
   }[status] || "🔵";
 
   const statusText = {
-    OPEN: "Aberta",
+    NEW: "Nova",
     IN_PROGRESS: "Em Andamento",
     RESOLVED: "Resolvida",
   }[status] || status;

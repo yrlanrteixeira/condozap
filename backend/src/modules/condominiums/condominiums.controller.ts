@@ -3,8 +3,10 @@ import { prisma } from "../../shared/db/prisma";
 import {
   createCondominiumSchema,
   updateCondominiumSchema,
+  updateCondominiumSettingsSchema,
   type CreateCondominiumRequest,
   type UpdateCondominiumRequest,
+  type UpdateCondominiumSettingsRequest,
 } from "./condominiums.schema";
 import * as condominiumService from "./condominiums.service";
 import type { AuthUser } from "../../types/auth";
@@ -88,4 +90,25 @@ export async function getCondominiumStatsHandler(
   const { id } = request.params as { id: string };
   const stats = await condominiumService.getCondominiumStats(prisma, id);
   return reply.send(stats);
+}
+
+export async function updateCondominiumSettingsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id } = request.params as { id: string };
+  const body = updateCondominiumSettingsSchema.parse(
+    request.body
+  ) as UpdateCondominiumSettingsRequest;
+  const user = request.user as AuthUser;
+
+  const condominium = await condominiumService.updateCondominium(
+    prisma,
+    request.log,
+    id,
+    body,
+    user.id
+  );
+
+  return reply.send(condominium);
 }

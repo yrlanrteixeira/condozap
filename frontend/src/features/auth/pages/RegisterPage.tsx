@@ -3,19 +3,7 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Info } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import { CardContent } from "@/shared/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/shared/components/ui/form";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
 import {
@@ -25,6 +13,8 @@ import {
   AuthErrorAlert,
   RegisterSuccessCard,
   ConsentDialog,
+  TextInput,
+  PasswordInput,
 } from "../components";
 
 export function RegisterPage() {
@@ -120,7 +110,7 @@ export function RegisterPage() {
 
   return (
     <>
-      <AuthCard>
+      <AuthCard maxWidth="xl">
         <AuthHeader
           title="Criar conta"
           description={
@@ -130,269 +120,180 @@ export function RegisterPage() {
           }
         />
 
-        <CardContent className="space-y-4">
-          {/* Progress indicator */}
-          <div className="flex items-center gap-2 mb-6">
-            <div
-              className={`flex-1 h-1 rounded ${
-                step >= 1 ? "bg-primary" : "bg-gray-200"
-              }`}
-            />
-            <div
-              className={`flex-1 h-1 rounded ${
-                step >= 2 ? "bg-primary" : "bg-gray-200"
-              }`}
-            />
-          </div>
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex-1 h-1.5 rounded-full ${
+              step >= 1 ? "bg-primary" : "bg-border"
+            }`}
+          />
+          <div
+            className={`flex-1 h-1.5 rounded-full ${
+              step >= 2 ? "bg-primary" : "bg-border"
+            }`}
+          />
+        </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {step === 1 && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome completo</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="João Silva"
-                            autoComplete="name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          {step === 1 && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <TextInput
+                  type="text"
+                  label="Nome completo"
+                  placeholder="João Silva"
+                  autoComplete="name"
+                  error={form.formState.errors.name?.message}
+                  {...form.register("name")}
+                />
+
+                <TextInput
+                  type="email"
+                  label="E-mail"
+                  placeholder="joao@email.com"
+                  autoComplete="email"
+                  error={form.formState.errors.email?.message}
+                  {...form.register("email")}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <TextInput
+                  type="text"
+                  label="Condomínio"
+                  placeholder="Nome do condomínio"
+                  error={form.formState.errors.condominiumId?.message}
+                  {...form.register("condominiumId")}
+                />
+
+                <TextInput
+                  type="tel"
+                  label="Telefone (WhatsApp)"
+                  placeholder="(11) 99999-9999"
+                  autoComplete="tel"
+                  helperText="Usado para notificações do sistema"
+                  error={form.formState.errors.phone?.message}
+                  {...form.register("phone")}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5">
+              <PasswordInput
+                placeholder="••••••••"
+                autoComplete="new-password"
+                helperText="Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo"
+                error={form.formState.errors.password?.message}
+                {...form.register("password")}
+              />
+
+              <PasswordInput
+                label="Confirmar senha"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                error={form.formState.errors.confirmPassword?.message}
+                {...form.register("confirmPassword")}
+              />
+
+              <div className="space-y-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Info className="h-4 w-4" />
+                  Termos e Consentimentos
+                </div>
+
+                <div className="flex items-start space-x-3 rounded-2xl border border-border/50 bg-foreground/5 p-4">
+                  <Checkbox
+                    checked={consentDataProcessing}
+                    onCheckedChange={handleDataConsentClick}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="joao@email.com"
-                            autoComplete="email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="condominiumId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Condomínio</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do condomínio" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telefone (WhatsApp)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="(11) 99999-9999"
-                            autoComplete="tel"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Usado para notificações do sistema
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="w-full"
-                    size="lg"
-                  >
-                    Continuar
-                  </Button>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Mínimo 8 caracteres, com maiúscula, minúscula, número e
-                          símbolo
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmar senha</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Consent Section */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <Info className="h-4 w-4" />
-                      Termos e Consentimentos
-                    </div>
-
-                    {/* Data Processing Consent - Required */}
-                    <FormField
-                      control={form.control}
-                      name="consentDataProcessing"
-                      render={() => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={consentDataProcessing}
-                              onCheckedChange={handleDataConsentClick}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="cursor-pointer">
-                              Aceito os{" "}
-                              <button
-                                type="button"
-                                onClick={() => setShowDataDialog(true)}
-                                className="text-primary underline hover:no-underline"
-                              >
-                                Termos de Uso e Política de Privacidade
-                              </button>{" "}
-                              <span className="text-destructive">*</span>
-                            </FormLabel>
-                            <FormDescription>
-                              Autorizo o tratamento dos meus dados conforme a LGPD
-                            </FormDescription>
-                            <FormMessage />
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* WhatsApp Consent - OBRIGATÓRIO */}
-                    <FormField
-                      control={form.control}
-                      name="consentWhatsapp"
-                      render={() => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/50">
-                          <FormControl>
-                            <Checkbox
-                              checked={consentWhatsapp}
-                              onCheckedChange={handleWhatsappConsentClick}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="cursor-pointer">
-                              Aceito receber{" "}
-                              <button
-                                type="button"
-                                onClick={() => setShowWhatsappDialog(true)}
-                                className="text-green-600 underline hover:no-underline"
-                              >
-                                notificações via WhatsApp
-                              </button>{" "}
-                              <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormDescription className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                              Obrigatório. As notificações WhatsApp são essenciais para o funcionamento da plataforma.
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-1 leading-none flex-1">
+                    <label className="text-sm cursor-pointer">
+                      Aceito os{" "}
+                      <button
+                        type="button"
+                        onClick={() => setShowDataDialog(true)}
+                        className="text-primary underline hover:no-underline"
+                      >
+                        Termos de Uso e Política de Privacidade
+                      </button>{" "}
+                      <span className="text-destructive">*</span>
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Autorizo o tratamento dos meus dados conforme a LGPD
+                    </p>
                   </div>
+                </div>
 
-                  <AuthErrorAlert message={error} />
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setStep(1)}
-                      className="flex-1"
-                      size="lg"
-                    >
-                      Voltar
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1"
-                      size="lg"
-                      disabled={isSubmitting || !consentDataProcessing || !consentWhatsapp}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Criando conta...
-                        </>
-                      ) : (
-                        "Criar conta"
-                      )}
-                    </Button>
+                <div className="flex items-start space-x-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-4">
+                  <Checkbox
+                    checked={consentWhatsapp}
+                    onCheckedChange={handleWhatsappConsentClick}
+                  />
+                  <div className="space-y-1 leading-none flex-1">
+                    <label className="text-sm cursor-pointer">
+                      Aceito receber{" "}
+                      <button
+                        type="button"
+                        onClick={() => setShowWhatsappDialog(true)}
+                        className="text-green-600 dark:text-green-400 underline hover:no-underline"
+                      >
+                        notificações via WhatsApp
+                      </button>{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                      Obrigatório. As notificações WhatsApp são essenciais para o funcionamento da plataforma.
+                    </p>
                   </div>
-                </>
-              )}
-            </form>
-          </Form>
-        </CardContent>
+                </div>
+              </div>
+
+              <AuthErrorAlert message={error} />
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 rounded-2xl border border-border bg-foreground/5 py-4 font-medium hover:bg-foreground/10 transition-colors"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !consentDataProcessing || !consentWhatsapp}
+                  className="flex-1 rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Criando conta...
+                    </span>
+                  ) : (
+                    "Criar conta"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
 
         <AuthFooter>
-          <div className="text-sm text-center text-muted-foreground">
-            Já tem uma conta?{" "}
-            <Link
-              to="/auth/login"
-              className="text-primary hover:underline font-medium"
-            >
-              Fazer login
-            </Link>
-          </div>
+          Já tem uma conta?{" "}
+          <Link
+            to="/auth/login"
+            className="text-primary hover:underline transition-colors font-medium"
+          >
+            Fazer login
+          </Link>
         </AuthFooter>
       </AuthCard>
 

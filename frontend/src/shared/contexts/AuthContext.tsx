@@ -173,9 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update profile
   const updateProfile = useCallback(async (data: Partial<User>) => {
     try {
-      // TODO: Implement update profile endpoint in backend
-      console.log("Update profile:", data);
-      throw new Error("Not implemented yet");
+      const { data: updatedUser } = await api.patch<User>("/auth/me", data);
+      setUser(updatedUser);
     } catch (error) {
       console.error("Error updating profile:", error);
       throw error;

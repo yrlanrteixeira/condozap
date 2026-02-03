@@ -15,9 +15,21 @@ export const updateCondominiumSchema = z.object({
   status: condominiumStatusEnum.optional(),
   whatsappPhone: z.string().optional(),
   whatsappBusinessId: z.string().optional(),
+  structure: z.record(z.unknown()).optional(),
+});
+
+/** Schema para ADMIN/SYNDIC atualizarem apenas nome, estrutura e WhatsApp do condomínio */
+export const updateCondominiumSettingsSchema = z.object({
+  name: z.string().min(3).optional(),
+  structure: z.record(z.unknown()).optional(),
+  whatsappPhone: z.string().optional().nullable(),
+  whatsappBusinessId: z.string().optional().nullable(),
 });
 
 export type CondominiumStatus = z.infer<typeof condominiumStatusEnum>;
 export type CreateCondominiumRequest = z.infer<typeof createCondominiumSchema>;
 export type UpdateCondominiumRequest = z.infer<typeof updateCondominiumSchema>;
+export type UpdateCondominiumSettingsRequest = z.infer<
+  typeof updateCondominiumSettingsSchema
+>;
 
