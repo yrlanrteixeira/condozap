@@ -13,8 +13,8 @@ export const updateCondominiumSchema = z.object({
   name: z.string().min(3).optional(),
   cnpj: z.string().min(3).optional(),
   status: condominiumStatusEnum.optional(),
-  whatsappPhone: z.string().optional(),
-  whatsappBusinessId: z.string().optional(),
+  whatsappPhone: z.string().optional().nullable(),
+  whatsappBusinessId: z.string().optional().nullable(),
   structure: z.record(z.unknown()).optional(),
 });
 

@@ -90,9 +90,6 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/documents",
     {
       onRequest: [app.authenticate],
-      schema: {
-        description: "Upload resident document",
-      },
     },
     async (request, reply) => {
       const user = request.user;
@@ -177,9 +174,6 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/complaints/attachments/:attachmentId",
     {
       onRequest: [app.authenticate],
-      schema: {
-        description: "Delete complaint attachment",
-      },
     },
     async (request, reply) => {
       const { attachmentId } = request.params as { attachmentId: string };
@@ -232,9 +226,6 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/documents/:documentId",
     {
       onRequest: [app.authenticate],
-      schema: {
-        description: "Delete resident document",
-      },
     },
     async (request, reply) => {
       const { documentId } = request.params as { documentId: string };

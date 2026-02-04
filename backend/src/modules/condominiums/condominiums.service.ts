@@ -1,4 +1,4 @@
-import { ComplaintStatus, PrismaClient } from "@prisma/client";
+import { ComplaintStatus, PrismaClient, Prisma } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import { ConflictError, NotFoundError } from "../../shared/errors";
 import type {
@@ -57,9 +57,22 @@ export async function updateCondominium(
     }
   }
 
+  const updateData: Prisma.CondominiumUpdateInput = {
+    ...(data.name !== undefined && { name: data.name }),
+    ...(data.cnpj !== undefined && { cnpj: data.cnpj }),
+    ...(data.status !== undefined && { status: data.status }),
+    ...(data.whatsappPhone !== undefined && { whatsappPhone: data.whatsappPhone }),
+    ...(data.whatsappBusinessId !== undefined && {
+      whatsappBusinessId: data.whatsappBusinessId,
+    }),
+    ...(data.structure !== undefined && {
+      structure: data.structure as Prisma.InputJsonValue,
+    }),
+  };
+
   const condominium = await prisma.condominium.update({
     where: { id },
-    data,
+    data: updateData,
   });
 
   logger.info(`Condominium ${id} updated by ${userId}`);
