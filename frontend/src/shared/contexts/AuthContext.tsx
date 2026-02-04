@@ -17,6 +17,7 @@ import {
   setCurrentCondominium,
   clearCondominiums,
 } from "@/shared/store/slices/condominiumSlice";
+import { store } from "@/shared/store";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
@@ -69,11 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.condominiums && data.condominiums.length > 0) {
         dispatch(setCondominiums(data.condominiums));
 
-        // Se não houver condomínio selecionado, selecionar o primeiro
-        const state = (dispatch as any).getState?.();
+        // Ler condomínio atual do estado persistido (redux-persist)
+        const state = store.getState();
         const currentCondoId = state?.condominium?.currentCondominiumId;
+        const ids = data.condominiums.map((c) => c.id);
 
-        if (!currentCondoId) {
+        // Se não houver condomínio selecionado ou o selecionado não estiver na lista, usar o primeiro
+        if (!currentCondoId || !ids.includes(currentCondoId)) {
           const firstCondo = data.condominiums[0];
           if (firstCondo) {
             dispatch(setCurrentCondominium(firstCondo.id));

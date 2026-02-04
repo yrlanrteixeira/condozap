@@ -33,17 +33,20 @@ export const Header = ({
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const userCondominiums = useAppSelector(selectCondominiums);
 
-  // SUPER_ADMIN pode ver todos os condomínios
+  // SUPER_ADMIN pode ver todos os condomínios; fallback para userCondominiums (Redux) enquanto carrega
   const { data: allCondominiums = [] } = useCondominiums({
     enabled: user?.role === "SUPER_ADMIN",
   });
 
   const condominiumsToShow =
-    user?.role === "SUPER_ADMIN" ? allCondominiums : userCondominiums;
+    user?.role === "SUPER_ADMIN"
+      ? (allCondominiums.length > 0 ? allCondominiums : userCondominiums)
+      : userCondominiums;
 
-  // Mostra o seletor para SUPER_ADMIN ou para usuários com múltiplos condomínios
+  // Mostra o seletor para SUPER_ADMIN (com lista) ou para usuários com múltiplos condomínios
   const showCondominiumSelector =
-    condominiumsToShow.length > 1 || (user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0);
+    condominiumsToShow.length > 1 ||
+    (user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0);
 
   const handleCondominiumChange = (condoId: string) => {
     dispatch(setCurrentCondominium(condoId));
