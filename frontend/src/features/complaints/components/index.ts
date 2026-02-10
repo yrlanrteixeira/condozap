@@ -8,5 +8,6 @@ export { ComplaintKanbanColumn } from './ComplaintKanbanColumn';
 export { ComplaintForm } from './ComplaintForm';
 export { ComplaintViewModeToggle } from './ComplaintViewModeToggle';
 export { ComplaintHistoryList } from './ComplaintHistoryList';
+export { ComplaintDetailSheet } from './ComplaintDetailSheet';
 
 

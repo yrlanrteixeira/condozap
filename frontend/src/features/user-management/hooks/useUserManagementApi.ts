@@ -9,6 +9,7 @@ import type {
   CreateAdminInput,
   CreateSyndicInput,
   UpdateUserRoleInput,
+  UpdateCouncilPositionInput,
   RemoveUserInput,
   InviteUserInput,
 } from '../types';
@@ -92,6 +93,25 @@ export function useUpdateUserRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.all,
+      });
+    },
+  });
+}
+
+/**
+ * Hook para atualizar cargo/função do conselheiro no condomínio
+ */
+export function useUpdateCouncilPosition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: UpdateCouncilPositionInput) => {
+      const { data } = await api.patch('/users/update-council-position', input);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.list(variables.condominiumId),
       });
     },
   });

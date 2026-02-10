@@ -44,6 +44,8 @@ export interface Complaint {
     id: string;
     name: string;
   } | null;
+  /** Incluído na listagem quando disponível (backend envia); usado para mostrar último comentário ao morador */
+  statusHistory?: ComplaintStatusHistory[];
 }
 
 export interface CreateComplaintInput {
@@ -103,4 +105,10 @@ export interface ComplaintStats {
   byPriority: Record<ComplaintPriority, number>;
   byCategory: Record<string, number>;
   avgResolutionTime: number; // in hours
+}
+
+/** Complaint with statusHistory and attachments (detail API) */
+export interface ComplaintDetail extends Complaint {
+  statusHistory?: ComplaintStatusHistory[];
+  attachments?: ComplaintAttachment[];
 }

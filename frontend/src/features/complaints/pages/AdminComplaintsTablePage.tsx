@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Button } from "@/shared/components/ui/button";
 import { PaginationTable } from "@/shared/components/ui/pagination-table";
 import { ConfirmDialog } from "@/shared/components/ui/confirm-dialog";
 import type { Complaint, ComplaintStatus } from "@/features/complaints/types";
@@ -26,12 +27,14 @@ interface AdminComplaintsTablePageProps {
   complaints: Complaint[];
   residents: Resident[];
   onStatusChange: (complaintId: number, newStatus: ComplaintStatus) => void;
+  onComplaintClick?: (complaint: Complaint) => void;
 }
 
 export function AdminComplaintsTablePage({
   complaints,
   residents,
   onStatusChange,
+  onComplaintClick,
 }: AdminComplaintsTablePageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -56,8 +59,13 @@ export function AdminComplaintsTablePage({
     }
   }, [complaints.length, currentPage, totalPages]);
 
+  const residentMap = useMemo(
+    () => new Map(residents.map((r) => [r.id, r])),
+    [residents]
+  );
+
   const getResidentInfo = (residentId: string) => {
-    const resident = residents.find((r) => r.id === residentId);
+    const resident = residentMap.get(residentId);
     return resident ? `${resident.unit} - Torre ${resident.tower}` : "Anônimo";
   };
 
@@ -98,7 +106,7 @@ export function AdminComplaintsTablePage({
                 <TableHead className="font-bold">Descrição</TableHead>
                 <TableHead className="font-bold">Unidade</TableHead>
                 <TableHead className="font-bold">Data</TableHead>
-                <TableHead className="font-bold w-[200px]">Ação</TableHead>
+                <TableHead className="font-bold w-[240px]">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -139,15 +147,26 @@ export function AdminComplaintsTablePage({
                       )}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={complaint.status}
-                        onValueChange={(value) =>
-                          handleStatusChangeRequest(
-                            complaint.id,
-                            value as ComplaintStatus
-                          )
-                        }
-                      >
+                      <div className="flex items-center gap-2">
+                        {onComplaintClick && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 shrink-0"
+                            onClick={() => onComplaintClick(complaint)}
+                          >
+                            Detalhes
+                          </Button>
+                        )}
+                        <Select
+                          value={complaint.status}
+                          onValueChange={(value) =>
+                            handleStatusChangeRequest(
+                              complaint.id,
+                              value as ComplaintStatus
+                            )
+                          }
+                        >
                         <SelectTrigger className="h-9 text-xs">
                           <SelectValue placeholder="Alterar status" />
                         </SelectTrigger>
@@ -208,6 +227,7 @@ export function AdminComplaintsTablePage({
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

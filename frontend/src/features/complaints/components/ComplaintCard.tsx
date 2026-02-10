@@ -1,6 +1,7 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
 import type { Complaint } from '@/features/complaints/types';
 import type { Resident } from '@/features/residents/types';
 import { formatDate, formatDateTime } from '@/shared/utils/helpers';
@@ -10,6 +11,7 @@ interface ComplaintCardProps {
   resident?: Resident;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent, complaint: Complaint) => void;
+  onComplaintClick?: (complaint: Complaint) => void;
 }
 
 export const ComplaintCard = ({
@@ -17,6 +19,7 @@ export const ComplaintCard = ({
   resident,
   draggable = false,
   onDragStart,
+  onComplaintClick,
 }: ComplaintCardProps) => {
   // Suporta tanto timestamp (compatibilidade) quanto createdAt (padrão)
   const dateField = complaint.timestamp || complaint.createdAt;
@@ -65,10 +68,28 @@ export const ComplaintCard = ({
           </div>
         )}
 
-        {draggable && (
-          <div className="text-xs text-muted-foreground flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
-            <ArrowRight size={12} />
-            Arraste para mover
+        {(draggable || onComplaintClick) && (
+          <div className="text-xs text-muted-foreground flex items-center justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
+            {draggable && (
+              <span className="flex items-center gap-1">
+                <ArrowRight size={12} />
+                Arraste para mover
+              </span>
+            )}
+            {onComplaintClick && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplaintClick(complaint);
+                }}
+              >
+                <FileText size={12} className="mr-1" />
+                Detalhes
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

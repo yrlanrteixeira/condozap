@@ -5,6 +5,7 @@ import type {
   CreateAdminRequest,
   CreateSyndicRequest,
   UpdateUserRoleRequest,
+  UpdateCouncilPositionRequest,
   RemoveUserRequest,
   InviteUserRequest,
   UserRole,
@@ -146,6 +147,7 @@ export async function getUsersByCondominium(
     email: uc.user.email,
     name: uc.user.name,
     role: uc.role,
+    councilPosition: uc.councilPosition ?? null,
     globalRole: uc.user.role,
     status: uc.user.status,
     createdAt: uc.user.createdAt,
@@ -174,6 +176,30 @@ export async function updateUserRole(
   });
 
   logger.info(`User ${data.userId} role updated to ${data.newRole}`);
+}
+
+export async function updateCouncilPosition(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  data: UpdateCouncilPositionRequest
+) {
+  const updated = await prisma.userCondominium.updateMany({
+    where: {
+      userId: data.userId,
+      condominiumId: data.condominiumId,
+    },
+    data: { councilPosition: data.councilPosition ?? null },
+  });
+
+  if (updated.count === 0) {
+    throw new Error("Vínculo usuário-condomínio não encontrado");
+  }
+
+  logger.info(
+    `Council position for user ${data.userId} in condominium ${data.condominiumId} updated to ${data.councilPosition ?? "(vazio)"}`
+  );
+
+  return { councilPosition: data.councilPosition };
 }
 
 export async function removeUserFromCondominium(

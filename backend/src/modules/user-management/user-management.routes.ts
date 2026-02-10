@@ -10,6 +10,7 @@ import {
   createSyndicHandler,
   listUsersByCondoHandler,
   updateUserRoleHandler,
+  updateCouncilPositionHandler,
   removeUserHandler,
   inviteUserHandler,
 } from "./user-management.controller";
@@ -52,6 +53,18 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     updateUserRoleHandler
+  );
+
+  fastify.patch(
+    "/users/update-council-position",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireAdmin(),
+        requireCondoAccess({ source: "body" }),
+      ],
+    },
+    updateCouncilPositionHandler
   );
 
   fastify.delete(

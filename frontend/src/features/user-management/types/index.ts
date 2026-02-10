@@ -7,10 +7,17 @@ export interface CondominiumUser {
   email: string;
   name: string;
   role: string;
+  councilPosition?: string | null;
   globalRole: string;
   status: string;
   createdAt: string;
   approvedAt: string | null;
+}
+
+export interface UpdateCouncilPositionInput {
+  userId: string;
+  condominiumId: string;
+  councilPosition: string | null;
 }
 
 export interface CreateAdminInput {

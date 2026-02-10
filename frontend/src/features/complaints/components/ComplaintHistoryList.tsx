@@ -1,8 +1,16 @@
-import { History, Clock, FileText } from 'lucide-react';
+import { History, Clock, FileText, MessageSquare } from 'lucide-react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import type { Complaint, ComplaintStatus } from '@/features/complaints/types';
 import { ComplaintStatusBadge } from './ComplaintStatusBadge';
+
+const ACTION_COMMENT = 'COMMENT';
+
+function getLastAdminComment(complaint: Complaint): string | null {
+  const history = complaint.statusHistory ?? [];
+  const commentEntry = history.find((e) => e.action === ACTION_COMMENT && e.notes);
+  return commentEntry?.notes ?? null;
+}
 
 interface ComplaintHistoryListProps {
   complaints: Complaint[];
@@ -31,6 +39,7 @@ export const ComplaintHistoryList = ({ complaints }: ComplaintHistoryListProps) 
 
         {complaints.map((complaint) => {
           const dateStr = complaint.timestamp ?? complaint.createdAt;
+          const lastComment = getLastAdminComment(complaint);
           return (
             <Card key={complaint.id} className="hover:shadow-md transition">
               <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
@@ -63,6 +72,15 @@ export const ComplaintHistoryList = ({ complaints }: ComplaintHistoryListProps) 
                       {complaint.resolutionDueAt && (
                         <div>Resolução prevista: {new Date(complaint.resolutionDueAt).toLocaleString('pt-BR')}</div>
                       )}
+                    </div>
+                  )}
+                  {lastComment && (
+                    <div className="mt-2 flex gap-2 rounded-md bg-primary/5 border border-primary/20 p-2 text-xs">
+                      <MessageSquare className="h-3.5 w-3.5 shrink-0 text-primary mt-0.5" />
+                      <div>
+                        <span className="font-medium text-foreground">O que está sendo realizado: </span>
+                        <span className="text-muted-foreground">{lastComment}</span>
+                      </div>
                     </div>
                   )}
                 </div>

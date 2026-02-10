@@ -14,6 +14,7 @@ async function main() {
   await prisma.complaint.deleteMany();
   await prisma.resident.deleteMany();
   await prisma.userCondominium.deleteMany();
+  await prisma.announcement.deleteMany();
   await prisma.user.deleteMany();
   await prisma.condominium.deleteMany();
   console.log("✅ Data cleaned");
@@ -38,6 +39,35 @@ async function main() {
   });
 
   console.log("✅ Condominiums created");
+
+  // Novidades da semana (announcements) para o morador
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+  await prisma.announcement.createMany({
+    data: [
+      {
+        condominiumId: condo1.id,
+        title: "Novidade da semana",
+        content: "Reunião de condomínio na próxima quarta-feira às 19h. Participe!",
+        startsAt: weekStart,
+        endsAt: weekEnd,
+        createdBy: null,
+      },
+      {
+        condominiumId: condo1.id,
+        title: "Manutenção do elevador",
+        content: "O elevador da torre A passará por manutenção preventiva na sexta-feira. Use as escadas no período das 9h às 12h.",
+        startsAt: weekStart,
+        endsAt: weekEnd,
+        createdBy: null,
+      },
+    ],
+  });
+  console.log("✅ Announcements (novidades) created");
 
   // Create users with different approval statuses
   const hashedPassword = await bcrypt.hash("Admin123!@#", 10);
