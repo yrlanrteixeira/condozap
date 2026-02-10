@@ -12,6 +12,7 @@ import {
   getCondominiumStatsHandler,
   updateCondominiumSettingsHandler,
 } from "./condominiums.controller";
+import { getAnnouncementsByCondominiumHandler } from "../announcements";
 import { requireRole } from "../../shared/middlewares";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -21,6 +22,17 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     listCondominiumsHandler
+  );
+
+  fastify.get(
+    "/:id/announcements",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess({ paramName: "id" }),
+      ],
+    },
+    getAnnouncementsByCondominiumHandler
   );
 
   fastify.get(

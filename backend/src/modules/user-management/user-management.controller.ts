@@ -3,11 +3,13 @@ import {
   createAdminSchema,
   createSyndicSchema,
   updateUserRoleSchema,
+  updateCouncilPositionSchema,
   removeUserSchema,
   inviteUserSchema,
   type CreateAdminRequest,
   type CreateSyndicRequest,
   type UpdateUserRoleRequest,
+  type UpdateCouncilPositionRequest,
   type RemoveUserRequest,
   type InviteUserRequest,
 } from "./user-management.schema";
@@ -85,6 +87,26 @@ export async function updateUserRoleHandler(
   return reply.send({
     message: "Função atualizada com sucesso",
     newRole: body.newRole,
+  });
+}
+
+export async function updateCouncilPositionHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const body = updateCouncilPositionSchema.parse(
+    request.body
+  ) as UpdateCouncilPositionRequest;
+
+  const result = await userService.updateCouncilPosition(
+    prisma,
+    request.log,
+    body
+  );
+
+  return reply.send({
+    message: "Cargo/função atualizado com sucesso",
+    councilPosition: result.councilPosition,
   });
 }
 

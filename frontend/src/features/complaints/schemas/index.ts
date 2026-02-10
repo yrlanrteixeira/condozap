@@ -17,6 +17,18 @@ const statusEnum = z.enum([
 
 const priorityEnum = z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
 
+const complaintStatusHistorySchema = z.object({
+  id: z.string(),
+  complaintId: z.number(),
+  fromStatus: statusEnum,
+  toStatus: statusEnum,
+  changedBy: z.string(),
+  notes: z.string().nullable().optional(),
+  action: z.string().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
+  createdAt: z.string(),
+});
+
 export const ComplaintSchema = z.object({
   id: z.number(),
   condominiumId: z.string(),
@@ -60,6 +72,7 @@ export const ComplaintSchema = z.object({
     })
     .optional()
     .nullable(),
+  statusHistory: z.array(complaintStatusHistorySchema).optional(),
 });
 
 export const CreateComplaintSchema = z.object({
@@ -77,4 +90,20 @@ export const UpdateComplaintSchema = z.object({
   status: statusEnum.optional(),
   priority: priorityEnum.optional(),
   resolvedBy: z.string().optional(),
+});
+
+const complaintAttachmentSchema = z.object({
+  id: z.string(),
+  complaintId: z.number(),
+  fileUrl: z.string(),
+  fileName: z.string(),
+  fileType: z.string(),
+  fileSize: z.number(),
+  uploadedAt: z.string(),
+});
+
+// Detail response includes statusHistory and attachments
+export const ComplaintDetailSchema = ComplaintSchema.extend({
+  statusHistory: z.array(complaintStatusHistorySchema).optional().default([]),
+  attachments: z.array(complaintAttachmentSchema).optional().default([]),
 });

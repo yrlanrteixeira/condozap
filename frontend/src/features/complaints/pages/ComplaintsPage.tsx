@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { Complaint, ComplaintStatus } from "../types";
-import { ComplaintViewModeToggle } from "../components";
+import { ComplaintViewModeToggle, ComplaintDetailSheet } from "../components";
 import { ResidentComplaintsPage } from "./ResidentComplaintsPage";
 import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
 import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
@@ -22,18 +22,22 @@ type ViewMode = "kanban" | "table";
 
 export function ComplaintsPage() {
   const isMobile = useIsMobile();
-  
-  // No mobile, inicia com modo tabela (cards), no desktop com kanban
-  const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? "table" : "kanban");
-  
-  // Atualizar viewMode quando mudar entre mobile/desktop
-  useEffect(() => {
-    setViewMode(isMobile ? "table" : "kanban");
-  }, [isMobile]);
+
+  // No mobile, força modo tabela; no desktop respeita preferência do usuário
+  const [preferredViewMode, setPreferredViewMode] = useState<ViewMode>("kanban");
+  const viewMode: ViewMode = isMobile ? "table" : preferredViewMode;
+
   const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(
     null
   );
+  const [detailSheet, setDetailSheet] = useState<{ id: number | null; open: boolean }>(
+    { id: null, open: false }
+  );
   const { toast } = useToast();
+
+  const openComplaintDetail = useCallback((complaint: Complaint) => {
+    setDetailSheet({ id: complaint.id, open: true });
+  }, []);
 
   const { isResident } = useRole();
   const { user } = useAuth();
@@ -242,6 +246,7 @@ export function ComplaintsPage() {
       <ResidentComplaintsPage
         complaints={complaints}
         onSubmit={handleComplaintSubmit}
+        condominiumId={currentCondominiumId || ""}
       />
     );
   }
@@ -252,7 +257,7 @@ export function ComplaintsPage() {
       <div className="p-4 sm:p-6 pb-0">
         <ComplaintViewModeToggle
           viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          onViewModeChange={setPreferredViewMode}
         />
       </div>
 
@@ -263,14 +268,22 @@ export function ComplaintsPage() {
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onComplaintClick={openComplaintDetail}
         />
       ) : (
         <AdminComplaintsTablePage
           complaints={complaints}
           residents={residents}
           onStatusChange={handleStatusChange}
+          onComplaintClick={openComplaintDetail}
         />
       )}
+
+      <ComplaintDetailSheet
+        complaintId={detailSheet.id}
+        open={detailSheet.open}
+        onOpenChange={(open) => setDetailSheet((prev) => ({ ...prev, open }))}
+      />
     </div>
   );
 }

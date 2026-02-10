@@ -23,3 +23,6 @@ export * from "./history";
 
 // Settings Feature
 export * from "./settings";
+
+// Announcements (Novidades) Feature
+export * from "./announcements";

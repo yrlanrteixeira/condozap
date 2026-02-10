@@ -18,6 +18,13 @@ import {
   DropdownMenuTrigger
 } from '@/shared/components/ui/dropdown-menu';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -41,7 +48,7 @@ import {
 import { PageHeaderSkeleton, ListItemSkeleton } from '@/shared/components/ui/skeleton';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
-import { useCondominiumUsers, useRemoveUser, useUpdateUserRole } from '../hooks/useUserManagementApi';
+import { useCondominiumUsers, useRemoveUser, useUpdateUserRole, useUpdateCouncilPosition } from '../hooks/useUserManagementApi';
 import { CreateAdminDialog } from '../components/CreateAdminDialog';
 import { CreateSyndicDialog } from '../components/CreateSyndicDialog';
 import { useToast } from '@/shared/components/ui/use-toast';
@@ -78,6 +85,16 @@ const statusLabels: Record<string, string> = {
   SUSPENDED: 'Suspenso',
 };
 
+const COUNCIL_POSITION_OPTIONS = [
+  { value: '__none__', label: 'Sem cargo definido' },
+  { value: 'Obras', label: 'Obras' },
+  { value: 'Financeiro', label: 'Financeiro' },
+  { value: 'Segurança', label: 'Segurança' },
+  { value: 'Jurídico', label: 'Jurídico' },
+  { value: 'Social', label: 'Social' },
+  { value: 'Comunicação', label: 'Comunicação' },
+];
+
 export function TeamManagementPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user: currentUser } = useAuth();
@@ -90,6 +107,7 @@ export function TeamManagementPage() {
   const { data: users = [], isLoading, refetch } = useCondominiumUsers(currentCondominiumId || '');
   const removeUserMutation = useRemoveUser();
   const updateRoleMutation = useUpdateUserRole();
+  const updateCouncilPositionMutation = useUpdateCouncilPosition();
 
   // Filtrar conselheiros (ADMINs) e síndicos deste condomínio
   // SUPER_ADMIN não aparece aqui pois é o desenvolvedor
@@ -135,6 +153,29 @@ export function TeamManagementPage() {
     } catch (error: any) {
       toast({
         title: 'Erro ao atualizar função',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCouncilPositionChange = async (userId: string, councilPosition: string | null) => {
+    if (!currentCondominiumId) return;
+    const value = councilPosition?.trim() || null;
+    try {
+      await updateCouncilPositionMutation.mutateAsync({
+        userId,
+        condominiumId: currentCondominiumId,
+        councilPosition: value,
+      });
+      toast({
+        title: 'Cargo atualizado',
+        description: value ? `Cargo definido: ${value}` : 'Cargo removido.',
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao atualizar cargo',
         description: error.message,
         variant: 'destructive',
       });
@@ -252,13 +293,36 @@ export function TeamManagementPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Badge variant="outline" className={statusColors[user.status]}>
                         {statusLabels[user.status]}
                       </Badge>
                       <Badge variant="secondary">
                         {roleLabels[user.role]}
                       </Badge>
+
+                      {/* Cargo/função no conselho - apenas para ADMIN e SYNDIC */}
+                      <Select
+                        value={user.councilPosition ?? '__none__'}
+                        onValueChange={(value) => handleCouncilPositionChange(user.id, value === '__none__' ? null : value)}
+                        disabled={updateCouncilPositionMutation.isPending}
+                      >
+                        <SelectTrigger className="w-[160px] h-9">
+                          <SelectValue placeholder="Cargo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNCIL_POSITION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                          {user.councilPosition && !COUNCIL_POSITION_OPTIONS.some((o) => o.value === user.councilPosition) && (
+                            <SelectItem value={user.councilPosition}>
+                              {user.councilPosition}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
 
                       {/* Síndico só pode gerenciar ADMINs (conselheiros), não outros síndicos */}
                       {/* SUPER_ADMIN pode gerenciar todos */}

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { LucideIcon, Inbox } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ interface ComplaintKanbanColumnProps {
   onDragStart: (e: React.DragEvent, complaint: Complaint) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, status: Complaint['status']) => void;
+  onComplaintClick?: (complaint: Complaint) => void;
 }
 
 export const ComplaintKanbanColumn = ({
@@ -27,7 +29,13 @@ export const ComplaintKanbanColumn = ({
   onDragStart,
   onDragOver,
   onDrop,
+  onComplaintClick,
 }: ComplaintKanbanColumnProps) => {
+  const residentMap = useMemo(
+    () => new Map(residents.map((r) => [r.id, r])),
+    [residents]
+  );
+
   return (
     <div
       className="flex-1 min-w-[280px] sm:min-w-[300px] bg-muted/50 rounded-xl flex flex-col max-h-full"
@@ -49,7 +57,7 @@ export const ComplaintKanbanColumn = ({
 
       <div className="p-2 sm:p-3 space-y-2 sm:space-y-3 overflow-y-auto flex-1">
         {complaints.map((complaint) => {
-          const resident = residents.find((r) => r.id === complaint.residentId);
+          const resident = residentMap.get(complaint.residentId);
           return (
             <ComplaintCard
               key={complaint.id}
@@ -57,6 +65,7 @@ export const ComplaintKanbanColumn = ({
               resident={resident}
               draggable
               onDragStart={onDragStart}
+              onComplaintClick={onComplaintClick}
             />
           );
         })}

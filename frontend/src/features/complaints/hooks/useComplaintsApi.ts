@@ -5,9 +5,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "../utils/queryKeys";
-import { ComplaintSchema } from "../schemas";
+import { ComplaintSchema, ComplaintDetailSchema } from "../schemas";
 import type {
   Complaint,
+  ComplaintDetail,
   CreateComplaintInput,
   UpdateComplaintInput,
   ComplaintFilters,
@@ -44,10 +45,11 @@ export function useComplaints(
 export function useComplaint(complaintId: number) {
   return useQuery({
     queryKey: queryKeys.detail(complaintId),
-    queryFn: async () => {
+    queryFn: async (): Promise<ComplaintDetail> => {
       const { data } = await api.get(`/complaints/detail/${complaintId}`);
-      return ComplaintSchema.parse(data);
+      return ComplaintDetailSchema.parse(data) as ComplaintDetail;
     },
+    enabled: complaintId > 0,
   });
 }
 

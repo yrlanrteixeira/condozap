@@ -2,7 +2,7 @@
  * Auth Feature - API Hooks
  */
 
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { LoginInput, RegisterInput, AuthResponse } from '../types'
 
@@ -54,11 +54,13 @@ export function useLogout() {
 // =====================================================
 
 export function useCurrentUser() {
-  return useMutation({
-    mutationFn: async () => {
+  return useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
       const { data } = await api.get('/auth/me')
       return data
     },
+    enabled: !!localStorage.getItem('auth_token'),
   })
 }
 

@@ -113,15 +113,34 @@ model Condominium {
   structure Json? @db.JsonB
 
   // Relations
-  users      UserCondominium[]
-  residents  Resident[]
-  complaints Complaint[]
-  messages   Message[]
-  sectors    Sector[]
-  slaConfigs SlaConfig[]
+  users        UserCondominium[]
+  residents    Resident[]
+  complaints   Complaint[]
+  messages     Message[]
+  sectors      Sector[]
+  slaConfigs   SlaConfig[]
+  announcements Announcement[]
 
   @@index([cnpj])
   @@map("condominiums")
+}
+
+model Announcement {
+  id            String    @id @default(cuid())
+  condominiumId String    @map("condominium_id")
+  title         String
+  content       String    @db.Text
+  imageUrl      String?   @map("image_url")
+  startsAt      DateTime  @map("starts_at")
+  endsAt        DateTime  @map("ends_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  createdBy     String?   @map("created_by")
+
+  condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+
+  @@index([condominiumId])
+  @@index([condominiumId, startsAt, endsAt])
+  @@map("announcements")
 }
 
 model User {
@@ -172,11 +191,12 @@ model User {
 }
 
 model UserCondominium {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  condominiumId String   @map("condominium_id")
-  role          UserRole
-  createdAt     DateTime @default(now()) @map("created_at")
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  condominiumId   String   @map("condominium_id")
+  role            UserRole
+  councilPosition String?  @map("council_position") // Cargo/função no conselho (ex: Obras, Financeiro)
+  createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

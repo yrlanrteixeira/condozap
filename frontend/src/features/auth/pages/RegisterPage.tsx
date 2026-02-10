@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Info } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
@@ -101,8 +101,8 @@ export function RegisterPage() {
   };
 
   const isSubmitting = form.formState.isSubmitting;
-  const consentDataProcessing = form.watch("consentDataProcessing");
-  const consentWhatsapp = form.watch("consentWhatsapp");
+  const consentDataProcessing = useWatch({ control: form.control, name: "consentDataProcessing" });
+  const consentWhatsapp = useWatch({ control: form.control, name: "consentWhatsapp" });
 
   if (success) {
     return <RegisterSuccessCard email={form.getValues("email")} />;
