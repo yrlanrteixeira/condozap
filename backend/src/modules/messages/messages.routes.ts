@@ -11,7 +11,7 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/stats",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId", "query")],
     },
     getMessageStatsHandler
   );

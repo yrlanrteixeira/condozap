@@ -12,6 +12,12 @@ import axios, {
 import qs from "qs";
 import { config } from "./config";
 
+let apiStore: any = null;
+
+export const setApiStore = (store: any) => {
+  apiStore = store;
+};
+
 /**
  * Serializa parâmetros de query mantendo + literal para espaços em campos específicos
  * Útil para endpoints que esperam espaços como + na query string
@@ -170,13 +176,19 @@ api.interceptors.response.use(
         const newToken = response.data.token;
         const newRefreshToken = response.data.refreshToken;
 
-        // Salva novos tokens
         localStorage.setItem("auth_token", newToken);
         if (newRefreshToken) {
           localStorage.setItem("refresh_token", newRefreshToken);
         }
 
-        console.log("✅ Token renovado com sucesso via interceptor");
+        if (apiStore) {
+          const { updateAccessToken } = await import(
+            "@/shared/store/slices/authSlice"
+          );
+          apiStore.dispatch(
+            updateAccessToken({ token: newToken, refreshToken: newRefreshToken })
+          );
+        }
 
         // Atualiza header da requisição original
         if (originalRequest.headers) {

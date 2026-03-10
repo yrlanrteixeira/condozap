@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
+import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
+import { isSuperAdmin } from "../../auth/roles";
+import type { AuthUser } from "../../types/auth";
 import {
   historyLogIdParamSchema,
   historyParamsSchema,
@@ -35,6 +38,18 @@ export async function getHistoryLogByIdHandler(
 
   if (!log) {
     return reply.status(404).send({ error: "Log não encontrado" });
+  }
+
+  const user = request.user as AuthUser;
+  if (!isSuperAdmin(user.role) && log.complaint) {
+    const context = await resolveAccessContext(prisma, {
+      id: user.id,
+      role: user.role,
+      permissionScope: user.permissionScope as any,
+    });
+    if (!isCondominiumAllowed(context, log.complaint.condominiumId)) {
+      return reply.status(403).send({ error: "Acesso negado ao condomínio do log" });
+    }
   }
 
   return reply.send(log);

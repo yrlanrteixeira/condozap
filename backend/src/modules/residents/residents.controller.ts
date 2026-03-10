@@ -3,8 +3,10 @@ import { prisma } from "../../shared/db/prisma";
 import {
   condominiumIdParamSchema,
   createResidentSchema,
+  importResidentsSchema,
   residentFiltersSchema,
   residentIdParamSchema,
+  updateConsentSchema,
   updateResidentSchema,
   type CreateResidentRequest,
   type ResidentFilters,
@@ -116,12 +118,7 @@ export async function updateResidentConsentHandler(
   reply: FastifyReply
 ) {
   const { id } = residentIdParamSchema.parse(request.params);
-  const body = request.body as {
-    consent_whatsapp?: boolean;
-    consent_data_processing?: boolean;
-    consentWhatsapp?: boolean;
-    consentDataProcessing?: boolean;
-  };
+  const body = updateConsentSchema.parse(request.body);
 
   const updateData: Record<string, boolean> = {};
   if (body.consent_whatsapp !== undefined) updateData.consentWhatsapp = body.consent_whatsapp;
@@ -137,18 +134,7 @@ export async function importResidentsHandler(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  const body = request.body as {
-    condominiumId: string;
-    residents: Array<{
-      name: string;
-      email: string;
-      phone: string;
-      tower: string;
-      floor: string;
-      unit: string;
-      type?: string;
-    }>;
-  };
+  const body = importResidentsSchema.parse(request.body);
 
   const results = await importResidents(prisma, request.log, body.condominiumId, body.residents);
   return reply.status(201).send(results);

@@ -108,8 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           loginAction({ email, password })
         ).unwrap();
 
-        // Save to localStorage
         localStorage.setItem("auth_token", result.token);
+        if (result.refreshToken) {
+          localStorage.setItem("refresh_token", result.refreshToken);
+        }
 
         // Update local state
         setUser(result.user);
@@ -163,10 +165,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out
   const signOut = useCallback(async () => {
     try {
+      try {
+        await api.post("/auth/logout");
+      } catch {
+        // Ignora erro do backend - logout local continua
+      }
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("refresh_token");
       setUser(null);
       dispatch(logoutAction());
-      dispatch(clearCondominiums()); // Clear condominium data
+      dispatch(clearCondominiums());
       navigate("/auth/login");
     } catch (error) {
       console.error("Error signing out:", error);

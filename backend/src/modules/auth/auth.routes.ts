@@ -362,13 +362,3 @@ declare module "fastify" {
     authenticate: any;
   }
 }
-
-export async function setupAuthDecorators(fastify: any) {
-  fastify.decorate("authenticate", async function (request: any, reply: any) {
-    try {
-      await request.jwtVerify();
-    } catch (err) {
-      reply.status(401).send({ error: "Unauthorized" });
-    }
-  });
-}

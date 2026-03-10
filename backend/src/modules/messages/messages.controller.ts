@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
+import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
+import { isSuperAdmin } from "../../auth/roles";
+import type { AuthUser } from "../../types/auth";
 import {
   messageIdParamSchema,
   messageStatsQuerySchema,
@@ -37,6 +40,18 @@ export async function getMessageDetailHandler(
 
   if (!message) {
     return reply.status(404).send({ error: "Mensagem não encontrada" });
+  }
+
+  const user = request.user as AuthUser;
+  if (!isSuperAdmin(user.role)) {
+    const context = await resolveAccessContext(prisma, {
+      id: user.id,
+      role: user.role,
+      permissionScope: user.permissionScope as any,
+    });
+    if (!isCondominiumAllowed(context, message.condominiumId)) {
+      return reply.status(403).send({ error: "Acesso negado ao condomínio da mensagem" });
+    }
   }
 
   return reply.send(message);
