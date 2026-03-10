@@ -1,6 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import {
+  messageIdParamSchema,
+  messageStatsQuerySchema,
   messagesParamsSchema,
   messagesQuerySchema,
   sendMessageSchema,
@@ -8,7 +10,7 @@ import {
   type MessagesQuery,
   type SendMessageBody,
 } from "./messages.schema";
-import { listMessages, sendMessage } from "./messages.service";
+import { getMessageById, getMessageStats, listMessages, sendMessage } from "./messages.service";
 
 export async function listMessagesHandler(
   request: FastifyRequest,
@@ -24,6 +26,32 @@ export async function listMessagesHandler(
   const messages = await listMessages(prisma, condominiumId, Number(limit));
 
   return reply.send(messages);
+}
+
+export async function getMessageDetailHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id } = messageIdParamSchema.parse(request.params);
+  const message = await getMessageById(prisma, id);
+
+  if (!message) {
+    return reply.status(404).send({ error: "Mensagem não encontrada" });
+  }
+
+  return reply.send(message);
+}
+
+export async function getMessageStatsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { condominiumId, startDate, endDate } = messageStatsQuerySchema.parse(
+    request.query
+  );
+
+  const stats = await getMessageStats(prisma, condominiumId, startDate, endDate);
+  return reply.send(stats);
 }
 
 export async function sendMessageHandler(

@@ -48,9 +48,10 @@ export function useResident(residentId: string) {
   return useQuery({
     queryKey: queryKeys.detail(residentId),
     queryFn: async () => {
-      const { data } = await api.get(`/residents/${residentId}`);
+      const { data } = await api.get(`/residents/detail/${residentId}`);
       return ResidentSchema.parse(data);
     },
+    enabled: !!residentId,
   });
 }
 

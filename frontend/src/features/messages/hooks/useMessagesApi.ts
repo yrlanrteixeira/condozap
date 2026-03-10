@@ -40,9 +40,10 @@ export function useMessage(messageId: string) {
   return useQuery({
     queryKey: queryKeys.detail(messageId),
     queryFn: async () => {
-      const { data } = await api.get(`/messages/${messageId}`)
+      const { data } = await api.get(`/messages/detail/${messageId}`)
       return MessageSchema.parse(data)
     },
+    enabled: !!messageId,
   })
 }
 

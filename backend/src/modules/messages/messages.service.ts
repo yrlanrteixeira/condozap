@@ -62,6 +62,60 @@ export async function createMessageLog(
   });
 }
 
+export async function getMessageById(
+  prisma: PrismaClient,
+  messageId: string
+) {
+  return prisma.message.findUnique({
+    where: { id: messageId },
+  });
+}
+
+export async function getMessageStats(
+  prisma: PrismaClient,
+  condominiumId: string,
+  startDate?: Date,
+  endDate?: Date
+) {
+  const where: Record<string, unknown> = { condominiumId };
+  if (startDate || endDate) {
+    where.sentAt = {
+      ...(startDate && { gte: startDate }),
+      ...(endDate && { lte: endDate }),
+    };
+  }
+
+  const [total, byStatus, byType] = await Promise.all([
+    prisma.message.count({ where }),
+    prisma.message.groupBy({
+      by: ["whatsappStatus"],
+      where,
+      _count: { id: true },
+    }),
+    prisma.message.groupBy({
+      by: ["type"],
+      where,
+      _count: { id: true },
+    }),
+  ]);
+
+  const totalRecipients = await prisma.message.aggregate({
+    where,
+    _sum: { recipientCount: true },
+  });
+
+  return {
+    total,
+    totalRecipients: totalRecipients._sum.recipientCount || 0,
+    byStatus: Object.fromEntries(
+      byStatus.map((s) => [s.whatsappStatus || "UNKNOWN", s._count.id])
+    ),
+    byType: Object.fromEntries(
+      byType.map((t) => [t.type, t._count.id])
+    ),
+  };
+}
+
 export async function sendMessage(
   prisma: PrismaClient,
   userId: string,

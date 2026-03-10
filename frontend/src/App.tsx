@@ -9,8 +9,11 @@ import { AuthProvider } from "@/shared/contexts/AuthContext";
 import { ThemeProvider } from "@/shared/components/theme-provider";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { store, persistor } from "@/shared/store";
+import { setReduxStore } from "@/lib/api-client";
 import { queryClient } from "@/lib/queryClient";
 import { AppRoutes } from "@/routes";
+
+setReduxStore(store);
 
 // Loading fallback
 function LoadingFallback() {

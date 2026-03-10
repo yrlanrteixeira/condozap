@@ -6,7 +6,7 @@ import axios, {
 import qs from "qs";
 
 const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 /**
  * Serializa parâmetros de query mantendo + literal para espaços em campos específicos
@@ -245,4 +245,5 @@ apiClient.interceptors.response.use(
   }
 );
 
+export { apiClient };
 export default apiClient;

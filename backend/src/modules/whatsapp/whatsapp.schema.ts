@@ -31,6 +31,26 @@ export const whatsappWebhookBodySchema = z.object({
     .default([]),
 });
 
+export const sendWhatsAppSchema = z.object({
+  to: z.string().min(1),
+  message: z.string().min(1),
+  type: z.enum(["text", "template"]).default("text"),
+  condominium_id: z.string().min(1),
+});
+
+export const sendBulkWhatsAppSchema = z.object({
+  condominium_id: z.string().min(1),
+  recipients: z.array(
+    z.object({
+      phone: z.string().min(1),
+      name: z.string().optional(),
+    })
+  ),
+  message: z.string().min(1),
+});
+
 export type WebhookVerifyQuery = z.infer<typeof webhookVerifyQuerySchema>;
 export type WhatsAppWebhookBody = z.infer<typeof whatsappWebhookBodySchema>;
+export type SendWhatsAppBody = z.infer<typeof sendWhatsAppSchema>;
+export type SendBulkWhatsAppBody = z.infer<typeof sendBulkWhatsAppSchema>;
 

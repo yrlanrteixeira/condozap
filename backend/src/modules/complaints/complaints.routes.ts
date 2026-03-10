@@ -17,9 +17,11 @@ import {
   getAllComplaintsHandler,
   getComplaintsByCondominiumHandler,
   getComplaintDetailHandler,
+  getComplaintStatsHandler,
   pauseComplaintSlaHandler,
   resumeComplaintSlaHandler,
   runSlaScanHandler,
+  updateComplaintHandler,
   updateComplaintPriorityHandler,
   updateComplaintStatusHandler,
 } from "./complaints.controller";
@@ -31,6 +33,14 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     getAllComplaintsHandler
+  );
+
+  fastify.get(
+    "/stats",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    getComplaintStatsHandler
   );
 
   fastify.get(
@@ -58,6 +68,14 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     createComplaintHandler
+  );
+
+  fastify.put(
+    "/:id",
+    {
+      onRequest: [fastify.authenticate, requireTicketModify()],
+    },
+    updateComplaintHandler
   );
 
   fastify.patch(
@@ -130,7 +148,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     "/:id",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireTicketModify()],
     },
     deleteComplaintHandler
   );

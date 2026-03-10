@@ -173,6 +173,46 @@ export async function getAllResidents(
   });
 }
 
+export async function importResidents(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  condominiumId: string,
+  residents: Array<{
+    name: string;
+    email: string;
+    phone: string;
+    tower: string;
+    floor: string;
+    unit: string;
+    type?: string;
+  }>
+) {
+  const results = [];
+  const errors = [];
+
+  for (const residentData of residents) {
+    try {
+      const resident = await createResident(prisma, logger, {
+        ...residentData,
+        condominiumId,
+        type: (residentData.type as ResidentType) || "OWNER",
+        consentWhatsapp: true,
+        consentDataProcessing: true,
+      });
+      results.push(resident);
+    } catch (error: any) {
+      errors.push({
+        data: residentData,
+        error: error.message,
+      });
+    }
+  }
+
+  logger.info(`Imported ${results.length} residents, ${errors.length} errors`);
+
+  return { imported: results, errors, total: residents.length };
+}
+
 export async function getResidentsByCondominium(
   prisma: PrismaClient,
   condominiumId: string,

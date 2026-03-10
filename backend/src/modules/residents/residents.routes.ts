@@ -4,8 +4,11 @@ import { requireCondoAccess } from "../../auth/authorize";
 import {
   createResidentHandler,
   deleteResidentHandler,
+  getResidentDetailHandler,
+  importResidentsHandler,
   listAllResidentsHandler,
   listResidentsByCondoHandler,
+  updateResidentConsentHandler,
   updateResidentHandler,
 } from "./residents.controller";
 
@@ -16,6 +19,14 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     listAllResidentsHandler
+  );
+
+  fastify.get(
+    "/detail/:id",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    getResidentDetailHandler
   );
 
   fastify.get(
@@ -35,6 +46,25 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     createResidentHandler
+  );
+
+  fastify.post(
+    "/import",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess("condominiumId", "body"),
+      ],
+    },
+    importResidentsHandler
+  );
+
+  fastify.patch(
+    "/:id/consent",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    updateResidentConsentHandler
   );
 
   fastify.patch(

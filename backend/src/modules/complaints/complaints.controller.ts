@@ -9,12 +9,14 @@ import {
   addCommentSchema,
   complaintFiltersSchema,
   complaintIdParamSchema,
+  complaintStatsQuerySchema,
   condominiumIdParamSchema,
   addAttachmentSchema,
   createComplaintSchema,
   pauseSlaSchema,
   resumeSlaSchema,
   assignComplaintSchema,
+  updateComplaintSchema,
   updatePrioritySchema,
   updateStatusSchema,
   type AddComplaintCommentRequest,
@@ -200,6 +202,34 @@ export async function runSlaScanHandler(
     condominiumId
   );
   return reply.send(result);
+}
+
+export async function updateComplaintHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id } = complaintIdParamSchema.parse(request.params);
+  const body = updateComplaintSchema.parse(request.body);
+  const user = request.user as AuthUser;
+
+  const updated = await complaintService.updateComplaint(
+    prisma,
+    request.log,
+    id,
+    body,
+    user.id
+  );
+
+  return reply.send(updated);
+}
+
+export async function getComplaintStatsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { condominiumId } = complaintStatsQuerySchema.parse(request.query);
+  const stats = await complaintService.getComplaintStats(prisma, condominiumId);
+  return reply.send(stats);
 }
 
 export async function deleteComplaintHandler(

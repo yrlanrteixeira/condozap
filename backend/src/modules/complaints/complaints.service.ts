@@ -377,6 +377,109 @@ export async function addComplaintComment(
   return historyEntry;
 }
 
+export async function updateComplaint(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: number,
+  data: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    content?: string;
+    resolvedBy?: string;
+  },
+  userId: string
+) {
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true },
+  });
+  if (!complaint) {
+    throw new NotFoundError("Complaint");
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (data.category !== undefined) updateData.category = data.category;
+  if (data.content !== undefined) updateData.content = data.content;
+  if (data.resolvedBy !== undefined) updateData.resolvedBy = data.resolvedBy;
+
+  if (data.priority !== undefined) {
+    updateData.priority = data.priority as ComplaintPriority;
+  }
+
+  if (data.status !== undefined) {
+    const nextStatus = data.status as ComplaintStatus;
+    assertValidTransition(complaint.status, nextStatus);
+    updateData.status = nextStatus;
+
+    if (nextStatus === ComplaintStatus.RESOLVED) {
+      updateData.resolvedAt = new Date();
+      updateData.resolvedBy = data.resolvedBy || userId;
+    }
+  }
+
+  const updated = await prisma.complaint.update({
+    where: { id },
+    data: updateData,
+    include: {
+      resident: true,
+      attachments: true,
+      statusHistory: { orderBy: { createdAt: "desc" } },
+      sector: true,
+      assignee: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (data.status && data.status !== complaint.status) {
+    await prisma.complaintStatusHistory.create({
+      data: {
+        complaintId: id,
+        fromStatus: complaint.status,
+        toStatus: data.status as ComplaintStatus,
+        changedBy: userId,
+        action: SLA_ACTIONS.STATUS_CHANGE,
+      },
+    });
+  }
+
+  logger.info(`Complaint ${id} updated`);
+  return updated;
+}
+
+export async function getComplaintStats(
+  prisma: PrismaClient,
+  condominiumId?: string
+) {
+  const where = condominiumId ? { condominiumId } : {};
+
+  const [total, byStatus, byPriority] = await Promise.all([
+    prisma.complaint.count({ where }),
+    prisma.complaint.groupBy({
+      by: ["status"],
+      where,
+      _count: { id: true },
+    }),
+    prisma.complaint.groupBy({
+      by: ["priority"],
+      where,
+      _count: { id: true },
+    }),
+  ]);
+
+  const statusCounts = Object.fromEntries(
+    byStatus.map((s) => [s.status, s._count.id])
+  );
+  const priorityCounts = Object.fromEntries(
+    byPriority.map((p) => [p.priority, p._count.id])
+  );
+
+  return {
+    total,
+    byStatus: statusCounts,
+    byPriority: priorityCounts,
+  };
+}
+
 export async function deleteComplaint(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,

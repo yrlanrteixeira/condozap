@@ -1,8 +1,29 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireCondoAccess } from "../../auth/authorize";
-import { listMessagesHandler, sendMessageHandler } from "./messages.controller";
+import {
+  getMessageDetailHandler,
+  getMessageStatsHandler,
+  listMessagesHandler,
+  sendMessageHandler,
+} from "./messages.controller";
 
 export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.get(
+    "/stats",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    getMessageStatsHandler
+  );
+
+  fastify.get(
+    "/detail/:id",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    getMessageDetailHandler
+  );
+
   fastify.get(
     "/:condominiumId",
     {

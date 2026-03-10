@@ -1,5 +1,32 @@
 import { PrismaClient } from "@prisma/client";
 
+export async function getHistoryLogById(
+  prisma: PrismaClient,
+  logId: string
+) {
+  return prisma.complaintStatusHistory.findUnique({
+    where: { id: logId },
+    include: {
+      complaint: {
+        include: {
+          condominium: {
+            select: { id: true, name: true },
+          },
+          resident: {
+            select: {
+              id: true,
+              name: true,
+              tower: true,
+              floor: true,
+              unit: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 export async function getAllHistory(
   prisma: PrismaClient,
   condominiumId?: string

@@ -50,7 +50,12 @@ export const changePasswordSchema = z
     path: ["confirmNewPassword"],
   });
 
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, "Refresh token é obrigatório"),
+});
+
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type UpdateProfileBody = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
+export type RefreshTokenBody = z.infer<typeof refreshTokenSchema>;

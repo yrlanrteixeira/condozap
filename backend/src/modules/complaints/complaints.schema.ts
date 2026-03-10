@@ -60,6 +60,18 @@ export const addAttachmentSchema = z.object({
   fileSize: z.number().max(10 * 1024 * 1024),
 });
 
+export const updateComplaintSchema = z.object({
+  status: statusEnum.optional(),
+  priority: priorityEnum.optional(),
+  category: z.string().optional(),
+  content: z.string().optional(),
+  resolvedBy: z.string().optional(),
+});
+
+export const complaintStatsQuerySchema = z.object({
+  condominiumId: z.string().optional(),
+});
+
 export const complaintFiltersSchema = z.object({
   status: statusEnum.optional(),
   priority: priorityEnum.optional(),
@@ -89,4 +101,6 @@ export type AssignComplaintRequest = z.infer<typeof assignComplaintSchema>;
 export type PauseComplaintSlaRequest = z.infer<typeof pauseSlaSchema>;
 export type ResumeComplaintSlaRequest = z.infer<typeof resumeSlaSchema>;
 export type AddComplaintAttachmentRequest = z.infer<typeof addAttachmentSchema>;
+export type UpdateComplaintRequest = z.infer<typeof updateComplaintSchema>;
+export type ComplaintStatsQuery = z.infer<typeof complaintStatsQuerySchema>;
 export type ComplaintFilters = z.infer<typeof complaintFiltersSchema>;

@@ -13,7 +13,9 @@ import {
 import {
   createResident,
   deleteResident,
+  getResidentById,
   getResidentsByCondominium,
+  importResidents,
   updateResident,
 } from "./residents.service";
 import {
@@ -92,6 +94,64 @@ export async function updateResidentHandler(
 
   const updated = await updateResident(prisma, request.log, id, body);
   return reply.send(updated);
+}
+
+export async function getResidentDetailHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id } = residentIdParamSchema.parse(request.params);
+  const user = request.user as AuthUser;
+  const resident = await findResidentByIdForUser(prisma, user, id);
+  if (!resident) {
+    return reply
+      .status(404)
+      .send({ error: "Morador não encontrado" });
+  }
+  return reply.send(resident);
+}
+
+export async function updateResidentConsentHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id } = residentIdParamSchema.parse(request.params);
+  const body = request.body as {
+    consent_whatsapp?: boolean;
+    consent_data_processing?: boolean;
+    consentWhatsapp?: boolean;
+    consentDataProcessing?: boolean;
+  };
+
+  const updateData: Record<string, boolean> = {};
+  if (body.consent_whatsapp !== undefined) updateData.consentWhatsapp = body.consent_whatsapp;
+  if (body.consent_data_processing !== undefined) updateData.consentDataProcessing = body.consent_data_processing;
+  if (body.consentWhatsapp !== undefined) updateData.consentWhatsapp = body.consentWhatsapp;
+  if (body.consentDataProcessing !== undefined) updateData.consentDataProcessing = body.consentDataProcessing;
+
+  const updated = await updateResident(prisma, request.log, id, updateData);
+  return reply.send(updated);
+}
+
+export async function importResidentsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const body = request.body as {
+    condominiumId: string;
+    residents: Array<{
+      name: string;
+      email: string;
+      phone: string;
+      tower: string;
+      floor: string;
+      unit: string;
+      type?: string;
+    }>;
+  };
+
+  const results = await importResidents(prisma, request.log, body.condominiumId, body.residents);
+  return reply.status(201).send(results);
 }
 
 export async function deleteResidentHandler(
