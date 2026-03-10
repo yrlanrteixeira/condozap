@@ -35,11 +35,11 @@ export const sendWhatsAppSchema = z.object({
   to: z.string().min(1),
   message: z.string().min(1),
   type: z.enum(["text", "template"]).default("text"),
-  condominium_id: z.string().min(1),
+  condominiumId: z.string().min(1),
 });
 
 export const sendBulkWhatsAppSchema = z.object({
-  condominium_id: z.string().min(1),
+  condominiumId: z.string().min(1),
   recipients: z.array(
     z.object({
       phone: z.string().min(1),

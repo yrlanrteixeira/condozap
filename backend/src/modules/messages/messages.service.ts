@@ -122,7 +122,7 @@ export async function sendMessage(
   body: SendMessageBody
 ) {
   const residents = await findTargetResidents(prisma, {
-    condominiumId: body.condominium_id,
+    condominiumId: body.condominiumId,
     scope: body.target.scope,
     tower: body.target.tower,
     floor: body.target.floor,
@@ -142,7 +142,7 @@ export async function sendMessage(
   });
 
   const message = await createMessageLog(prisma, {
-    condominiumId: body.condominium_id,
+    condominiumId: body.condominiumId,
     type: body.type,
     scope: body.target.scope,
     targetTower: body.target.tower,

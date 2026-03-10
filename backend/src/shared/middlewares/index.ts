@@ -1,15 +1,13 @@
 /**
  * Authorization Middlewares
  *
- * Centralized middleware functions for authentication and authorization
+ * Re-exports from auth/authorize for backwards compatibility.
+ * New code should import directly from ../../auth/authorize.
  */
 
 export {
   requireRole,
   requireSuperAdmin,
   requireAdmin,
-} from "./requireRole";
-
-export { requireCondoAccess } from "./requireCondoAccess";
-
-export { requireCondoMembership } from "./requireCondoMembership";
+  requireCondoAccess,
+} from "../../auth/authorize";

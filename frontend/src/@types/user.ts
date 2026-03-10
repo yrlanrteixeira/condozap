@@ -125,16 +125,3 @@ export interface ForgotPasswordRequest {
   email: string;
 }
 
-/**
- * Contexto de autenticação (para Context API)
- */
-export interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: RegisterRequest) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (data: Partial<User>) => Promise<void>;
-  switchCondominium: (condominiumId: string) => Promise<void>;
-}

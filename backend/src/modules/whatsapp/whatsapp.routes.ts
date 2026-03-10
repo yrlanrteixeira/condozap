@@ -14,7 +14,7 @@ export const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/send",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominium_id", "body")],
+      onRequest: [fastify.authenticate, requireCondoAccess({ source: "body" })],
     },
     sendWhatsAppHandler
   );
@@ -22,7 +22,7 @@ export const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/send-bulk",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominium_id", "body")],
+      onRequest: [fastify.authenticate, requireCondoAccess({ source: "body" })],
     },
     sendBulkWhatsAppHandler
   );

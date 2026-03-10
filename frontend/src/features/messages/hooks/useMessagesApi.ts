@@ -64,7 +64,7 @@ export function useSendWhatsAppMessage() {
         to,
         message,
         type: 'text',
-        condominium_id: condominiumId,
+        condominiumId,
       })
       return data
     },
@@ -86,7 +86,7 @@ export function useSendBulkMessages() {
   return useMutation({
     mutationFn: async (input: SendBulkMessagesInput) => {
       const { data } = await api.post('/whatsapp/send-bulk', {
-        condominium_id: input.condominium_id,
+        condominiumId: input.condominiumId,
         recipients: input.recipients,
         message: input.message,
       })
@@ -94,7 +94,7 @@ export function useSendBulkMessages() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominium_id),
+        queryKey: queryKeys.list(variables.condominiumId),
       })
     },
   })
@@ -114,7 +114,7 @@ export function useSendMessage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominium_id),
+        queryKey: queryKeys.list(variables.condominiumId),
       })
     },
   })

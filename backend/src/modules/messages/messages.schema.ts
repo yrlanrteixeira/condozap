@@ -9,7 +9,7 @@ export const messagesQuerySchema = z.object({
 });
 
 export const sendMessageSchema = z.object({
-  condominium_id: z.string().min(1),
+  condominiumId: z.string().min(1),
   type: z.enum(["TEXT", "TEMPLATE", "IMAGE"]),
   content: z.object({
     text: z.string().min(1),

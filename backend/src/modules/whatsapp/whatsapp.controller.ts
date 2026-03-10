@@ -52,7 +52,7 @@ export const sendWhatsAppHandler = async (
 
     await prisma.message.create({
       data: {
-        condominiumId: body.condominium_id,
+        condominiumId: body.condominiumId,
         type: "TEXT",
         scope: "UNIT",
         content: body.message,
@@ -87,7 +87,7 @@ export const sendBulkWhatsAppHandler = async (
 
     await prisma.message.create({
       data: {
-        condominiumId: body.condominium_id,
+        condominiumId: body.condominiumId,
         type: "TEXT",
         scope: "ALL",
         content: body.message,

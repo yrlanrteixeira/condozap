@@ -42,7 +42,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireCondoAccess("condominiumId", "body"),
+        requireCondoAccess({ source: "body" }),
       ],
     },
     createResidentHandler
@@ -53,7 +53,7 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireCondoAccess("condominiumId", "body"),
+        requireCondoAccess({ source: "body" }),
       ],
     },
     importResidentsHandler
