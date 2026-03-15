@@ -121,6 +121,67 @@ export const login = createAsyncThunk(
 );
 
 /**
+ * Thunk para registrar novo usuario
+ */
+export const register = createAsyncThunk(
+  "auth/register",
+  async (
+    data: {
+      email: string;
+      password: string;
+      name: string;
+      role?: string;
+      requestedCondominiumId?: string;
+      requestedPhone?: string;
+      consentDataProcessing?: boolean;
+      consentWhatsapp?: boolean;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post("/auth/register", data);
+      return response.data;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error || error.message || "Erro ao registrar";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+/**
+ * Thunk para buscar usuario atual (revalidacao de sessao)
+ */
+export const fetchCurrentUser = createAsyncThunk(
+  "auth/fetchCurrentUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/auth/me");
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue("Sessão inválida");
+    }
+  }
+);
+
+/**
+ * Thunk para atualizar perfil
+ */
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data: Record<string, unknown>, { rejectWithValue }) => {
+    try {
+      const response = await api.patch("/auth/me", data);
+      return response.data;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error || error.message || "Erro ao atualizar perfil";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+/**
  * Thunk para renovar o token de acesso
  */
 export const refreshAccessToken = createAsyncThunk(
@@ -261,7 +322,6 @@ const authSlice = createSlice({
         );
       })
       .addCase(refreshAccessToken.rejected, (state) => {
-        // Se falhar ao renovar, fazer logout
         console.error("❌ Falha ao renovar token - Realizando logout");
         state.user = null;
         state.token = null;
@@ -270,6 +330,39 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isLoading = false;
         state.error = "Sessão expirada";
+      })
+      // Register
+      .addCase(register.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.refreshToken = action.payload.refreshToken;
+        state.tokenExpiresAt = calculateTokenExpiry(action.payload.token);
+        state.error = null;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Current User
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(fetchCurrentUser.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+      })
+      // Update Profile
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
       });
   },
 });

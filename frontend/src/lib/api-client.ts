@@ -203,7 +203,7 @@ apiClient.interceptors.response.use(
         // Tenta renovar o token
         console.log("🔄 Tentando renovar token via interceptor...");
         const { refreshAccessToken } =
-          await import("../store/slices/authSlice");
+          await import("../shared/store/slices/authSlice");
         const result = await reduxStore.dispatch(refreshAccessToken()).unwrap();
 
         // Token renovado com sucesso

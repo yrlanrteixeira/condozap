@@ -1,8 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
-import {
-  requireSuperAdmin,
-  requireCondoAccess,
-} from "../../shared/middlewares";
+import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireCondoAccess } from "../../auth/authorize";
 import {
   listCondominiumsHandler,
   getCondominiumHandler,

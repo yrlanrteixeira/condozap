@@ -12,7 +12,6 @@ export type {
   LoginInput,
   RegisterInput,
   AuthResponse,
-  AuthContextType,
 } from './types'
 
 // Schemas

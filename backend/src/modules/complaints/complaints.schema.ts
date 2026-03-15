@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const priorityEnum = z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
 export const statusEnum = z.enum([
+  "OPEN",
   "NEW",
   "TRIAGE",
   "IN_PROGRESS",

@@ -38,7 +38,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/stats",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireCondoAccess({ source: "query" })],
     },
     getComplaintStatsHandler
   );
@@ -64,7 +64,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireCondoAccess("condominiumId", "body"),
+        requireCondoAccess({ source: "body" }),
       ],
     },
     createComplaintHandler

@@ -1,10 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
-import {
-  requireRole,
-  requireSuperAdmin,
-  requireAdmin,
-  requireCondoAccess,
-} from "../../shared/middlewares";
+import { requireRole, requireSuperAdmin, requireAdmin } from "../../shared/middlewares";
+import { requireCondoAccess } from "../../auth/authorize";
 import {
   createAdminHandler,
   createSyndicHandler,

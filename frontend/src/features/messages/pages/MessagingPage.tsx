@@ -109,7 +109,7 @@ export function MessagingPage() {
       }
 
       await sendMessage.mutateAsync({
-        condominium_id: currentCondominiumId,
+        condominiumId: currentCondominiumId,
         type: msgType.toUpperCase() as any,
         content: {
           text: contentString,

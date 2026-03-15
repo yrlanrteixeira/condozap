@@ -22,7 +22,7 @@ export const MessageSchema = z.object({
 });
 
 export const SendMessageSchema = z.object({
-  condominium_id: z.string(),
+  condominiumId: z.string(),
   type: z.enum(["TEXT", "TEMPLATE", "IMAGE"]),
   scope: z.enum(["ALL", "TOWER", "FLOOR", "UNIT"]),
   target_tower: z.string().optional(),

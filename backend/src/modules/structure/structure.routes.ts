@@ -15,7 +15,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     getStructureHandler
   );
@@ -23,7 +23,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     updateStructureHandler
   );
@@ -31,7 +31,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId/sectors",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     listSectorsHandler
   );
@@ -39,7 +39,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:condominiumId/sectors",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     createSectorHandler
   );
@@ -47,7 +47,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:condominiumId/sectors/:sectorId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     updateSectorHandler
   );
@@ -55,7 +55,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:condominiumId/sectors/:sectorId/members",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess("condominiumId")],
+      onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     setSectorMembersHandler
   );

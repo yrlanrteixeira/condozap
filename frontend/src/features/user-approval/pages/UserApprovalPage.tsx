@@ -9,7 +9,7 @@ import { UserCheck, Loader2, Users } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { useAppSelector } from "@/shared/hooks";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
-import { useAuth } from "@/shared/contexts/AuthContext";
+import { useAuth } from "@/shared/hooks/useAuth";
 import {
   usePendingUsers,
   useAllPendingUsers,

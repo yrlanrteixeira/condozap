@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Info } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import { useAuth } from "@/shared/contexts/AuthContext";
+import { useAuth } from "@/shared/hooks/useAuth";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
 import {
   AuthCard,

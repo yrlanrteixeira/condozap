@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Building2 } from "lucide-react";
-import { useAuth } from "@/shared/contexts/AuthContext";
+import { useAuth } from "@/shared/hooks/useAuth";
 import { LoginSchema, type LoginInput } from "../schemas";
 import {
   AuthCard,
@@ -16,6 +16,7 @@ import {
 
 export function LoginPage() {
   const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<LoginInput>({
@@ -32,6 +33,7 @@ export function LoginPage() {
     setError(null);
     try {
       await signIn(values.email, values.password);
+      navigate("/");
     } catch (err: any) {
       setError(err.message);
     }

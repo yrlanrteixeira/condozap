@@ -24,7 +24,7 @@ export interface Message {
 }
 
 export interface SendMessageInput {
-  condominium_id: string;
+  condominiumId: string;
   type: MessageType;
   content: {
     text: string;
@@ -45,7 +45,7 @@ export interface SendWhatsAppMessageInput {
 }
 
 export interface SendBulkMessagesInput {
-  condominium_id: string;
+  condominiumId: string;
   recipients: Array<{
     phone: string;
     name: string;

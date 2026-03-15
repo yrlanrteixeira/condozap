@@ -99,11 +99,15 @@ const canAccessTicket = (
   return false;
 };
 
-export const requireCondoAccess = (
-  paramName = "condominiumId",
-  source: "params" | "query" | "body" = "params"
-) =>
-  async (request: FastifyRequest, reply: FastifyReply) => {
+interface CondoAccessConfig {
+  paramName?: string;
+  source?: "params" | "query" | "body";
+}
+
+export const requireCondoAccess = (config: CondoAccessConfig = {}) => {
+  const { paramName = "condominiumId", source = "params" } = config;
+
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as AuthUser | undefined;
     if (!user) {
       return deny(reply, 401, "Usuário não autenticado");
@@ -127,6 +131,7 @@ export const requireCondoAccess = (
       return deny(reply, 403, "Acesso negado ao condomínio solicitado");
     }
   };
+};
 
 const createTicketGuard = (
   action: TicketAction,
@@ -171,4 +176,25 @@ export const requireTriage = (paramName = "id") =>
 
 export const requireAttachmentUpload = (paramName = "id") =>
   createTicketGuard(TicketActions.UPLOAD_ATTACHMENT, paramName);
+
+// =====================================================
+// Role-based authorization
+// =====================================================
+
+export const requireRole = (roles: string[]) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return deny(reply, 401, "Usuário não autenticado");
+    }
+    if (!roles.includes(user.role)) {
+      return deny(reply, 403, `Acesso negado. Roles permitidos: ${roles.join(", ")}`);
+    }
+  };
+};
+
+export const requireSuperAdmin = () => requireRole(["SUPER_ADMIN"]);
+
+export const requireAdmin = () =>
+  requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
 
