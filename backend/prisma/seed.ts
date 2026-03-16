@@ -8,13 +8,19 @@ async function main() {
 
   // Clean existing data (optional - comment if you want to keep data)
   console.log("🧹 Cleaning existing data...");
+  await prisma.auditLog.deleteMany();
+  await prisma.complaintAssignment.deleteMany();
+  await prisma.sectorMember.deleteMany();
   await prisma.message.deleteMany();
   await prisma.complaintStatusHistory.deleteMany();
   await prisma.complaintAttachment.deleteMany();
   await prisma.complaint.deleteMany();
+  await prisma.sector.deleteMany();
+  await prisma.residentDocument.deleteMany();
   await prisma.resident.deleteMany();
   await prisma.userCondominium.deleteMany();
   await prisma.announcement.deleteMany();
+  await prisma.slaConfig.deleteMany();
   await prisma.user.deleteMany();
   await prisma.condominium.deleteMany();
   console.log("✅ Data cleaned");
