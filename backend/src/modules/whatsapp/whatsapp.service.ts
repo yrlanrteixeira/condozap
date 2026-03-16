@@ -256,3 +256,66 @@ export const updateMessageStatuses = async (
 };
 
 export const whatsappService = new WhatsAppService();
+
+export async function sendAndRecordMessage(
+  prisma: PrismaClient,
+  _logger: FastifyBaseLogger,
+  body: { to: string; message: string; condominiumId: string },
+  userId: string
+) {
+  const result = await whatsappService.sendTextMessage(body.to, body.message);
+
+  await prisma.message.create({
+    data: {
+      condominiumId: body.condominiumId,
+      type: "TEXT",
+      scope: "UNIT",
+      content: body.message,
+      recipientCount: 1,
+      sentBy: userId,
+      whatsappStatus: "SENT",
+      whatsappMessageId: result.messageId,
+    },
+  });
+
+  return { success: true, messageId: result.messageId };
+}
+
+export async function sendBulkAndRecordMessages(
+  prisma: PrismaClient,
+  _logger: FastifyBaseLogger,
+  body: {
+    condominiumId: string;
+    message: string;
+    recipients: Array<{ phone: string; name?: string }>;
+  },
+  userId: string
+) {
+  const result = await whatsappService.sendBulkMessages({
+    recipients: body.recipients.map((r) => ({
+      phone: r.phone,
+      name: r.name || "",
+    })),
+    message: body.message,
+  });
+
+  await prisma.message.create({
+    data: {
+      condominiumId: body.condominiumId,
+      type: "TEXT",
+      scope: "ALL",
+      content: body.message,
+      recipientCount: result.total,
+      sentBy: userId,
+      whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
+    },
+  });
+
+  return {
+    success: true,
+    total: result.total,
+    sent: result.sent,
+    failed: result.failed,
+    results: result.results,
+  };
+}

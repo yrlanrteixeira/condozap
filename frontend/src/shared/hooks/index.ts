@@ -24,3 +24,13 @@ export { usePermissions } from './usePermissions';
 
 // Media Query Hooks
 export { useMediaQuery, useIsMobile, useIsTablet, useIsDesktop } from './useMediaQuery';
+
+// API Hooks Factory
+export {
+  createQuery,
+  createMutationWithInvalidation,
+  fetchList,
+  fetchOne,
+  postAndParse,
+  patchAndParse,
+} from './useApiFactory';

@@ -1,9 +1,15 @@
-export {
-  findAllMetricsData as getAllMetricsData,
-  findMetricsDataByCondominium as getCondominiumMetricsData,
+import type { PrismaClient } from "@prisma/client";
+import {
+  findAllMetricsData,
+  findMetricsDataByCondominium,
   findCondominiumsByIds,
   findComplaintsByCondominiumIds,
 } from "./dashboard.repository";
+
+export {
+  findAllMetricsData as getAllMetricsData,
+  findMetricsDataByCondominium as getCondominiumMetricsData,
+};
 
 interface ComplaintData {
   status: string;
@@ -165,4 +171,39 @@ export function buildUnifiedDashboard(
     urgentFeed,
     complaintsByCondo,
   };
+}
+
+const EMPTY_UNIFIED_DASHBOARD = {
+  totalCondos: 0,
+  totalComplaints: 0,
+  criticalComplaints: 0,
+  openComplaints: 0,
+  inProgressComplaints: 0,
+  urgentFeed: [],
+  complaintsByCondo: [],
+};
+
+export function parseCondominiumIds(condominiumIds: string): string[] {
+  return condominiumIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id !== "");
+}
+
+export async function getUnifiedDashboard(
+  prisma: PrismaClient,
+  filteredCondoIds: string[]
+) {
+  const condominiums = await findCondominiumsByIds(prisma, filteredCondoIds);
+
+  if (condominiums.length === 0) {
+    return EMPTY_UNIFIED_DASHBOARD;
+  }
+
+  const complaints = await findComplaintsByCondominiumIds(
+    prisma,
+    filteredCondoIds
+  );
+
+  return buildUnifiedDashboard(condominiums, complaints);
 }
