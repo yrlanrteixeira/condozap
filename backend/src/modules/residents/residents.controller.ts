@@ -15,7 +15,6 @@ import {
 import {
   createResident,
   deleteResident,
-  getResidentById,
   getResidentsByCondominium,
   importResidents,
   updateResident,
