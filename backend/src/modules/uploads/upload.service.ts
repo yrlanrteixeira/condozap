@@ -1,5 +1,5 @@
 import { FastifyBaseLogger } from "fastify";
-import { uploadFileToStorage, deleteFileFromStorage } from "../../shared/db/supabase";
+import { uploadFileToStorage, deleteFileFromStorage } from "../../shared/db/s3";
 import { BadRequestError } from "../../shared/errors";
 import crypto from "crypto";
 import path from "path";
@@ -184,12 +184,13 @@ export async function deleteFile(
 
 /**
  * Extract file path from public URL
+ * Supports S3-compatible URLs: https://endpoint/bucket/bucketName/path
  */
 export function extractFilePathFromUrl(publicUrl: string, bucketName: string): string {
-  // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-  const urlParts = publicUrl.split(`/object/public/${bucketName}/`);
-  if (urlParts.length < 2) {
+  const marker = `/${bucketName}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) {
     throw new Error("Invalid public URL");
   }
-  return urlParts[1];
+  return publicUrl.substring(idx + marker.length);
 }

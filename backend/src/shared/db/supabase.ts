@@ -18,6 +18,10 @@ export const getSupabaseClient = (): SupabaseClient => {
     return supabaseClient
   }
 
+  if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required when using Supabase storage')
+  }
+
   // Use service role key for admin operations if available, otherwise use anon key
   const supabaseKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY
 
@@ -40,6 +44,10 @@ export const getSupabaseClient = (): SupabaseClient => {
  * @returns {SupabaseClient} Supabase client configured with user token
  */
 export const getSupabaseClientWithToken = (accessToken: string): SupabaseClient => {
+  if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required when using Supabase')
+  }
+
   return createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY, {
     global: {
       headers: {
@@ -124,5 +132,5 @@ export const deleteFileFromStorage = async ({
   }
 }
 
-export const supabase = getSupabaseClient()
+
 

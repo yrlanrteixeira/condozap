@@ -14,9 +14,9 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string(),
 
-  // Supabase
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string(),
+  // Supabase (optional - only needed if STORAGE_TYPE=supabase)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // JWT
@@ -42,7 +42,8 @@ const envSchema = z.object({
   STORAGE_TYPE: z.enum(["local", "s3", "supabase"]).default("local"),
   STORAGE_PATH: z.string().default("./uploads"),
 
-  // S3 (if using S3)
+  // S3 (if using S3 or S3-compatible like Railway)
+  AWS_S3_ENDPOINT: z.string().url().optional(),
   AWS_REGION: z.string().optional(),
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
