@@ -4,6 +4,7 @@ import type { FastifyBaseLogger } from "fastify";
 import { config } from "../../config/env";
 import { evolutionService } from "../evolution/evolution.service";
 import type { WhatsAppWebhookBody } from "./whatsapp.schema";
+import { updateMessageStatus } from "./whatsapp.repository";
 
 export interface WhatsAppMessage {
   to: string;
@@ -249,12 +250,7 @@ export const updateMessageStatuses = async (
     if (!allowedStatus) {
       continue;
     }
-    await prisma.message.updateMany({
-      where: { whatsappMessageId: messageId },
-      data: {
-        whatsappStatus: allowedStatus,
-      },
-    });
+    await updateMessageStatus(prisma, messageId, allowedStatus);
     logger.info(`Updated message ${messageId} status to ${allowedStatus}`);
   }
 };
