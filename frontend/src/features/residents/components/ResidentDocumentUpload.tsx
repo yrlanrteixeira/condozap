@@ -22,8 +22,7 @@ import {
   DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { FileText, Trash2, Download, CheckCircle, XCircle, Clock } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatRelativeTime } from "@/shared/utils/date";
 
 const DOCUMENT_TYPES = {
   RG: "RG",
@@ -169,10 +168,7 @@ export function ResidentDocumentUpload({
                       </p>
                     )}
                     <p className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(document.createdAt), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
+                      {formatRelativeTime(document.createdAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">

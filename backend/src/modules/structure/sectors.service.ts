@@ -1,40 +1,36 @@
 import { PrismaClient } from "@prisma/client";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
 import { SetMembersBody, CreateSectorBody, UpdateSectorBody } from "./sectors.schema";
+import {
+  findSectors,
+  findByNameInCondominium,
+  findSectorInCondominium,
+  createSector as repoCreateSector,
+  updateSector as repoUpdateSector,
+  findUserMemberships,
+  deleteRemovedSectorMembers,
+  upsertSectorMember,
+  findSectorWithMembers,
+} from "./sectors.repository";
 
 export const listSectors = async (
   prisma: PrismaClient,
   condominiumId: string
-) =>
-  prisma.sector.findMany({
-    where: { condominiumId },
-    include: {
-      members: {
-        where: { isActive: true },
-        include: { user: { select: { id: true, name: true, email: true } } },
-        orderBy: [{ order: "asc" }, { workload: "asc" }],
-      },
-    },
-    orderBy: { name: "asc" },
-  });
+) => findSectors(prisma, condominiumId);
 
 export const createSector = async (
   prisma: PrismaClient,
   condominiumId: string,
   body: CreateSectorBody
 ) => {
-  const exists = await prisma.sector.findFirst({
-    where: { condominiumId, name: body.name },
-  });
+  const exists = await findByNameInCondominium(prisma, condominiumId, body.name);
   if (exists) {
     throw new BadRequestError("Setor já existe neste condomínio");
   }
-  return prisma.sector.create({
-    data: {
-      condominiumId,
-      name: body.name,
-      categories: body.categories ?? [],
-    },
+  return repoCreateSector(prisma, {
+    condominiumId,
+    name: body.name,
+    categories: body.categories ?? [],
   });
 };
 
@@ -44,30 +40,24 @@ export const updateSector = async (
   sectorId: string,
   body: UpdateSectorBody
 ) => {
-  const sector = await prisma.sector.findFirst({
-    where: { id: sectorId, condominiumId },
-  });
+  const sector = await findSectorInCondominium(prisma, condominiumId, sectorId);
   if (!sector) {
     throw new NotFoundError("Setor");
   }
   if (body.name) {
-    const duplicate = await prisma.sector.findFirst({
-      where: {
-        condominiumId,
-        name: body.name,
-        id: { not: sectorId },
-      },
-    });
+    const duplicate = await findByNameInCondominium(
+      prisma,
+      condominiumId,
+      body.name,
+      sectorId
+    );
     if (duplicate) {
       throw new BadRequestError("Já existe outro setor com este nome");
     }
   }
-  return prisma.sector.update({
-    where: { id: sectorId },
-    data: {
-      ...(body.name && { name: body.name }),
-      ...(body.categories && { categories: body.categories }),
-    },
+  return repoUpdateSector(prisma, sectorId, {
+    ...(body.name && { name: body.name }),
+    ...(body.categories && { categories: body.categories }),
   });
 };
 
@@ -77,16 +67,12 @@ export const setSectorMembers = async (
   sectorId: string,
   body: SetMembersBody
 ) => {
-  const sector = await prisma.sector.findFirst({
-    where: { id: sectorId, condominiumId },
-  });
+  const sector = await findSectorInCondominium(prisma, condominiumId, sectorId);
   if (!sector) {
     throw new NotFoundError("Setor");
   }
   const userIds = body.members.map((m) => m.userId);
-  const memberships = await prisma.userCondominium.findMany({
-    where: { condominiumId, userId: { in: userIds } },
-  });
+  const memberships = await findUserMemberships(prisma, condominiumId, userIds);
   const allowedUserIds = new Set(memberships.map((m) => m.userId));
   const invalid = userIds.filter((id) => !allowedUserIds.has(id));
   if (invalid.length) {
@@ -95,46 +81,10 @@ export const setSectorMembers = async (
     );
   }
   return prisma.$transaction(async (trx) => {
-    await trx.sectorMember.deleteMany({
-      where: {
-        sectorId,
-        userId: { notIn: userIds },
-      },
-    });
+    await deleteRemovedSectorMembers(trx as unknown as PrismaClient, sectorId, userIds);
     for (const member of body.members) {
-      await trx.sectorMember.upsert({
-        where: {
-          sectorId_userId: {
-            sectorId,
-            userId: member.userId,
-          },
-        },
-        update: {
-          order: member.order ?? 0,
-          workload: member.workload ?? 0,
-          isActive: member.isActive ?? true,
-        },
-        create: {
-          sectorId,
-          userId: member.userId,
-          order: member.order ?? 0,
-          workload: member.workload ?? 0,
-          isActive: member.isActive ?? true,
-        },
-      });
+      await upsertSectorMember(trx as unknown as PrismaClient, sectorId, member);
     }
-    return trx.sector.findUnique({
-      where: { id: sectorId },
-      include: {
-        members: {
-          where: { isActive: true },
-          include: { user: { select: { id: true, name: true, email: true } } },
-          orderBy: [{ order: "asc" }, { workload: "asc" }],
-        },
-      },
-    });
+    return findSectorWithMembers(trx as unknown as PrismaClient, sectorId);
   });
 };
-
-
-

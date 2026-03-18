@@ -1,4 +1,5 @@
 import { config } from "../../config/env";
+import { BadRequestError } from "../../shared/errors";
 import { evolutionService } from "../evolution/evolution.service";
 import { whatsappService } from "../whatsapp/whatsapp.service";
 import type {
@@ -118,12 +119,12 @@ class MessagingService {
     switch (type) {
       case "image":
         if (!mediaUrl) {
-          throw new Error("mediaUrl required for image");
+          throw new BadRequestError("mediaUrl required for image");
         }
         return this.sendImage(phone, mediaUrl, caption || message);
       case "document":
         if (!mediaUrl || !fileName) {
-          throw new Error("mediaUrl and fileName required for document");
+          throw new BadRequestError("mediaUrl and fileName required for document");
         }
         return this.sendDocument(phone, mediaUrl, fileName, caption || message);
       case "audio":
@@ -131,7 +132,7 @@ class MessagingService {
           const response = await evolutionService.sendAudio(phone, mediaUrl);
           return { success: true, messageId: response.key.id };
         }
-        throw new Error("Audio sending requires Evolution API and mediaUrl");
+        throw new BadRequestError("Audio sending requires Evolution API and mediaUrl");
       case "text":
       default:
         return this.sendText(phone, message);

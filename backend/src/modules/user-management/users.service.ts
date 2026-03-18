@@ -1,6 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, UserRole as PrismaUserRole } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import bcrypt from "bcryptjs";
+import { ConflictError, NotFoundError, BadRequestError } from "../../shared/errors";
 import type {
   CreateAdminRequest,
   CreateSyndicRequest,
@@ -10,6 +11,7 @@ import type {
   InviteUserRequest,
   UserRole,
 } from "./user-management.schema";
+import * as usersRepository from "./users.repository";
 
 export async function createAdmin(
   prisma: PrismaClient,
@@ -17,42 +19,28 @@ export async function createAdmin(
   data: CreateAdminRequest,
   createdBy: string
 ) {
-  const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
+  const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (existingUser) {
-    throw new Error("Email já está cadastrado no sistema");
+    throw new ConflictError("Email já está cadastrado no sistema");
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  const newAdmin = await prisma.user.create({
-    data: {
-      email: data.email,
-      password: hashedPassword,
-      name: data.name,
-      role: "ADMIN",
-      permissionScope: "LOCAL",
-      status: "APPROVED",
-      approvedAt: new Date(),
-      approvedBy: createdBy,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      status: true,
-      createdAt: true,
-    },
+  const newAdmin = await usersRepository.createUser(prisma, {
+    email: data.email,
+    password: hashedPassword,
+    name: data.name,
+    role: "ADMIN" as PrismaUserRole,
+    permissionScope: "LOCAL",
+    status: "APPROVED",
+    approvedAt: new Date(),
+    approvedBy: createdBy,
   });
 
-  await prisma.userCondominium.create({
-    data: {
-      userId: newAdmin.id,
-      condominiumId: data.condominiumId,
-      role: "ADMIN",
-    },
+  await usersRepository.createUserCondominium(prisma, {
+    userId: newAdmin.id,
+    condominiumId: data.condominiumId,
+    role: "ADMIN" as PrismaUserRole,
   });
 
   logger.info(
@@ -68,45 +56,31 @@ export async function createSyndic(
   data: CreateSyndicRequest,
   createdBy: string
 ) {
-  const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
+  const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (existingUser) {
-    throw new Error("Email já está cadastrado no sistema");
+    throw new ConflictError("Email já está cadastrado no sistema");
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  const newSyndic = await prisma.user.create({
-    data: {
-      email: data.email,
-      password: hashedPassword,
-      name: data.name,
-      role: "SYNDIC",
-      permissionScope: "LOCAL",
-      status: "APPROVED",
-      approvedAt: new Date(),
-      approvedBy: createdBy,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      status: true,
-      createdAt: true,
-    },
+  const newSyndic = await usersRepository.createUser(prisma, {
+    email: data.email,
+    password: hashedPassword,
+    name: data.name,
+    role: "SYNDIC" as PrismaUserRole,
+    permissionScope: "LOCAL",
+    status: "APPROVED",
+    approvedAt: new Date(),
+    approvedBy: createdBy,
   });
 
   const userCondominiumsData = data.condominiumIds.map((condoId) => ({
     userId: newSyndic.id,
     condominiumId: condoId,
-    role: "SYNDIC" as const,
+    role: "SYNDIC" as PrismaUserRole,
   }));
 
-  await prisma.userCondominium.createMany({
-    data: userCondominiumsData,
-  });
+  await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
 
   logger.info(
     `Syndic ${newSyndic.email} created by ${createdBy} for ${data.condominiumIds.length} condominiums`
@@ -122,25 +96,7 @@ export async function getUsersByCondominium(
   prisma: PrismaClient,
   condominiumId: string
 ) {
-  const users = await prisma.userCondominium.findMany({
-    where: { condominiumId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          approvedAt: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const users = await usersRepository.findUsersByCondominium(prisma, condominiumId);
 
   return users.map((uc) => ({
     id: uc.user.id,
@@ -162,18 +118,18 @@ export async function updateUserRole(
   currentUserId: string
 ) {
   if (data.userId === currentUserId) {
-    throw new Error("Você não pode alterar sua própria função");
+    throw new BadRequestError("Você não pode alterar sua própria função");
   }
 
-  await prisma.user.update({
-    where: { id: data.userId },
-    data: { role: data.newRole as UserRole },
+  await usersRepository.updateUser(prisma, data.userId, {
+    role: data.newRole as UserRole,
   });
 
-  await prisma.userCondominium.updateMany({
-    where: { userId: data.userId },
-    data: { role: data.newRole as UserRole },
-  });
+  await usersRepository.updateUserCondominiums(
+    prisma,
+    { userId: data.userId },
+    { role: data.newRole as UserRole }
+  );
 
   logger.info(`User ${data.userId} role updated to ${data.newRole}`);
 }
@@ -183,16 +139,17 @@ export async function updateCouncilPosition(
   logger: FastifyBaseLogger,
   data: UpdateCouncilPositionRequest
 ) {
-  const updated = await prisma.userCondominium.updateMany({
-    where: {
+  const updated = await usersRepository.updateUserCondominiums(
+    prisma,
+    {
       userId: data.userId,
       condominiumId: data.condominiumId,
     },
-    data: { councilPosition: data.councilPosition ?? null },
-  });
+    { councilPosition: data.councilPosition ?? null }
+  );
 
   if (updated.count === 0) {
-    throw new Error("Vínculo usuário-condomínio não encontrado");
+    throw new NotFoundError("Vínculo usuário-condomínio");
   }
 
   logger.info(
@@ -209,25 +166,22 @@ export async function removeUserFromCondominium(
   currentUserId: string
 ) {
   if (data.userId === currentUserId) {
-    throw new Error("Você não pode remover a si mesmo");
+    throw new BadRequestError("Você não pode remover a si mesmo");
   }
 
-  await prisma.userCondominium.deleteMany({
-    where: {
-      userId: data.userId,
-      condominiumId: data.condominiumId,
-    },
+  await usersRepository.deleteUserCondominiums(prisma, {
+    userId: data.userId,
+    condominiumId: data.condominiumId,
   });
 
-  const remainingCondos = await prisma.userCondominium.count({
-    where: { userId: data.userId },
+  const remainingCondos = await usersRepository.countUserCondominiums(prisma, {
+    userId: data.userId,
   });
 
   let userSuspended = false;
   if (remainingCondos === 0) {
-    await prisma.user.update({
-      where: { id: data.userId },
-      data: { status: "SUSPENDED" },
+    await usersRepository.updateUser(prisma, data.userId, {
+      status: "SUSPENDED",
     });
     userSuspended = true;
   }
@@ -244,29 +198,24 @@ export async function inviteUserToCondominium(
   logger: FastifyBaseLogger,
   data: InviteUserRequest
 ) {
-  const targetUser = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
+  const targetUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (!targetUser) {
-    throw new Error("Usuário não encontrado. Crie um novo administrador.");
+    throw new NotFoundError("Usuário");
   }
 
-  const existingLink = await prisma.userCondominium.findFirst({
-    where: {
-      userId: targetUser.id,
-      condominiumId: data.condominiumId,
-    },
-  });
+  const existingLink = await usersRepository.findUserCondominiumLink(
+    prisma,
+    targetUser.id,
+    data.condominiumId
+  );
   if (existingLink) {
-    throw new Error("Este usuário já está vinculado ao condomínio");
+    throw new ConflictError("Este usuário já está vinculado ao condomínio");
   }
 
-  await prisma.userCondominium.create({
-    data: {
-      userId: targetUser.id,
-      condominiumId: data.condominiumId,
-      role: data.role,
-    },
+  await usersRepository.createUserCondominium(prisma, {
+    userId: targetUser.id,
+    condominiumId: data.condominiumId,
+    role: data.role,
   });
 
   logger.info(

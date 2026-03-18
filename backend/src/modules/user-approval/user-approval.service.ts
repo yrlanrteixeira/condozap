@@ -10,42 +10,14 @@ import type {
   RejectUserBody,
   ResidentType,
 } from "./user-approval.schema";
+import * as repo from "./user-approval.repository";
 
 export async function getCondominiumsList(prisma: PrismaClient) {
-  return prisma.condominium.findMany({
-    select: {
-      id: true,
-      name: true,
-      status: true,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+  return repo.findAllCondominiums(prisma);
 }
 
 export async function getPendingUsers(prisma: PrismaClient) {
-  return prisma.user.findMany({
-    where: {
-      status: "PENDING",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      requestedCondominiumId: true,
-      requestedTower: true,
-      requestedFloor: true,
-      requestedUnit: true,
-      requestedPhone: true,
-      consentWhatsapp: true,
-      consentDataProcessing: true,
-      createdAt: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  return repo.findPendingUsers(prisma);
 }
 
 export async function getPendingUsersByCondominium(
@@ -62,38 +34,17 @@ export async function getPendingUsersByCondominium(
   }
 
   if (currentUser.role !== "SUPER_ADMIN") {
-    const access = await prisma.userCondominium.findFirst({
-      where: {
-        userId: currentUser.id,
-        condominiumId,
-      },
-    });
+    const access = await repo.findUserCondominiumAccess(
+      prisma,
+      currentUser.id,
+      condominiumId
+    );
     if (!access) {
       throw new ForbiddenError("Você não tem acesso a este condomínio.");
     }
   }
 
-  return prisma.user.findMany({
-    where: {
-      status: "PENDING",
-      requestedCondominiumId: condominiumId,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      requestedTower: true,
-      requestedFloor: true,
-      requestedUnit: true,
-      requestedPhone: true,
-      consentWhatsapp: true,
-      consentDataProcessing: true,
-      createdAt: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  return repo.findPendingUsersByCondominium(prisma, condominiumId);
 }
 
 export async function approveUser(
@@ -101,19 +52,15 @@ export async function approveUser(
   approver: AuthUser,
   body: ApproveUserBody
 ) {
-  const pendingUser = await prisma.user.findFirst({
-    where: {
-      id: body.userId,
-      status: "PENDING",
-    },
-  });
+  const pendingUser = await repo.findPendingUserById(prisma, body.userId);
   if (!pendingUser) {
     throw new BadRequestError("Usuário não encontrado ou não está pendente.");
   }
 
-  const condominium = await prisma.condominium.findUnique({
-    where: { id: body.condominiumId },
-  });
+  const condominium = await repo.findCondominiumById(
+    prisma,
+    body.condominiumId
+  );
   if (!condominium) {
     throw new BadRequestError(
       "Condomínio não encontrado. Verifique o ID informado."
@@ -121,74 +68,60 @@ export async function approveUser(
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const approvedUser = await tx.user.update({
-      where: { id: body.userId },
-      data: {
-        status: "APPROVED",
-        approvedAt: new Date(),
-        approvedBy: approver.id,
-      },
+    const approvedUser = await repo.txUpdateUserStatus(tx, body.userId, {
+      status: "APPROVED",
+      approvedAt: new Date(),
+      approvedBy: approver.id,
     });
 
-    const existingResident = await tx.resident.findFirst({
-      where: {
-        condominiumId: body.condominiumId,
-        tower: body.tower,
-        floor: body.floor,
-        unit: body.unit,
-      },
-    });
+    const existingResident = await repo.txFindExistingResident(
+      tx,
+      body.condominiumId,
+      body.tower,
+      body.floor,
+      body.unit
+    );
 
     const phone = pendingUser.requestedPhone || "5500000000000";
 
     if (existingResident) {
-      await tx.resident.update({
-        where: { id: existingResident.id },
-        data: {
-          userId: body.userId,
-          name: approvedUser.name,
-          email: approvedUser.email,
-          phone: pendingUser.requestedPhone || existingResident.phone,
-          type: (body.type as ResidentType) || "OWNER",
-          consentWhatsapp: pendingUser.consentWhatsapp,
-          consentDataProcessing: pendingUser.consentDataProcessing,
-        },
+      await repo.txUpdateResident(tx, existingResident.id, {
+        userId: body.userId,
+        name: approvedUser.name,
+        email: approvedUser.email,
+        phone: pendingUser.requestedPhone || existingResident.phone,
+        type: (body.type as ResidentType) || "OWNER",
+        consentWhatsapp: pendingUser.consentWhatsapp,
+        consentDataProcessing: pendingUser.consentDataProcessing,
       });
     } else {
-      await tx.resident.create({
-        data: {
-          condominiumId: body.condominiumId,
-          userId: body.userId,
-          name: approvedUser.name,
-          email: approvedUser.email,
-          phone,
-          tower: body.tower,
-          floor: body.floor,
-          unit: body.unit,
-          type: (body.type as ResidentType) || "OWNER",
-          consentWhatsapp: pendingUser.consentWhatsapp,
-          consentDataProcessing: pendingUser.consentDataProcessing,
-        },
+      await repo.txCreateResident(tx, {
+        condominiumId: body.condominiumId,
+        userId: body.userId,
+        name: approvedUser.name,
+        email: approvedUser.email,
+        phone,
+        tower: body.tower,
+        floor: body.floor,
+        unit: body.unit,
+        type: (body.type as ResidentType) || "OWNER",
+        consentWhatsapp: pendingUser.consentWhatsapp,
+        consentDataProcessing: pendingUser.consentDataProcessing,
       });
     }
 
-    const existingLink = await tx.userCondominium.findUnique({
-      where: {
-        userId_condominiumId: {
-          userId: body.userId,
-          condominiumId: body.condominiumId,
-        },
-      },
-    });
+    const existingLink = await repo.txFindUserCondominiumLink(
+      tx,
+      body.userId,
+      body.condominiumId
+    );
 
     if (!existingLink) {
-      await tx.userCondominium.create({
-        data: {
-          userId: body.userId,
-          condominiumId: body.condominiumId,
-          role: "RESIDENT",
-        },
-      });
+      await repo.txCreateUserCondominiumLink(
+        tx,
+        body.userId,
+        body.condominiumId
+      );
     }
 
     return approvedUser;
@@ -202,12 +135,7 @@ export async function rejectUser(
   currentUser: AuthUser,
   body: RejectUserBody
 ) {
-  const pendingUser = await prisma.user.findFirst({
-    where: {
-      id: body.userId,
-      status: "PENDING",
-    },
-  });
+  const pendingUser = await repo.findPendingUserById(prisma, body.userId);
   if (!pendingUser) {
     throw new BadRequestError("Usuário não encontrado ou não está pendente.");
   }
@@ -224,12 +152,11 @@ export async function rejectUser(
     currentUser.role !== "SUPER_ADMIN" &&
     pendingUser.requestedCondominiumId
   ) {
-    const access = await prisma.userCondominium.findFirst({
-      where: {
-        userId: currentUser.id,
-        condominiumId: pendingUser.requestedCondominiumId,
-      },
-    });
+    const access = await repo.findUserCondominiumAccess(
+      prisma,
+      currentUser.id,
+      pendingUser.requestedCondominiumId
+    );
     if (!access) {
       throw new ForbiddenError(
         "Você não tem permissão para rejeitar usuários deste condomínio."
@@ -237,31 +164,15 @@ export async function rejectUser(
     }
   }
 
-  return prisma.user.update({
-    where: { id: body.userId },
-    data: {
-      status: "REJECTED",
-      rejectionReason: body.reason,
-      approvedBy: currentUser.id,
-    },
+  return repo.updateUser(prisma, body.userId, {
+    status: "REJECTED",
+    rejectionReason: body.reason,
+    approvedBy: currentUser.id,
   });
 }
 
 export async function getMyStatus(prisma: PrismaClient, userId: string) {
-  const status = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      status: true,
-      approvedAt: true,
-      rejectionReason: true,
-      requestedTower: true,
-      requestedFloor: true,
-      requestedUnit: true,
-    },
-  });
+  const status = await repo.findUserStatus(prisma, userId);
   if (!status) {
     throw new NotFoundError("Usuário");
   }
