@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { findActiveByCondominiumId } from "./announcements.repository";
 
 /**
  * List announcements active in the current week (or overlapping with now) for a condominium.
@@ -9,14 +10,7 @@ export async function findActiveByCondominium(
   condominiumId: string
 ) {
   const now = new Date();
-  const announcements = await prisma.announcement.findMany({
-    where: {
-      condominiumId,
-      startsAt: { lte: now },
-      endsAt: { gte: now },
-    },
-    orderBy: { startsAt: "desc" },
-  });
+  const announcements = await findActiveByCondominiumId(prisma, condominiumId, now);
 
   return announcements.map((a) => ({
     id: a.id,

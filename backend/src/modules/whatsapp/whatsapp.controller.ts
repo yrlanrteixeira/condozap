@@ -11,7 +11,11 @@ import {
   type WebhookVerifyQuery,
   type WhatsAppWebhookBody,
 } from "./whatsapp.schema";
-import { updateMessageStatuses, whatsappService } from "./whatsapp.service";
+import {
+  sendAndRecordMessage,
+  sendBulkAndRecordMessages,
+  updateMessageStatuses,
+} from "./whatsapp.service";
 
 export const verifyWebhookHandler = async (
   request: FastifyRequest,
@@ -46,24 +50,16 @@ export const sendWhatsAppHandler = async (
   reply: FastifyReply
 ) => {
   const body = sendWhatsAppSchema.parse(request.body) as SendWhatsAppBody;
+  const userId = (request.user as any).id;
 
   try {
-    const result = await whatsappService.sendTextMessage(body.to, body.message);
-
-    await prisma.message.create({
-      data: {
-        condominiumId: body.condominiumId,
-        type: "TEXT",
-        scope: "UNIT",
-        content: body.message,
-        recipientCount: 1,
-        sentBy: (request.user as any).id,
-        whatsappStatus: "SENT",
-        whatsappMessageId: result.messageId,
-      },
-    });
-
-    return reply.send({ success: true, messageId: result.messageId });
+    const result = await sendAndRecordMessage(
+      prisma,
+      request.log,
+      body,
+      userId
+    );
+    return reply.send(result);
   } catch (error: any) {
     request.log.error({ error }, "Failed to send WhatsApp message");
     return reply.status(500).send({ error: error.message });
@@ -75,35 +71,16 @@ export const sendBulkWhatsAppHandler = async (
   reply: FastifyReply
 ) => {
   const body = sendBulkWhatsAppSchema.parse(request.body) as SendBulkWhatsAppBody;
+  const userId = (request.user as any).id;
 
   try {
-    const result = await whatsappService.sendBulkMessages({
-      recipients: body.recipients.map((r) => ({
-        phone: r.phone,
-        name: r.name || "",
-      })),
-      message: body.message,
-    });
-
-    await prisma.message.create({
-      data: {
-        condominiumId: body.condominiumId,
-        type: "TEXT",
-        scope: "ALL",
-        content: body.message,
-        recipientCount: result.total,
-        sentBy: (request.user as any).id,
-        whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
-      },
-    });
-
-    return reply.send({
-      success: true,
-      total: result.total,
-      sent: result.sent,
-      failed: result.failed,
-      results: result.results,
-    });
+    const result = await sendBulkAndRecordMessages(
+      prisma,
+      request.log,
+      body,
+      userId
+    );
+    return reply.send(result);
   } catch (error: any) {
     request.log.error({ error }, "Failed to send bulk WhatsApp messages");
     return reply.status(500).send({ error: error.message });

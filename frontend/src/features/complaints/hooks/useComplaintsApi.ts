@@ -2,10 +2,17 @@
  * Complaints Feature - API Hooks
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { queryKeys } from "../utils/queryKeys";
-import { ComplaintSchema, ComplaintDetailSchema } from "../schemas";
+import { useMutation } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import {
+  createQuery,
+  createMutationWithInvalidation,
+  fetchList,
+  fetchOne,
+  postAndParse,
+} from '@/shared/hooks/useApiFactory';
+import { queryKeys } from '../utils/queryKeys';
+import { ComplaintSchema, ComplaintDetailSchema } from '../schemas';
 import type {
   Complaint,
   ComplaintDetail,
@@ -13,302 +20,205 @@ import type {
   UpdateComplaintInput,
   ComplaintFilters,
   ComplaintStatus,
-} from "../types";
+} from '../types';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Standard invalidation for mutations that return a complaint with an id */
+const invalidateListAndDetail = (data: Complaint) =>
+  data?.id
+    ? [queryKeys.lists(), queryKeys.detail(data.id)]
+    : [queryKeys.lists()];
 
 // =====================================================
 // Query: Fetch Complaints
 // =====================================================
 
-export function useComplaints(
-  condominiumId: string,
-  filters?: ComplaintFilters
-) {
-  const endpoint = `/complaints/${condominiumId}`;
-
-  return useQuery({
-    queryKey: queryKeys.list(condominiumId, filters),
-    queryFn: async () => {
-      const { data } = await api.get(endpoint, { params: filters });
-      return data.map((complaint: Complaint) =>
-        ComplaintSchema.parse(complaint)
-      );
-    },
-    enabled: !!condominiumId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-  });
-}
+export const useComplaints = createQuery({
+  queryKey: (condominiumId: string, filters?: ComplaintFilters) =>
+    queryKeys.list(condominiumId, filters),
+  queryFn: (condominiumId: string, filters?: ComplaintFilters) =>
+    fetchList(`/complaints/${condominiumId}`, ComplaintSchema, filters as Record<string, unknown>),
+  enabled: (condominiumId: string) => !!condominiumId,
+  staleTime: 1000 * 60 * 2,
+});
 
 // =====================================================
 // Query: Fetch Single Complaint
 // =====================================================
 
-export function useComplaint(complaintId: number) {
-  return useQuery({
-    queryKey: queryKeys.detail(complaintId),
-    queryFn: async (): Promise<ComplaintDetail> => {
-      const { data } = await api.get(`/complaints/detail/${complaintId}`);
-      return ComplaintDetailSchema.parse(data) as ComplaintDetail;
-    },
-    enabled: complaintId > 0,
-  });
-}
+export const useComplaint = createQuery({
+  queryKey: (complaintId: number) => queryKeys.detail(complaintId),
+  queryFn: async (complaintId: number): Promise<ComplaintDetail> => {
+    const { data } = await api.get(`/complaints/detail/${complaintId}`);
+    return ComplaintDetailSchema.parse(data) as ComplaintDetail;
+  },
+  enabled: (complaintId: number) => complaintId > 0,
+});
 
 // =====================================================
 // Mutation: Create Complaint
 // =====================================================
 
-export function useCreateComplaint() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: CreateComplaintInput) => {
-      const { data } = await api.post("/complaints", input);
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.lists(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      });
-    },
-  });
-}
+export const useCreateComplaint = createMutationWithInvalidation<
+  CreateComplaintInput,
+  Complaint
+>({
+  mutationFn: (input) => postAndParse('/complaints', input, ComplaintSchema),
+  invalidateKeys: (_, variables) => [
+    queryKeys.lists(),
+    queryKeys.list(variables.condominiumId),
+  ],
+});
 
 // =====================================================
 // Mutation: Update Complaint
 // =====================================================
 
-export function useUpdateComplaint() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateComplaintInput) => {
-      const { data } = await api.put(`/complaints/${id}`, input);
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.lists(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.detail(data.id),
-        });
-      }
-    },
-  });
-}
+export const useUpdateComplaint = createMutationWithInvalidation<
+  UpdateComplaintInput,
+  Complaint
+>({
+  mutationFn: async ({ id, ...input }) => {
+    const { data } = await api.put(`/complaints/${id}`, input);
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
-// Mutation: Update Complaint Status (com notificação WhatsApp)
+// Mutation: Update Complaint Status (com notificacao WhatsApp)
 // =====================================================
 
-export function useUpdateComplaintStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      notes,
-    }: {
-      id: number;
-      status: ComplaintStatus;
-      notes?: string;
-    }) => {
-      const { data } = await api.patch(`/complaints/${id}/status`, {
-        status,
-        notes,
-      });
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
-      }
-    },
-  });
-}
+export const useUpdateComplaintStatus = createMutationWithInvalidation<
+  { id: number; status: ComplaintStatus; notes?: string },
+  Complaint
+>({
+  mutationFn: async ({ id, status, notes }) => {
+    const { data } = await api.patch(`/complaints/${id}/status`, { status, notes });
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
-// Mutation: Update Complaint Priority (com notificação WhatsApp)
+// Mutation: Update Complaint Priority (com notificacao WhatsApp)
 // =====================================================
 
-export function useUpdateComplaintPriority() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      priority,
-    }: {
-      id: number;
-      priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-    }) => {
-      const { data } = await api.patch(`/complaints/${id}/priority`, {
-        priority,
-      });
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
-      }
-    },
-  });
-}
+export const useUpdateComplaintPriority = createMutationWithInvalidation<
+  { id: number; priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' },
+  Complaint
+>({
+  mutationFn: async ({ id, priority }) => {
+    const { data } = await api.patch(`/complaints/${id}/priority`, { priority });
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
-// Mutation: Add Comment to Complaint (com notificação WhatsApp)
+// Mutation: Add Comment to Complaint (com notificacao WhatsApp)
 // =====================================================
 
-export function useAddComplaintComment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
-      const { data } = await api.post(`/complaints/${id}/comment`, { notes });
-      return data;
-    },
-    onSuccess: (_, variables) => {
-      // Invalida as queries para recarregar os dados atualizados
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.detail(variables.id),
-      });
-    },
-  });
-}
+export const useAddComplaintComment = createMutationWithInvalidation<
+  { id: number; notes: string },
+  unknown
+>({
+  mutationFn: async ({ id, notes }) => {
+    const { data } = await api.post(`/complaints/${id}/comment`, { notes });
+    return data;
+  },
+  invalidateKeys: (_, variables) => [
+    queryKeys.lists(),
+    queryKeys.detail(variables.id),
+  ],
+});
 
 // =====================================================
 // Mutation: Assign Complaint to Sector/Assignee
 // =====================================================
 
-export function useAssignComplaint() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
+export const useAssignComplaint = createMutationWithInvalidation<
+  { id: number; sectorId: string; assigneeId?: string; reason?: string },
+  Complaint
+>({
+  mutationFn: async ({ id, sectorId, assigneeId, reason }) => {
+    const { data } = await api.post(`/complaints/${id}/assign`, {
       sectorId,
       assigneeId,
       reason,
-    }: {
-      id: number;
-      sectorId: string;
-      assigneeId?: string;
-      reason?: string;
-    }) => {
-      const { data } = await api.post(`/complaints/${id}/assign`, {
-        sectorId,
-        assigneeId,
-        reason,
-      });
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
-      }
-    },
-  });
-}
+    });
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
 // Mutation: Pause SLA
 // =====================================================
 
-export function usePauseComplaintSla() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
+export const usePauseComplaintSla = createMutationWithInvalidation<
+  {
+    id: number;
+    status: 'WAITING_USER' | 'WAITING_THIRD_PARTY';
+    reason: string;
+    pausedUntil?: string;
+  },
+  Complaint
+>({
+  mutationFn: async ({ id, status, reason, pausedUntil }) => {
+    const { data } = await api.post(`/complaints/${id}/pause`, {
       status,
       reason,
       pausedUntil,
-    }: {
-      id: number;
-      status: "WAITING_USER" | "WAITING_THIRD_PARTY";
-      reason: string;
-      pausedUntil?: string;
-    }) => {
-      const { data } = await api.post(`/complaints/${id}/pause`, {
-        status,
-        reason,
-        pausedUntil,
-      });
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
-      }
-    },
-  });
-}
+    });
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
 // Mutation: Resume SLA
 // =====================================================
 
-export function useResumeComplaintSla() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
-      const { data } = await api.post(`/complaints/${id}/resume`, { notes });
-      return ComplaintSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: queryKeys.detail(data.id) });
-      }
-    },
-  });
-}
+export const useResumeComplaintSla = createMutationWithInvalidation<
+  { id: number; notes?: string },
+  Complaint
+>({
+  mutationFn: async ({ id, notes }) => {
+    const { data } = await api.post(`/complaints/${id}/resume`, { notes });
+    return ComplaintSchema.parse(data);
+  },
+  invalidateKeys: invalidateListAndDetail,
+});
 
 // =====================================================
 // Mutation: Add Attachment
 // =====================================================
 
-export function useAddComplaintAttachment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
+export const useAddComplaintAttachment = createMutationWithInvalidation<
+  {
+    id: number;
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  },
+  unknown
+>({
+  mutationFn: async ({ id, fileUrl, fileName, fileType, fileSize }) => {
+    const { data } = await api.post(`/complaints/${id}/attachments`, {
       fileUrl,
       fileName,
       fileType,
       fileSize,
-    }: {
-      id: number;
-      fileUrl: string;
-      fileName: string;
-      fileType: string;
-      fileSize: number;
-    }) => {
-      const { data } = await api.post(`/complaints/${id}/attachments`, {
-        fileUrl,
-        fileName,
-        fileType,
-        fileSize,
-      });
-      return data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.detail(variables.id) });
-    },
-  });
-}
+    });
+    return data;
+  },
+  invalidateKeys: (_, variables) => [queryKeys.detail(variables.id)],
+});
 
 // =====================================================
 // Mutation: Run SLA Scan (admin)
@@ -317,7 +227,7 @@ export function useAddComplaintAttachment() {
 export function useRunSlaScan() {
   return useMutation({
     mutationFn: async () => {
-      const { data } = await api.post("/complaints/sla/scan");
+      const { data } = await api.post('/complaints/sla/scan');
       return data;
     },
   });
@@ -327,34 +237,24 @@ export function useRunSlaScan() {
 // Mutation: Delete Complaint
 // =====================================================
 
-export function useDeleteComplaint() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (complaintId: number) => {
-      await api.delete(`/complaints/${complaintId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.lists(),
-      });
-    },
-  });
-}
+export const useDeleteComplaint = createMutationWithInvalidation<number, void>({
+  mutationFn: async (complaintId) => {
+    await api.delete(`/complaints/${complaintId}`);
+  },
+  invalidateKeys: () => [queryKeys.lists()],
+});
 
 // =====================================================
 // Query: Get Complaint Statistics
 // =====================================================
 
-export function useComplaintStats(condominiumId: string) {
-  return useQuery({
-    queryKey: queryKeys.stats(condominiumId),
-    queryFn: async () => {
-      const { data } = await api.get("/complaints/stats", {
-        params: { condominiumId },
-      });
-      return data;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-}
+export const useComplaintStats = createQuery({
+  queryKey: (condominiumId: string) => queryKeys.stats(condominiumId),
+  queryFn: async (condominiumId: string) => {
+    const { data } = await api.get('/complaints/stats', {
+      params: { condominiumId },
+    });
+    return data;
+  },
+  staleTime: 1000 * 60 * 5,
+});

@@ -18,6 +18,7 @@ import {
   getResidentsByCondominium,
   importResidents,
   updateResident,
+  updateResidentConsent,
 } from "./residents.service";
 import {
   findResidentByIdForUser,
@@ -119,13 +120,7 @@ export async function updateResidentConsentHandler(
   const { id } = residentIdParamSchema.parse(request.params);
   const body = updateConsentSchema.parse(request.body);
 
-  const updateData: Record<string, boolean> = {};
-  if (body.consent_whatsapp !== undefined) updateData.consentWhatsapp = body.consent_whatsapp;
-  if (body.consent_data_processing !== undefined) updateData.consentDataProcessing = body.consent_data_processing;
-  if (body.consentWhatsapp !== undefined) updateData.consentWhatsapp = body.consentWhatsapp;
-  if (body.consentDataProcessing !== undefined) updateData.consentDataProcessing = body.consentDataProcessing;
-
-  const updated = await updateResident(prisma, request.log, id, updateData);
+  const updated = await updateResidentConsent(prisma, request.log, id, body);
   return reply.send(updated);
 }
 

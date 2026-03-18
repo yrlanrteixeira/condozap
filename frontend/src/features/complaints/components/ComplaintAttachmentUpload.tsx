@@ -12,8 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/components/ui/dialog";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatRelativeTime } from "@/shared/utils/date";
 
 interface ComplaintAttachment {
   id: string;
@@ -125,10 +124,7 @@ export function ComplaintAttachmentUpload({
                     <span>{formatFileSize(attachment.fileSize)}</span>
                     <span>•</span>
                     <span>
-                      {formatDistanceToNow(new Date(attachment.uploadedAt), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
+                      {formatRelativeTime(attachment.uploadedAt)}
                     </span>
                   </div>
                 </div>
