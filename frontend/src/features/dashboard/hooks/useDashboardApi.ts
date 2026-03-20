@@ -2,45 +2,42 @@
  * Dashboard Feature - API Hooks
  */
 
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { queryKeys } from '../utils/queryKeys'
-import type { DashboardMetrics, UnifiedDashboardMetrics } from '../types'
+import { api } from '@/lib/api';
+import { createQuery } from '@/shared/hooks/useApiFactory';
+import { queryKeys } from '../utils/queryKeys';
+import type { DashboardMetrics, UnifiedDashboardMetrics } from '../types';
 
 // =====================================================
 // Query: Fetch Dashboard Metrics
 // =====================================================
 
-export function useDashboardMetrics(condominiumId: string | 'all') {
-  return useQuery({
-    queryKey: queryKeys.metrics(condominiumId),
-    queryFn: async (): Promise<DashboardMetrics> => {
-      const url = condominiumId === 'all' ? '/dashboard/metrics/all' : `/dashboard/metrics/${condominiumId}`;
-      const { data } = await api.get(url)
-      return data
-    },
-    enabled: !!condominiumId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchInterval: 1000 * 60 * 5, // Auto-refresh every 5 minutes
-  })
-}
+export const useDashboardMetrics = createQuery({
+  queryKey: (condominiumId: string | 'all') => queryKeys.metrics(condominiumId),
+  queryFn: async (condominiumId: string | 'all'): Promise<DashboardMetrics> => {
+    const url =
+      condominiumId === 'all'
+        ? '/dashboard/metrics/all'
+        : `/dashboard/metrics/${condominiumId}`;
+    const { data } = await api.get(url);
+    return data;
+  },
+  enabled: (condominiumId: string | 'all') => !!condominiumId,
+  staleTime: 1000 * 60 * 5,
+  refetchInterval: 1000 * 60 * 5,
+});
 
 // =====================================================
 // Query: Professional Syndic Unified Dashboard
 // =====================================================
 
-export function useUnifiedDashboard(condominiumIds: string[]) {
-  return useQuery({
-    queryKey: queryKeys.unified(condominiumIds),
-    queryFn: async (): Promise<UnifiedDashboardMetrics> => {
-      const { data } = await api.get('/dashboard/unified', {
-        params: { condominiumIds: condominiumIds.join(',') }
-      })
-      return data
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: condominiumIds.length > 0,
-  })
-}
-
-
+export const useUnifiedDashboard = createQuery({
+  queryKey: (condominiumIds: string[]) => queryKeys.unified(condominiumIds),
+  queryFn: async (condominiumIds: string[]): Promise<UnifiedDashboardMetrics> => {
+    const { data } = await api.get('/dashboard/unified', {
+      params: { condominiumIds: condominiumIds.join(',') },
+    });
+    return data;
+  },
+  staleTime: 1000 * 60 * 5,
+  enabled: (condominiumIds: string[]) => condominiumIds.length > 0,
+});

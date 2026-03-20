@@ -4,6 +4,7 @@ import { ConflictError, NotFoundError } from "../../shared/errors";
 import type {
   CreateResidentRequest,
   ResidentFilters,
+  UpdateConsentRequest,
   UpdateResidentRequest,
   ResidentType,
 } from "./residents.schema";
@@ -127,6 +128,21 @@ export async function deleteResident(
   });
 
   logger.info(`Resident ${id} deleted`);
+}
+
+export async function updateResidentConsent(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  id: string,
+  body: UpdateConsentRequest
+) {
+  const updateData: Record<string, boolean> = {};
+  if (body.consent_whatsapp !== undefined) updateData.consentWhatsapp = body.consent_whatsapp;
+  if (body.consent_data_processing !== undefined) updateData.consentDataProcessing = body.consent_data_processing;
+  if (body.consentWhatsapp !== undefined) updateData.consentWhatsapp = body.consentWhatsapp;
+  if (body.consentDataProcessing !== undefined) updateData.consentDataProcessing = body.consentDataProcessing;
+
+  return updateResident(prisma, logger, id, updateData);
 }
 
 export async function getResidentById(prisma: PrismaClient, id: string) {

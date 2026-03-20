@@ -2,10 +2,15 @@
  * Messages Feature - API Hooks
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { queryKeys } from '../utils/queryKeys'
-import { MessageSchema } from '../schemas'
+import { api } from '@/lib/api';
+import {
+  createQuery,
+  createMutationWithInvalidation,
+  fetchList,
+  fetchOne,
+} from '@/shared/hooks/useApiFactory';
+import { queryKeys } from '../utils/queryKeys';
+import { MessageSchema } from '../schemas';
 import type {
   Message,
   SendMessageInput,
@@ -13,127 +18,96 @@ import type {
   SendBulkMessagesInput,
   MessageFilters,
   MessageStatsPeriod,
-} from '../types'
+} from '../types';
 
 // =====================================================
 // Query: Fetch Messages History
 // =====================================================
 
-export function useMessages(condominiumId: string, filters?: MessageFilters) {
-  return useQuery({
-    queryKey: queryKeys.list(condominiumId, filters),
-    queryFn: async () => {
-      const { data } = await api.get(`/messages/${condominiumId}`, {
-        params: filters,
-      })
-      return data.map((message: Message) => MessageSchema.parse(message))
-    },
-    staleTime: 1000 * 60 * 2, // 2 minutes
-  })
-}
+export const useMessages = createQuery({
+  queryKey: (condominiumId: string, filters?: MessageFilters) =>
+    queryKeys.list(condominiumId, filters),
+  queryFn: (condominiumId: string, filters?: MessageFilters) =>
+    fetchList(`/messages/${condominiumId}`, MessageSchema, filters as Record<string, unknown>),
+  staleTime: 1000 * 60 * 2,
+});
 
 // =====================================================
 // Query: Fetch Single Message
 // =====================================================
 
-export function useMessage(messageId: string) {
-  return useQuery({
-    queryKey: queryKeys.detail(messageId),
-    queryFn: async () => {
-      const { data } = await api.get(`/messages/detail/${messageId}`)
-      return MessageSchema.parse(data)
-    },
-    enabled: !!messageId,
-  })
-}
+export const useMessage = createQuery({
+  queryKey: (messageId: string) => queryKeys.detail(messageId),
+  queryFn: (messageId: string) =>
+    fetchOne(`/messages/detail/${messageId}`, MessageSchema),
+  enabled: (messageId: string) => !!messageId,
+});
 
 // =====================================================
 // Mutation: Send Single WhatsApp Message
 // =====================================================
 
-export function useSendWhatsAppMessage() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({
+export const useSendWhatsAppMessage = createMutationWithInvalidation<
+  SendWhatsAppMessageInput,
+  unknown
+>({
+  mutationFn: async ({ to, message, condominiumId }) => {
+    const { data } = await api.post('/whatsapp/send', {
       to,
       message,
+      type: 'text',
       condominiumId,
-    }: SendWhatsAppMessageInput) => {
-      const { data } = await api.post('/whatsapp/send', {
-        to,
-        message,
-        type: 'text',
-        condominiumId,
-      })
-      return data
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      })
-    },
-  })
-}
+    });
+    return data;
+  },
+  invalidateKeys: (_, variables) => [queryKeys.list(variables.condominiumId)],
+});
 
 // =====================================================
 // Mutation: Send Bulk Messages
 // =====================================================
 
-export function useSendBulkMessages() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (input: SendBulkMessagesInput) => {
-      const { data } = await api.post('/whatsapp/send-bulk', {
-        condominiumId: input.condominiumId,
-        recipients: input.recipients,
-        message: input.message,
-      })
-      return data
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      })
-    },
-  })
-}
+export const useSendBulkMessages = createMutationWithInvalidation<
+  SendBulkMessagesInput,
+  unknown
+>({
+  mutationFn: async (input) => {
+    const { data } = await api.post('/whatsapp/send-bulk', {
+      condominiumId: input.condominiumId,
+      recipients: input.recipients,
+      message: input.message,
+    });
+    return data;
+  },
+  invalidateKeys: (_, variables) => [queryKeys.list(variables.condominiumId)],
+});
 
 // =====================================================
 // Mutation: Send Message with Targeting
 // =====================================================
 
-export function useSendMessage() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (input: SendMessageInput) => {
-      const { data } = await api.post('/messages/send', input)
-      return data
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      })
-    },
-  })
-}
+export const useSendMessage = createMutationWithInvalidation<
+  SendMessageInput,
+  unknown
+>({
+  mutationFn: async (input) => {
+    const { data } = await api.post('/messages/send', input);
+    return data;
+  },
+  invalidateKeys: (_, variables) => [queryKeys.list(variables.condominiumId)],
+});
 
 // =====================================================
 // Query: Get Message Statistics
 // =====================================================
 
-export function useMessageStats(condominiumId: string, period?: MessageStatsPeriod) {
-  return useQuery({
-    queryKey: queryKeys.stats(condominiumId, period),
-    queryFn: async () => {
-      const { data } = await api.get('/messages/stats', {
-        params: { condominiumId, ...period }
-      })
-      return data
-    },
-  })
-}
-
-
+export const useMessageStats = createQuery({
+  queryKey: (condominiumId: string, period?: MessageStatsPeriod) =>
+    queryKeys.stats(condominiumId, period),
+  queryFn: async (condominiumId: string, period?: MessageStatsPeriod) => {
+    const { data } = await api.get('/messages/stats', {
+      params: { condominiumId, ...period },
+    });
+    return data;
+  },
+});

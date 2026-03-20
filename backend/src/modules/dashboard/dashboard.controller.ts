@@ -8,11 +8,10 @@ import {
 } from "./dashboard.schema";
 import {
   buildMetrics,
-  buildUnifiedDashboard,
-  findComplaintsByCondominiumIds,
-  findCondominiumsByIds,
   getAllMetricsData,
   getCondominiumMetricsData,
+  getUnifiedDashboard,
+  parseCondominiumIds,
 } from "./dashboard.service";
 import { AuthUser } from "../../types/auth";
 import { isCondominiumAllowed, resolveAccessContext } from "../../auth/context";
@@ -67,10 +66,7 @@ export async function getUnifiedDashboardHandler(
     permissionScope: user.permissionScope as any,
   });
 
-  const condoIds = condominiumIds
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id !== "");
+  const condoIds = parseCondominiumIds(condominiumIds);
 
   if (condoIds.length === 0) {
     return reply.status(400).send({
@@ -88,25 +84,6 @@ export async function getUnifiedDashboardHandler(
       .send({ error: "Acesso negado aos condomínios solicitados" });
   }
 
-  const condominiums = await findCondominiumsByIds(prisma, filteredCondoIds);
-
-  if (condominiums.length === 0) {
-    return reply.send({
-      totalCondos: 0,
-      totalComplaints: 0,
-      criticalComplaints: 0,
-      openComplaints: 0,
-      inProgressComplaints: 0,
-      urgentFeed: [],
-      complaintsByCondo: [],
-    });
-  }
-
-  const complaints = await findComplaintsByCondominiumIds(
-    prisma,
-    filteredCondoIds
-  );
-
-  const dashboard = buildUnifiedDashboard(condominiums, complaints);
+  const dashboard = await getUnifiedDashboard(prisma, filteredCondoIds);
   return reply.send(dashboard);
 }

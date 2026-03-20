@@ -2,10 +2,17 @@
  * Residents Feature - API Hooks
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { queryKeys } from "../utils/queryKeys";
-import { ResidentSchema } from "../schemas";
+import { api } from '@/lib/api';
+import {
+  createQuery,
+  createMutationWithInvalidation,
+  fetchList,
+  fetchOne,
+  postAndParse,
+  patchAndParse,
+} from '@/shared/hooks/useApiFactory';
+import { queryKeys } from '../utils/queryKeys';
+import { ResidentSchema } from '../schemas';
 import type {
   Resident,
   CreateResidentInput,
@@ -13,193 +20,132 @@ import type {
   ImportResidentsInput,
   UpdateConsentInput,
   ResidentFilters,
-} from "../types";
+} from '../types';
 
 // =====================================================
 // Query: Fetch Residents
 // =====================================================
 
-export function useResidents(
-  condominiumId: string | "all",
-  filters?: ResidentFilters
-) {
-  return useQuery({
-    queryKey: queryKeys.list(condominiumId, filters),
-    queryFn: async () => {
-      const url =
-        condominiumId === "all"
-          ? "/residents/all"
-          : `/residents/${condominiumId}`;
-      const { data } = await api.get(url, {
-        params: filters, // Filters as query params (tower, floor, type, search)
-      });
-      return data.map((resident: Resident) => ResidentSchema.parse(resident));
-    },
-    enabled: !!condominiumId, // Only fetch when condominiumId is provided
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-}
+export const useResidents = createQuery({
+  queryKey: (condominiumId: string | 'all', filters?: ResidentFilters) =>
+    queryKeys.list(condominiumId, filters),
+  queryFn: (condominiumId: string | 'all', filters?: ResidentFilters) => {
+    const url =
+      condominiumId === 'all' ? '/residents/all' : `/residents/${condominiumId}`;
+    return fetchList(url, ResidentSchema, filters as Record<string, unknown>);
+  },
+  enabled: (condominiumId: string | 'all') => !!condominiumId,
+  staleTime: 1000 * 60 * 5,
+});
 
 // =====================================================
 // Query: Fetch Single Resident
 // =====================================================
 
-export function useResident(residentId: string) {
-  return useQuery({
-    queryKey: queryKeys.detail(residentId),
-    queryFn: async () => {
-      const { data } = await api.get(`/residents/detail/${residentId}`);
-      return ResidentSchema.parse(data);
-    },
-    enabled: !!residentId,
-  });
-}
+export const useResident = createQuery({
+  queryKey: (residentId: string) => queryKeys.detail(residentId),
+  queryFn: (residentId: string) =>
+    fetchOne(`/residents/detail/${residentId}`, ResidentSchema),
+  enabled: (residentId: string) => !!residentId,
+});
 
 // =====================================================
 // Query: Get Towers (Unique)
 // =====================================================
 
-export function useTowers(condominiumId: string) {
-  return useQuery<string[]>({
-    queryKey: queryKeys.towers(condominiumId),
-    queryFn: async () => {
-      // TODO: Backend doesn't have this endpoint yet
-      // Get unique towers from residents
-      const { data } = await api.get(`/residents/${condominiumId}`);
-      const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
-      return uniqueTowers.sort() as string[];
-    },
-    enabled: !!condominiumId,
-  });
-}
+export const useTowers = createQuery({
+  queryKey: (condominiumId: string) => queryKeys.towers(condominiumId),
+  queryFn: async (condominiumId: string): Promise<string[]> => {
+    // TODO: Backend doesn't have this endpoint yet
+    // Get unique towers from residents
+    const { data } = await api.get(`/residents/${condominiumId}`);
+    const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
+    return uniqueTowers.sort() as string[];
+  },
+  enabled: (condominiumId: string) => !!condominiumId,
+});
 
 // =====================================================
 // Mutation: Create Resident
 // =====================================================
 
-export function useCreateResident() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: CreateResidentInput) => {
-      const { data } = await api.post("/residents", input);
-      return ResidentSchema.parse(data);
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.lists(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      });
-    },
-  });
-}
+export const useCreateResident = createMutationWithInvalidation<
+  CreateResidentInput,
+  Resident
+>({
+  mutationFn: (input) => postAndParse('/residents', input, ResidentSchema),
+  invalidateKeys: (_, variables) => [
+    queryKeys.lists(),
+    queryKeys.list(variables.condominiumId),
+  ],
+});
 
 // =====================================================
 // Mutation: Update Resident
 // =====================================================
 
-export function useUpdateResident() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateResidentInput) => {
-      const { data } = await api.patch(`/residents/${id}`, input);
-      return ResidentSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.lists(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.detail(data.id),
-        });
-      }
-    },
-  });
-}
+export const useUpdateResident = createMutationWithInvalidation<
+  UpdateResidentInput,
+  Resident
+>({
+  mutationFn: ({ id, ...input }) =>
+    patchAndParse(`/residents/${id}`, input, ResidentSchema),
+  invalidateKeys: (data) =>
+    data?.id
+      ? [queryKeys.lists(), queryKeys.detail(data.id)]
+      : [queryKeys.lists()],
+});
 
 // =====================================================
 // Mutation: Delete Resident
 // =====================================================
 
-export function useDeleteResident() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (residentId: string) => {
-      await api.delete(`/residents/${residentId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.lists(),
-      });
-    },
-  });
-}
+export const useDeleteResident = createMutationWithInvalidation<string, void>({
+  mutationFn: async (residentId) => {
+    await api.delete(`/residents/${residentId}`);
+  },
+  invalidateKeys: () => [queryKeys.lists()],
+});
 
 // =====================================================
 // Mutation: Import Residents (Bulk)
 // =====================================================
 
-export function useImportResidents() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: ImportResidentsInput) => {
-      // TODO: Backend doesn't have this endpoint yet
-      // For now, create residents one by one
-      console.warn("Bulk import not implemented yet - creating individually");
-      const { data } = await api.post("/residents/import", input);
-      return data.map((resident: Resident) => ResidentSchema.parse(resident));
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.lists(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.list(variables.condominiumId),
-      });
-    },
-  });
-}
+export const useImportResidents = createMutationWithInvalidation<
+  ImportResidentsInput,
+  Resident[]
+>({
+  mutationFn: async (input) => {
+    // TODO: Backend doesn't have this endpoint yet
+    // For now, create residents one by one
+    console.warn('Bulk import not implemented yet - creating individually');
+    const { data } = await api.post('/residents/import', input);
+    return data.map((resident: Resident) => ResidentSchema.parse(resident));
+  },
+  invalidateKeys: (_, variables) => [
+    queryKeys.lists(),
+    queryKeys.list(variables.condominiumId),
+  ],
+});
 
 // =====================================================
 // Mutation: Update Consent
 // =====================================================
 
-export function useUpdateConsent() {
-  const queryClient = useQueryClient();
+export const useUpdateConsent = createMutationWithInvalidation<
+  UpdateConsentInput,
+  Resident
+>({
+  mutationFn: async ({ residentId, consentWhatsapp, consentDataProcessing }) => {
+    const updates: Record<string, boolean> = {};
+    if (consentWhatsapp !== undefined) updates.consent_whatsapp = consentWhatsapp;
+    if (consentDataProcessing !== undefined)
+      updates.consent_data_processing = consentDataProcessing;
 
-  return useMutation({
-    mutationFn: async ({
-      residentId,
-      consentWhatsapp,
-      consentDataProcessing,
-    }: UpdateConsentInput) => {
-      const updates: Record<string, boolean> = {};
-      if (consentWhatsapp !== undefined)
-        updates.consent_whatsapp = consentWhatsapp;
-      if (consentDataProcessing !== undefined)
-        updates.consent_data_processing = consentDataProcessing;
-
-      const { data } = await api.patch(
-        `/residents/${residentId}/consent`,
-        updates
-      );
-      return ResidentSchema.parse(data);
-    },
-    onSuccess: (data) => {
-      if (data?.id) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.lists(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.detail(data.id),
-        });
-      }
-    },
-  });
-}
+    return patchAndParse(`/residents/${residentId}/consent`, updates, ResidentSchema);
+  },
+  invalidateKeys: (data) =>
+    data?.id
+      ? [queryKeys.lists(), queryKeys.detail(data.id)]
+      : [queryKeys.lists()],
+});

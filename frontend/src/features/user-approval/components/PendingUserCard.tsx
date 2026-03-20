@@ -38,8 +38,7 @@ import {
   MessageCircle,
   Shield,
 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateLong } from "@/shared/utils/date";
 import type { PendingUser, Condominium } from "../types";
 
 interface PendingUserCardProps {
@@ -189,9 +188,7 @@ export function PendingUserCard({
                 <Calendar className="h-3.5 w-3.5" />
                 <span>
                   Cadastrado em{" "}
-                  {format(new Date(user.createdAt), "dd 'de' MMMM 'às' HH:mm", {
-                    locale: ptBR,
-                  })}
+                  {formatDateLong(user.createdAt)}
                 </span>
               </div>
             </div>
