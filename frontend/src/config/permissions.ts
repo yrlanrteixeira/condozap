@@ -1,5 +1,5 @@
 /**
- * Sistema de Permissões do CondoZap
+ * Sistema de Permissões do TalkZap
  * Hierarquia: SUPER_ADMIN > PROFESSIONAL_SYNDIC > ADMIN > SYNDIC > RESIDENT
  *
  * Perfis:

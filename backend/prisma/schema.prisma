@@ -1,4 +1,4 @@
-// Prisma Schema for CondoZap
+// Prisma Schema for TalkZap
 // Multi-tenant condominium management platform
 
 generator client {
@@ -216,7 +216,7 @@ model Resident {
   condominiumId String       @map("condominium_id")
   userId        String?      @unique @map("user_id")
   name          String
-  email         String       @default("pendente@condozap.com")
+  email         String       @default("pendente@talkzap.com")
   phone         String
   tower         String
   floor         String

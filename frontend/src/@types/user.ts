@@ -4,7 +4,7 @@
  */
 
 /**
- * Roles de usuário no sistema CondoZap
+ * Roles de usuário no sistema TalkZap
  * - SUPER_ADMIN: Acesso total ao sistema (múltiplos condomínios)
  * - PROFESSIONAL_SYNDIC: Síndico profissional (gerencia múltiplos condomínios)
  * - ADMIN: Administrador de condomínio

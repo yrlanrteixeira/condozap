@@ -2,18 +2,18 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: condozap-postgres
+    container_name: talkzap-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: condozap
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-condozap_secret}
-      POSTGRES_DB: condozap
+      POSTGRES_USER: talkzap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-talkzap_secret}
+      POSTGRES_DB: talkzap
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U condozap"]
+      test: ["CMD-SHELL", "pg_isready -U talkzap"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: condozap-backend
+    container_name: talkzap-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -32,7 +32,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://condozap:${POSTGRES_PASSWORD:-condozap_secret}@postgres:5432/condozap
+      DATABASE_URL: postgresql://talkzap:${POSTGRES_PASSWORD:-talkzap_secret}@postgres:5432/talkzap
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
 
@@ -67,7 +67,7 @@ services:
   #   build:
   #     context: ./frontend
   #     dockerfile: Dockerfile
-  #   container_name: condozap-frontend
+  #   container_name: talkzap-frontend
   #   restart: unless-stopped
   #   depends_on:
   #     - backend
@@ -84,4 +84,4 @@ volumes:
 
 networks:
   default:
-    name: condozap-network
+    name: talkzap-network

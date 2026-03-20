@@ -57,7 +57,7 @@ export default function App() {
     <Provider store={store}>
       <PersistGate loading={<LoadingFallback />} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system" storageKey="condozap-ui-theme">
+          <ThemeProvider defaultTheme="system" storageKey="talkzap-ui-theme">
             <BrowserRouter>
               <AppProvider>
                 <AppRoutes />

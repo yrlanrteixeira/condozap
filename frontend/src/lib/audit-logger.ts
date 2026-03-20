@@ -43,7 +43,7 @@ export interface AuditLogEntry {
   severity: AuditSeverity;
   userId?: string | number;
   userName?: string;
-  userRole?: string | number; // Suporta roles como string (CondoZap) ou number (outros)
+  userRole?: string | number; // Suporta roles como string (TalkZap) ou number (outros)
   attemptedPath?: string;
   attemptedResource?: string;
   requiredRole?: string | number;

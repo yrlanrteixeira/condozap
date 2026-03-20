@@ -43,12 +43,12 @@ export function LoginPage() {
 
   return (
     <AuthCard>
-      {/* Logo CondoZap - visível apenas em mobile */}
+      {/* Logo TalkZap - visível apenas em mobile */}
       <div className="flex items-center gap-2 md:hidden mb-2">
         <div className="p-2 bg-primary/10 rounded-lg">
           <Building2 className="h-6 w-6 text-primary" />
         </div>
-        <span className="text-xl font-bold text-foreground">CondoZap</span>
+        <span className="text-xl font-bold text-foreground">TalkZap</span>
       </div>
       
       <AuthHeader

@@ -60,7 +60,7 @@ export function ConsentDialog({
               <div className="space-y-2">
                 <h4 className="font-semibold text-foreground">Como funciona:</h4>
                 <p>
-                  Ao aceitar, você autoriza o CondoZap a enviar mensagens para o
+                  Ao aceitar, você autoriza o TalkZap a enviar mensagens para o
                   número de WhatsApp cadastrado. As mensagens são enviadas
                   automaticamente quando há atualizações relevantes sobre suas
                   solicitações ou comunicados do condomínio.
@@ -79,7 +79,7 @@ export function ConsentDialog({
               <div className="bg-muted p-3 rounded-lg text-xs">
                 <strong>Base Legal (LGPD):</strong> Art. 7º, I - Consentimento do
                 titular. Você pode solicitar a revogação enviando um email para
-                suporte@condozap.com.
+                suporte@talkzap.com.
               </div>
             </div>
           </ScrollArea>
@@ -160,7 +160,7 @@ export function ConsentDialog({
             <div className="bg-muted p-3 rounded-lg text-xs">
               <strong>Base Legal (LGPD):</strong> Art. 7º, I - Consentimento do
               titular. Para exercer seus direitos, entre em contato:
-              privacidade@condozap.com
+              privacidade@talkzap.com
             </div>
           </div>
         </ScrollArea>

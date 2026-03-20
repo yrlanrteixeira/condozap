@@ -84,7 +84,7 @@ async function main() {
 
   const superAdmin = await prisma.user.create({
     data: {
-      email: "superadmin@condozap.com",
+      email: "superadmin@talkzap.com",
       password: hashedPassword,
       name: "Super Admin",
       role: "SUPER_ADMIN",
@@ -109,9 +109,9 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: "admin@condozap.com",
+      email: "admin@talkzap.com",
       password: hashedPassword,
-      name: "Admin CondoZap",
+      name: "Admin TalkZap",
       role: "ADMIN",
       permissionScope: "LOCAL",
       status: "APPROVED",
@@ -628,8 +628,8 @@ async function main() {
   console.log("   - Residencial Bela Vista");
 
   console.log("\n👥 Usuários Aprovados (podem fazer login):");
-  console.log("   - superadmin@condozap.com (Super Admin)");
-  console.log("   - admin@condozap.com (Admin)");
+  console.log("   - superadmin@talkzap.com (Super Admin)");
+  console.log("   - admin@talkzap.com (Admin)");
   console.log("   - sindico@vistaverde.com (Síndico)");
   console.log("   - professional@sindicos.com (Síndico Profissional)");
   console.log("   - carlos@email.com (Morador)");

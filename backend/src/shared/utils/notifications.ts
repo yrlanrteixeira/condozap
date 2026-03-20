@@ -24,7 +24,7 @@ export function buildComplaintCreatedMessage(
   message += `📋 Categoria: ${category}\n`;
   message += `${priorityEmoji} Prioridade: ${priority}\n`;
   message += `📅 Data: ${new Date().toLocaleDateString("pt-BR")}\n\n`;
-  message += `Você pode acompanhar o andamento pelo sistema CondoZap.`;
+  message += `Você pode acompanhar o andamento pelo sistema TalkZap.`;
 
   return message;
 }
@@ -58,7 +58,7 @@ export function buildComplaintStatusMessage(
   }
 
   if (status === "RESOLVED") {
-    message += `\n\n✅ Sua denúncia foi resolvida! Obrigado por utilizar o CondoZap.`;
+    message += `\n\n✅ Sua denúncia foi resolvida! Obrigado por utilizar o TalkZap.`;
   }
 
   return message;

@@ -35,7 +35,7 @@ const envSchema = z.object({
   // Evolution API (Unofficial - Baileys)
   EVOLUTION_API_URL: z.string().default("http://localhost:8080"),
   EVOLUTION_API_KEY: z.string().optional(),
-  EVOLUTION_INSTANCE_NAME: z.string().default("condozap"),
+  EVOLUTION_INSTANCE_NAME: z.string().default("talkzap"),
   WHATSAPP_PROVIDER: z.enum(["evolution", "official"]).default("evolution"),
 
   // File Storage (Optional - can use local storage or S3)

@@ -6,7 +6,7 @@ import { UserRoles } from "@/config/permissions";
 /**
  * Componente que redireciona para a rota inicial apropriada baseada no perfil do usuário
  *
- * Lógica de redirecionamento CondoZap:
+ * Lógica de redirecionamento TalkZap:
  * - SUPER_ADMIN → /dashboard (todos admins vão para dashboard)
  * - PROFESSIONAL_SYNDIC → /dashboard (gerencia múltiplos condomínios)
  * - ADMIN → /dashboard (administrador de condomínio)

@@ -1,11 +1,11 @@
-# CondoZap
+# TalkZap
 
 Plataforma multi-tenant para gestão de condomínios com comunicação via WhatsApp.
 
 ## 📁 Estrutura
 
 ```txt
-condozap/
+talkzap/
 ├── frontend/           # React + Vite + TypeScript
 ├── backend/            # Fastify + Prisma + PostgreSQL
 │   ├── src/

@@ -59,7 +59,7 @@ async function testStorage() {
 
     const testBucket = "complaint-attachments";
     const testFileName = `test-${Date.now()}.txt`;
-    const testContent = "Hello from CondoZap!";
+    const testContent = "Hello from TalkZap!";
 
     try {
       const bucket = getStorageBucket(testBucket);

@@ -22,7 +22,7 @@ import {
 
 // Persist config - persiste theme, condominium, ui e user
 const persistConfig = {
-  key: "condozap-root", // Changed from ivijur-root
+  key: "talkzap-root", // Changed from ivijur-root
   version: 1,
   storage,
   whitelist: ["theme", "condominium", "ui", "user"], // Persiste dados não-sensíveis

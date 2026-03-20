@@ -24,7 +24,7 @@ const applyTheme = (theme: Theme) => {
 
 // Obter tema inicial e aplicar
 const getInitialTheme = (): Theme => {
-  const savedTheme = localStorage.getItem("condozap_theme") as Theme;
+  const savedTheme = localStorage.getItem("talkzap_theme") as Theme;
   const theme = savedTheme || "light"; // Padrão light em vez de system
 
   // Aplicar tema inicial ao document
@@ -43,7 +43,7 @@ const themeSlice = createSlice({
   reducers: {
     setTheme: (state, action: PayloadAction<Theme>) => {
       state.theme = action.payload;
-      localStorage.setItem("ivijur_theme", action.payload);
+      localStorage.setItem("talkzap_theme", action.payload);
       applyTheme(action.payload);
     },
 
@@ -60,7 +60,7 @@ const themeSlice = createSlice({
       // Alternar entre light e dark
       const newTheme = currentTheme === "light" ? "dark" : "light";
       state.theme = newTheme;
-      localStorage.setItem("ivijur_theme", newTheme);
+      localStorage.setItem("talkzap_theme", newTheme);
       applyTheme(newTheme);
     },
   },
