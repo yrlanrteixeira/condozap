@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireRole, requireGlobalScope } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   getAllMetricsHandler,
@@ -11,7 +11,7 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/metrics/all",
     {
-      onRequest: [fastify.authenticate, requireSuperAdmin()],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     getAllMetricsHandler
   );
@@ -27,7 +27,7 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/unified",
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     getUnifiedDashboardHandler
   );
