@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Menu, PanelLeftClose, PanelLeft, Building2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { ModeToggle } from "@/shared/components/mode-toggle";
@@ -47,6 +48,17 @@ export const Header = ({
   const showCondominiumSelector =
     condominiumsToShow.length > 1 ||
     (user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0);
+
+  // Auto-selecionar primeiro condomínio se nenhum está selecionado (não-SUPER_ADMIN)
+  useEffect(() => {
+    if (
+      !currentCondominiumId &&
+      user?.role !== "SUPER_ADMIN" &&
+      userCondominiums.length > 0
+    ) {
+      dispatch(setCurrentCondominium(userCondominiums[0].id));
+    }
+  }, [currentCondominiumId, user?.role, userCondominiums, dispatch]);
 
   const handleCondominiumChange = (condoId: string) => {
     dispatch(setCurrentCondominium(condoId));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, MessageSquare, AlertTriangle } from "lucide-react";
+import { Users, MessageSquare, AlertTriangle, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
 import { useAppSelector } from "@/shared/hooks";
@@ -21,7 +21,9 @@ export function DashboardPage() {
   const { user } = useAuth();
 
   // SUPER_ADMIN vê métricas globais, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = currentCondominiumId || '';
+  const condoIdToFetch = user?.role === 'SUPER_ADMIN'
+    ? (currentCondominiumId || 'all')
+    : (currentCondominiumId || '');
 
   const {
     data: metrics,
@@ -48,6 +50,27 @@ export function DashboardPage() {
             <CardSkeleton key={i} />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // Nenhum condomínio selecionado (não-SUPER_ADMIN sem vínculo)
+  if (!currentCondominiumId && user?.role !== 'SUPER_ADMIN') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-8 max-w-md text-center">
+          <CardContent className="space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">
+              Selecione um condomínio
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Utilize o seletor no topo da página para escolher o condomínio que deseja visualizar.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

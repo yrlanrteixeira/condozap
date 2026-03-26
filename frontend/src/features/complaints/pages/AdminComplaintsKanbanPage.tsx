@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import { AlertTriangle, Clock, CheckSquare } from 'lucide-react';
 import type { Complaint } from '@/features/complaints/types';
 import type { Resident } from '@/features/residents/types';
+import { useIsMobile } from '@/shared/hooks/useMediaQuery';
 import { ComplaintKanbanColumn } from '../components';
 
 type KanbanColumn = {
@@ -81,6 +82,8 @@ export const AdminComplaintsKanbanPage = memo(function AdminComplaintsKanbanPage
   onDrop,
   onComplaintClick,
 }: AdminComplaintsKanbanPageProps) {
+  const isMobile = useIsMobile();
+
   const complaintsPerColumn = useMemo(
     () =>
       COLUMNS.map((col) => ({
@@ -102,28 +105,51 @@ export const AdminComplaintsKanbanPage = memo(function AdminComplaintsKanbanPage
             Gestão de Ocorrências (Kanban)
           </h2>
           <p className="text-muted-foreground text-xs sm:text-sm">
-            Arraste os cartões para atualizar o status. O morador será notificado automaticamente.
+            {isMobile
+              ? 'Toque em "Detalhes" para gerenciar. O morador será notificado automaticamente.'
+              : 'Arraste os cartões para atualizar o status. O morador será notificado automaticamente.'}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 flex gap-3 sm:gap-6 overflow-x-auto pb-4">
-        {complaintsPerColumn.map(({ col, columnComplaints }) => (
-          <ComplaintKanbanColumn
-            key={col.id}
-            id={col.id}
-            title={col.title}
-            icon={col.icon}
-            color={col.color}
-            complaints={columnComplaints}
-            residents={residents}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            onComplaintClick={onComplaintClick}
-          />
-        ))}
-      </div>
+      {isMobile ? (
+        <div className="flex-1 flex flex-col gap-3 overflow-y-auto pb-4">
+          {complaintsPerColumn.map(({ col, columnComplaints }) => (
+            <ComplaintKanbanColumn
+              key={col.id}
+              id={col.id}
+              title={col.title}
+              icon={col.icon}
+              color={col.color}
+              complaints={columnComplaints}
+              residents={residents}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onComplaintClick={onComplaintClick}
+              isMobile
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex-1 flex gap-3 sm:gap-6 overflow-x-auto pb-4">
+          {complaintsPerColumn.map(({ col, columnComplaints }) => (
+            <ComplaintKanbanColumn
+              key={col.id}
+              id={col.id}
+              title={col.title}
+              icon={col.icon}
+              color={col.color}
+              complaints={columnComplaints}
+              residents={residents}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onComplaintClick={onComplaintClick}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 });

@@ -45,7 +45,7 @@ export const ComplaintHistoryList = ({ complaints }: ComplaintHistoryListProps) 
               <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <Badge variant="secondary" className="text-[10px] uppercase">
+                    <Badge variant="secondary" className="text-xs uppercase">
                       {complaint.category}
                     </Badge>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">

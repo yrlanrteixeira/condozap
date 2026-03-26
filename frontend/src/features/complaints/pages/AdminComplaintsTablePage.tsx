@@ -104,9 +104,9 @@ export function AdminComplaintsTablePage({
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="font-bold">Categoria</TableHead>
                 <TableHead className="font-bold">Descrição</TableHead>
-                <TableHead className="font-bold">Unidade</TableHead>
-                <TableHead className="font-bold">Data</TableHead>
-                <TableHead className="font-bold w-[240px]">Ação</TableHead>
+                <TableHead className="font-bold hidden sm:table-cell">Unidade</TableHead>
+                <TableHead className="font-bold hidden sm:table-cell">Data</TableHead>
+                <TableHead className="font-bold w-auto sm:w-[240px]">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,16 +138,16 @@ export function AdminComplaintsTablePage({
                         {complaint.content}
                       </p>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                       {getResidentInfo(complaint.residentId)}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                       {new Date(complaint.createdAt).toLocaleDateString(
                         "pt-BR"
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
                         {onComplaintClick && (
                           <Button
                             variant="outline"
@@ -167,7 +167,7 @@ export function AdminComplaintsTablePage({
                             )
                           }
                         >
-                        <SelectTrigger className="h-9 text-xs">
+                        <SelectTrigger className="h-9 text-xs w-full sm:w-[160px]">
                           <SelectValue placeholder="Alterar status" />
                         </SelectTrigger>
                         <SelectContent>

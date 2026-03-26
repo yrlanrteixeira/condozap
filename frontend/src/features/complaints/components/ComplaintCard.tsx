@@ -39,10 +39,10 @@ export const ComplaintCard = ({
     >
       <CardContent className="p-3 sm:p-4">
         <div className="flex justify-between items-start mb-2">
-          <Badge className="text-[10px] bg-muted text-muted-foreground">
+          <Badge className="text-xs bg-muted text-muted-foreground">
             {complaint.category}
           </Badge>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {formatDate(dateField)}
           </span>
         </div>
@@ -69,10 +69,10 @@ export const ComplaintCard = ({
         )}
 
         {(draggable || onComplaintClick) && (
-          <div className="text-xs text-muted-foreground flex items-center justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
+          <div className="text-xs text-muted-foreground flex items-center justify-between gap-2 opacity-70 hover:opacity-100 transition-opacity mt-2 border-t pt-2 border-border">
             {draggable && (
               <span className="flex items-center gap-1">
-                <ArrowRight size={12} />
+                <ArrowRight size={14} />
                 Arraste para mover
               </span>
             )}
@@ -80,13 +80,13 @@ export const ComplaintCard = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-9 px-3 text-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   onComplaintClick(complaint);
                 }}
               >
-                <FileText size={12} className="mr-1" />
+                <FileText size={14} className="mr-1" />
                 Detalhes
               </Button>
             )}

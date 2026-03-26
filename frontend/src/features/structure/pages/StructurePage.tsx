@@ -202,7 +202,7 @@ export function StructurePage() {
         </div>
       ) : (
         <Card className="border-border">
-          <CardContent className="flex flex-col items-center justify-center p-12">
+          <CardContent className="flex flex-col items-center justify-center p-6 sm:p-12">
             <div className="p-4 rounded-full bg-muted/50 mb-4">
               <Building2 className="h-8 w-8 text-muted-foreground" />
             </div>

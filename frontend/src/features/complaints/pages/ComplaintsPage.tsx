@@ -1,9 +1,14 @@
 import { useState, useCallback } from "react";
+import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { Complaint, ComplaintStatus } from "../types";
-import { ComplaintViewModeToggle, ComplaintDetailSheet } from "../components";
+import {
+  ComplaintViewModeToggle,
+  ComplaintDetailSheet,
+  AdminComplaintsMobileList,
+} from "../components";
 import { ResidentComplaintsPage } from "./ResidentComplaintsPage";
 import { AdminComplaintsKanbanPage } from "./AdminComplaintsKanbanPage";
 import { AdminComplaintsTablePage } from "./AdminComplaintsTablePage";
@@ -23,13 +28,11 @@ type ViewMode = "kanban" | "table";
 export function ComplaintsPage() {
   const isMobile = useIsMobile();
 
-  // No mobile, força modo tabela; no desktop respeita preferência do usuário
-  const [preferredViewMode, setPreferredViewMode] = useState<ViewMode>("kanban");
-  const viewMode: ViewMode = isMobile ? "table" : preferredViewMode;
+  // Default: tabela. No mobile: cards (componente dedicado). No desktop: respeita preferência.
+  const [preferredViewMode, setPreferredViewMode] = useState<ViewMode>("table");
+  const viewMode: ViewMode = preferredViewMode;
 
-  const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(
-    null
-  );
+  const [draggedComplaint, setDraggedComplaint] = useState<Complaint | null>(null);
   const [detailSheet, setDetailSheet] = useState<{ id: number | null; open: boolean }>(
     { id: null, open: false }
   );
@@ -43,16 +46,13 @@ export function ComplaintsPage() {
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
-  // SUPER_ADMIN vê ocorrências globais, outros veem apenas do condomínio selecionado
   const condoIdToFetch = currentCondominiumId || '';
 
-  // Fetch residents
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
     condoIdToFetch,
     {}
   );
 
-  // Fetch complaints from API
   const { data: complaints = [], isLoading: isLoadingComplaints } =
     useComplaints(condoIdToFetch);
 
@@ -180,7 +180,6 @@ export function ComplaintsPage() {
     }
   };
 
-  // Helper function to get status label
   const getStatusLabel = (status: ComplaintStatus): string => {
     const labels: Record<ComplaintStatus, string> = {
       NEW: "Novo",
@@ -200,31 +199,22 @@ export function ComplaintsPage() {
     return (
       <div className="p-4 sm:p-6 space-y-6">
         <PageHeaderSkeleton />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, colIndex) => (
-            <div key={colIndex} className="space-y-4">
-              <Card className="border-border">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <KanbanCardSkeleton key={i} />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <KanbanCardSkeleton key={i} />
           ))}
         </div>
       </div>
     );
   }
 
-  // No condominium selected (except for SUPER_ADMIN)
+  // No condominium selected
   if (!currentCondominiumId && user?.role !== "SUPER_ADMIN") {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-6">
-          <CardContent>
+      <div className="flex items-center justify-center h-full p-4">
+        <Card className="p-6 sm:p-8 max-w-md text-center">
+          <CardContent className="space-y-3">
+            <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto" />
             <p className="text-muted-foreground">
               Selecione um condomínio para visualizar as ocorrências.
             </p>
@@ -245,33 +235,86 @@ export function ComplaintsPage() {
     );
   }
 
+  // Contadores para o header admin
+  const openCount = complaints.filter((c) =>
+    ["NEW", "TRIAGE", "IN_PROGRESS", "WAITING_USER", "WAITING_THIRD_PARTY"].includes(c.status)
+  ).length;
+  const resolvedCount = complaints.filter((c) =>
+    ["RESOLVED", "CLOSED"].includes(c.status)
+  ).length;
+
   // Admin/Syndic view
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 sm:p-6 pb-0">
-        <ComplaintViewModeToggle
-          viewMode={viewMode}
-          onViewModeChange={setPreferredViewMode}
-        />
+      {/* Header */}
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+              Ocorrências
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {complaints.length} ocorrência{complaints.length !== 1 ? "s" : ""} registrada{complaints.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+
+          {/* Toggle: só no desktop */}
+          {!isMobile && (
+            <ComplaintViewModeToggle
+              viewMode={viewMode}
+              onViewModeChange={setPreferredViewMode}
+            />
+          )}
+        </div>
+
+        {/* Resumo rápido - só desktop */}
+        {!isMobile && complaints.length > 0 && (
+          <div className="flex gap-4 text-sm">
+            <div className="flex items-center gap-1.5 text-warning">
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">{openCount}</span>
+              <span className="text-muted-foreground">abertas</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-medium">{resolvedCount}</span>
+              <span className="text-muted-foreground">resolvidas</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {viewMode === "kanban" ? (
-        <AdminComplaintsKanbanPage
-          complaints={complaints}
-          residents={residents}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onComplaintClick={openComplaintDetail}
-        />
-      ) : (
-        <AdminComplaintsTablePage
-          complaints={complaints}
-          residents={residents}
-          onStatusChange={handleStatusChange}
-          onComplaintClick={openComplaintDetail}
-        />
-      )}
+      {/* Content */}
+      <div className="flex-1 min-h-0">
+        {isMobile ? (
+          /* Mobile: Card list */
+          <div className="px-4 pb-4">
+            <AdminComplaintsMobileList
+              complaints={complaints}
+              residents={residents}
+              onComplaintClick={openComplaintDetail}
+            />
+          </div>
+        ) : viewMode === "kanban" ? (
+          /* Desktop: Kanban */
+          <AdminComplaintsKanbanPage
+            complaints={complaints}
+            residents={residents}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onComplaintClick={openComplaintDetail}
+          />
+        ) : (
+          /* Desktop: Table (default) */
+          <AdminComplaintsTablePage
+            complaints={complaints}
+            residents={residents}
+            onStatusChange={handleStatusChange}
+            onComplaintClick={openComplaintDetail}
+          />
+        )}
+      </div>
 
       <ComplaintDetailSheet
         complaintId={detailSheet.id}

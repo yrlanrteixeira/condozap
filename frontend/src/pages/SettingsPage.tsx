@@ -99,7 +99,7 @@ export function SettingsPage() {
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Configurações</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground mt-2">
           Gerencie suas preferências e configurações do sistema
         </p>
