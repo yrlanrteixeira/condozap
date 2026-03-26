@@ -124,8 +124,10 @@ export const StructureConfigDialog = ({
 
       onOpenChange(false);
     } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string } } };
       const message =
-        error instanceof Error ? error.message : "Não foi possível atualizar a estrutura. Tente novamente.";
+        axiosError?.response?.data?.error ||
+        (error instanceof Error ? error.message : "Não foi possível atualizar a estrutura. Tente novamente.");
 
       toast({
         title: "Erro ao salvar",

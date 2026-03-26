@@ -28,7 +28,6 @@ const condominiumSlice = createSlice({
      */
     setCurrentCondominium: (state, action: PayloadAction<string>) => {
       state.currentCondominiumId = action.payload;
-      console.log("🏢 Condomínio atual alterado:", action.payload);
     },
 
     /**
