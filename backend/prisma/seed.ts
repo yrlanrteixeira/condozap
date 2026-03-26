@@ -84,7 +84,7 @@ async function main() {
 
   const superAdmin = await prisma.user.create({
     data: {
-      email: "superadmin@talkzap.com",
+      email: "superadmin@email.com",
       password: hashedPassword,
       name: "Super Admin",
       role: "SUPER_ADMIN",
@@ -97,7 +97,7 @@ async function main() {
   // Yolan's SUPER_ADMIN account
   const yrlanAdmin = await prisma.user.create({
     data: {
-      email: "yrlan.01@hotmail.com",
+      email: "yrlan.01@email.com",
       password: hashedPassword,
       name: "Yolan - Super Admin",
       role: "SUPER_ADMIN",
@@ -109,7 +109,7 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: "admin@talkzap.com",
+      email: "admin@email.com",
       password: hashedPassword,
       name: "Admin TalkZap",
       role: "ADMIN",
@@ -121,7 +121,7 @@ async function main() {
 
   const syndic = await prisma.user.create({
     data: {
-      email: "sindico@vistaverde.com",
+      email: "sindico@email.com",
       password: hashedPassword,
       name: "João Silva",
       role: "SYNDIC",
@@ -133,7 +133,7 @@ async function main() {
 
   const professionalSyndic = await prisma.user.create({
     data: {
-      email: "professional@sindicos.com",
+      email: "professional@email.com",
       password: hashedPassword,
       name: "Maria Santos",
       role: "PROFESSIONAL_SYNDIC",
@@ -628,10 +628,11 @@ async function main() {
   console.log("   - Residencial Bela Vista");
 
   console.log("\n👥 Usuários Aprovados (podem fazer login):");
-  console.log("   - superadmin@talkzap.com (Super Admin)");
-  console.log("   - admin@talkzap.com (Admin)");
-  console.log("   - sindico@vistaverde.com (Síndico)");
-  console.log("   - professional@sindicos.com (Síndico Profissional)");
+  console.log("   - superadmin@email.com (Super Admin)");
+  console.log("   - yrlan.01@email.com (Super Admin)");
+  console.log("   - admin@email.com (Admin)");
+  console.log("   - sindico@email.com (Síndico)");
+  console.log("   - professional@email.com (Síndico Profissional)");
   console.log("   - carlos@email.com (Morador)");
   console.log("   - ana@email.com (Morador)");
   console.log("   - pedro@email.com (Morador)");

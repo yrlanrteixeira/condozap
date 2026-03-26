@@ -13,6 +13,7 @@ const envSchema = z.object({
 
   // Database
   DATABASE_URL: z.string(),
+  DIRECT_URL: z.string().optional(),
 
   // Supabase (optional - only needed if STORAGE_TYPE=supabase)
   SUPABASE_URL: z.string().url().optional(),

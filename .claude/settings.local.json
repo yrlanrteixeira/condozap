@@ -5,7 +5,10 @@
       "Bash(npm run build:*)",
       "Bash(tree:*)",
       "Bash(dir:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx -p typescript tsc --noEmit)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)"
     ],
     "deny": [],
     "ask": []
