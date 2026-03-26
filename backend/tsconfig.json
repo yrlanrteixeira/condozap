@@ -20,7 +20,8 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@prisma/client": ["src/generated/prisma/client"]
     }
   },
   "include": ["src/**/*"],

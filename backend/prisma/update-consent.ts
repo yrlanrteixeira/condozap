@@ -10,7 +10,7 @@
 import { config } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../src/shared/db/prisma';
 
 // Obter __dirname em ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 // Carregar variáveis de ambiente do arquivo .env
 config({ path: resolve(__dirname, '../.env') });
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🔄 Atualizando consentimento dos moradores...\n');

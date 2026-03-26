@@ -9,8 +9,9 @@ COPY package*.json ./
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
 
-# Copy Prisma schema and generate client
+# Prisma 7: config + schema, then generate client
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 RUN npx prisma generate
 
 # Copy source code and build
@@ -28,6 +29,7 @@ ENV NODE_ENV=production
 # Copy dependency manifests and Prisma schema
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # Install production dependencies only (--only=production is deprecated)
 RUN npm ci --omit=dev

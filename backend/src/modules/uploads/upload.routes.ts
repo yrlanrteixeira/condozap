@@ -11,11 +11,10 @@ import {
   uploadResidentDocumentBodySchema,
 } from "./upload.schema";
 import { addComplaintAttachment } from "../complaints/complaints.service";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../shared/db/prisma";
 import { NotFoundError, BadRequestError } from "../../shared/errors";
 
 export async function uploadRoutes(app: FastifyInstance) {
-  const prisma = new PrismaClient();
 
   /**
    * POST /uploads/complaints/:complaintId/attachments

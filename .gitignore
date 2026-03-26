@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 
+# Prisma 7 generated client (regenerate with: npx prisma generate)
+backend/src/generated/prisma/
+
 # Environment variables
 .env
 .env.local

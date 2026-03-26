@@ -6,9 +6,9 @@
  * Uso: npx tsx prisma/clear.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "../src/shared/db/prisma";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function clearDatabase() {
   console.log("🗑️  Iniciando limpeza do banco de dados...\n");

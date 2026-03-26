@@ -2,13 +2,12 @@
 // Multi-tenant condominium management platform
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 // =====================================================
@@ -32,7 +31,7 @@ enum PermissionScope {
 }
 
 enum ComplaintStatus {
-  OPEN       // legado (init); tratar como TRIAGE na UI
+  OPEN // legado (init); tratar como TRIAGE na UI
   NEW
   TRIAGE
   IN_PROGRESS
@@ -116,12 +115,12 @@ model Condominium {
   structure Json? @db.JsonB
 
   // Relations
-  users        UserCondominium[]
-  residents    Resident[]
-  complaints   Complaint[]
-  messages     Message[]
-  sectors      Sector[]
-  slaConfigs   SlaConfig[]
+  users         UserCondominium[]
+  residents     Resident[]
+  complaints    Complaint[]
+  messages      Message[]
+  sectors       Sector[]
+  slaConfigs    SlaConfig[]
   announcements Announcement[]
 
   @@index([cnpj])
@@ -129,15 +128,15 @@ model Condominium {
 }
 
 model Announcement {
-  id            String    @id @default(cuid())
-  condominiumId String    @map("condominium_id")
+  id            String   @id @default(cuid())
+  condominiumId String   @map("condominium_id")
   title         String
-  content       String    @db.Text
-  imageUrl      String?   @map("image_url")
-  startsAt      DateTime  @map("starts_at")
-  endsAt        DateTime  @map("ends_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  createdBy     String?   @map("created_by")
+  content       String   @db.Text
+  imageUrl      String?  @map("image_url")
+  startsAt      DateTime @map("starts_at")
+  endsAt        DateTime @map("ends_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  createdBy     String?  @map("created_by")
 
   condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
 
