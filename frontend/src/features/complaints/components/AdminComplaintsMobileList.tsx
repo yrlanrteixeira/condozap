@@ -23,13 +23,6 @@ const STATUS_FILTERS: { value: ComplaintStatus | "ALL"; label: string }[] = [
   { value: "RESOLVED", label: "Resolvidas" },
 ];
 
-const PRIORITY_COLORS: Record<string, string> = {
-  CRITICAL: "border-l-red-500",
-  HIGH: "border-l-orange-500",
-  MEDIUM: "border-l-blue-500",
-  LOW: "border-l-emerald-500",
-};
-
 interface AdminComplaintsMobileListProps {
   complaints: Complaint[];
   residents: Resident[];
@@ -167,12 +160,11 @@ export function AdminComplaintsMobileList({
           filteredComplaints.map((complaint) => {
             const resident = residentMap.get(complaint.residentId);
             const dateField = complaint.timestamp || complaint.createdAt;
-            const priorityBorder = PRIORITY_COLORS[complaint.priority] || PRIORITY_COLORS.MEDIUM;
 
             return (
               <button
                 key={complaint.id}
-                className={`w-full text-left rounded-lg border-l-4 ${priorityBorder} bg-card border border-border p-3 active:bg-accent transition-colors`}
+                className="w-full text-left rounded-lg bg-card border border-border p-3 active:bg-accent transition-colors"
                 onClick={() => onComplaintClick?.(complaint)}
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
