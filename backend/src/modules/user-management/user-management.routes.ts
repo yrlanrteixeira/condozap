@@ -9,6 +9,7 @@ import {
   updateCouncilPositionHandler,
   removeUserHandler,
   inviteUserHandler,
+  listSyndicsHandler,
 } from "./user-management.controller";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
@@ -77,6 +78,12 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireAdmin()],
     },
     inviteUserHandler
+  );
+
+  fastify.get(
+    "/users/syndics",
+    { onRequest: [fastify.authenticate, requireSuperAdmin()] },
+    listSyndicsHandler
   );
 };
 

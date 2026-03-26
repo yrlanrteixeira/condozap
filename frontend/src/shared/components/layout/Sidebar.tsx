@@ -82,7 +82,13 @@ export const Sidebar = ({
       title: "Conselheiros",
       href: "/team",
       icon: UsersRound,
-      permission: Permissions.MANAGE_RESIDENTS,
+      permission: Permissions.MANAGE_TEAM,
+    },
+    {
+      title: "Síndicos",
+      href: "/syndics",
+      icon: Users,
+      permission: Permissions.MANAGE_SYNDICS,
     },
     {
       title: "Condomínios",
@@ -190,11 +196,17 @@ export const Sidebar = ({
       case "PROFESSIONAL_SYNDIC":
         return "Síndico Profissional";
       case "ADMIN":
-        return "Administrador";
+        return "Conselheiro";
       case "SYNDIC":
         return "Síndico";
       case "RESIDENT":
         return "Morador";
+      case "TRIAGE":
+        return "Triagem";
+      case "SETOR_MANAGER":
+        return "Gestor de Setor";
+      case "SETOR_MEMBER":
+        return "Membro de Setor";
       default:
         return "Usuário";
     }

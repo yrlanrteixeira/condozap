@@ -5,7 +5,7 @@ import {
   resolveAccessContext,
   isCondominiumAllowed,
 } from "../../auth/context";
-import { isSuperAdmin } from "../../auth/roles";
+import { isGlobalScope } from "../../auth/roles";
 import { ResidentFilters } from "./residents.schema";
 
 const includeResident = {
@@ -34,12 +34,12 @@ export const findResidentsForUser = async (
 ) => {
   const context = await getAccessContext(prisma, user);
   const allowedIds = context.allowedCondominiumIds;
-  const appliedCondoFilter = isSuperAdmin(context.role)
-    ? undefined
-    : filters.condominiumId
+  const appliedCondoFilter = filters.condominiumId
     ? isCondominiumAllowed(context, filters.condominiumId)
       ? { in: [filters.condominiumId] }
       : { in: ["__deny__"] }
+    : isGlobalScope(context.scope)
+    ? undefined
     : { in: allowedIds.length ? allowedIds : ["__deny__"] };
   return prisma.resident.findMany({
     where: {
@@ -74,7 +74,7 @@ export const findResidentByIdForUser = async (
   return prisma.resident.findFirst({
     where: {
       id,
-      ...(isSuperAdmin(context.role)
+      ...(isGlobalScope(context.scope)
         ? {}
         : { condominiumId: { in: context.allowedCondominiumIds } }),
     },

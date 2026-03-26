@@ -7,9 +7,9 @@ import {
 import { AuthUser } from "../../types/auth";
 import { resolveAccessContext } from "../../auth/context";
 import {
+  isGlobalScope,
   isResident,
   isSectorRole,
-  isSuperAdmin,
   isSyndic,
 } from "../../auth/roles";
 
@@ -80,7 +80,7 @@ const buildAccessFilteredWhere = async (
     permissionScope: user.permissionScope as any,
   });
   const where: Prisma.ComplaintWhereInput = buildBaseFilters(filters);
-  if (!isSuperAdmin(user.role)) {
+  if (!isGlobalScope(context.scope)) {
     const condoIds =
       filters.condominiumId && context.allowedCondominiumIds.length > 0
         ? context.allowedCondominiumIds.includes(filters.condominiumId)

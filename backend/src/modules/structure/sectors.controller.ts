@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import { AuthUser } from "../../types/auth";
-import { isSyndic, isSuperAdmin } from "../../auth/roles";
+import { isSyndic } from "../../auth/roles";
 import {
   createSector,
   deleteSector,
@@ -17,7 +17,7 @@ import {
 } from "./sectors.schema";
 
 const ensureCanManageSector = (user: AuthUser) => {
-  if (isSuperAdmin(user.role) || isSyndic(user.role)) {
+  if (isSyndic(user.role)) {
     return;
   }
   throw new Error("FORBIDDEN");

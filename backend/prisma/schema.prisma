@@ -109,6 +109,9 @@ model Condominium {
   whatsappPhone      String? @map("whatsapp_phone")
   whatsappBusinessId String? @map("whatsapp_business_id")
 
+  // Trial management
+  trialEndsAt        DateTime? @map("trial_ends_at")
+
   // Structure configuration (JSON)
   // Formato: { "towers": [{ "name": "A", "floors": ["1", "2", "3"], "unitsPerFloor": 4 }] }
   structure Json? @db.JsonB

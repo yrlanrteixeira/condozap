@@ -148,3 +148,28 @@ export async function inviteUserHandler(
   });
 }
 
+export async function listSyndicsHandler(
+  _request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const syndics = await prisma.user.findMany({
+    where: { role: { in: ["SYNDIC", "PROFESSIONAL_SYNDIC"] } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      condominiums: {
+        select: {
+          id: true,
+          condominiumId: true,
+          condominium: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+  return reply.send(syndics);
+}
+
