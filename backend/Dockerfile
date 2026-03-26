@@ -22,6 +22,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Set production environment (prevents loading devDependencies like pino-pretty)
+ENV NODE_ENV=production
+
 # Copy dependency manifests and Prisma schema
 COPY package*.json ./
 COPY prisma ./prisma/

@@ -97,5 +97,26 @@ export const useSetSectorMembers = () => {
   });
 };
 
-
+export const useDeleteSector = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      condominiumId,
+      sectorId,
+    }: {
+      condominiumId: string;
+      sectorId: string;
+    }) => {
+      const { data } = await api.delete(
+        `/structure/${condominiumId}/sectors/${sectorId}`
+      );
+      return data as { message: string };
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["sectors", variables.condominiumId],
+      });
+    },
+  });
+};
 

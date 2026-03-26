@@ -48,7 +48,7 @@ export function Logo({ className = "", size = "lg" }: LogoProps) {
       viewBox="0 0 500.000000 500.000000"
       preserveAspectRatio="xMidYMid meet"
       className={cn(sizeClasses[size], "w-auto mb-0", className)}
-      aria-label="CondoTalk"
+      aria-label="TalkZap"
     >
       <g
         transform="translate(0.000000,500.000000) scale(0.100000,-0.100000)"

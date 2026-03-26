@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PlusCircle, Building2, Grid3X3, Settings } from "lucide-react";
+import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
@@ -10,7 +10,7 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { ResidentDialog } from "@/features/residents";
-import { TowerCard, StructureConfigDialog } from "../components";
+import { TowerCard, StructureConfigDialog, SectorManagementDialog } from "../components";
 import { useStructure } from "../hooks/useStructureApi";
 
 export function StructurePage() {
@@ -18,6 +18,7 @@ export function StructurePage() {
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStructureDialogOpen, setIsStructureDialogOpen] = useState(false);
+  const [isSectorDialogOpen, setIsSectorDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
 
   // Buscar moradores do condomínio selecionado
@@ -116,14 +117,23 @@ export function StructurePage() {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setIsStructureDialogOpen(true)}
             className="w-full sm:w-auto"
           >
             <Settings className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Configurar Estrutura</span>
             <span className="sm:hidden">Configurar</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsSectorDialogOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            <FolderKanban className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Gerenciar Setores</span>
+            <span className="sm:hidden">Setores</span>
           </Button>
           <Button onClick={handleAddResident} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -224,6 +234,12 @@ export function StructurePage() {
         onOpenChange={setIsStructureDialogOpen}
         condominiumId={currentCondominiumId!}
         currentStructure={structureData?.structure}
+      />
+
+      <SectorManagementDialog
+        open={isSectorDialogOpen}
+        onOpenChange={setIsSectorDialogOpen}
+        condominiumId={currentCondominiumId!}
       />
     </div>
   );

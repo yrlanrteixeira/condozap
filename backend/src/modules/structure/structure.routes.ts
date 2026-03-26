@@ -6,6 +6,7 @@ import {
 } from "./structure.controller";
 import {
   createSectorHandler,
+  deleteSectorHandler,
   listSectorsHandler,
   setSectorMembersHandler,
   updateSectorHandler,
@@ -58,5 +59,13 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     setSectorMembersHandler
+  );
+
+  fastify.delete(
+    "/:condominiumId/sectors/:sectorId",
+    {
+      onRequest: [fastify.authenticate, requireCondoAccess()],
+    },
+    deleteSectorHandler
   );
 };

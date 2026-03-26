@@ -93,8 +93,8 @@ export function UnifiedDashboardPage() {
                 <p className="text-sm text-muted-foreground font-medium">Condomínios</p>
                 <p className="text-3xl font-bold text-foreground">{totalCondos}</p>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-3 bg-info/10 rounded-full">
+                <Building2 className="h-6 w-6 text-info" />
               </div>
             </div>
           </CardContent>
@@ -107,8 +107,8 @@ export function UnifiedDashboardPage() {
                 <p className="text-sm text-muted-foreground font-medium">Ocorrências Abertas</p>
                 <p className="text-3xl font-bold text-foreground">{openComplaints}</p>
               </div>
-              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <div className="p-3 bg-warning/10 rounded-full">
+                <Clock className="h-6 w-6 text-warning" />
               </div>
             </div>
           </CardContent>
@@ -121,8 +121,8 @@ export function UnifiedDashboardPage() {
                 <p className="text-sm text-muted-foreground font-medium">Críticas (Urgente)</p>
                 <p className="text-3xl font-bold text-destructive">{criticalComplaints}</p>
               </div>
-              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="p-3 bg-destructive/10 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
             </div>
           </CardContent>
@@ -135,8 +135,8 @@ export function UnifiedDashboardPage() {
                 <p className="text-sm text-muted-foreground font-medium">Em Andamento</p>
                 <p className="text-3xl font-bold text-foreground">{inProgressComplaints}</p>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="p-3 bg-success/10 rounded-full">
+                <TrendingUp className="h-6 w-6 text-success" />
               </div>
             </div>
           </CardContent>
@@ -147,7 +147,7 @@ export function UnifiedDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             Feed de Urgência ({urgentFeed.length} não lidas)
           </CardTitle>
         </CardHeader>
@@ -163,8 +163,8 @@ export function UnifiedDashboardPage() {
                 key={item.id}
                 className={`p-4 rounded-lg border-l-4 hover:bg-accent/50 transition cursor-pointer ${
                   item.priority === 'CRITICAL'
-                    ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20'
-                    : 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                    ? 'border-l-destructive bg-destructive/5'
+                    : 'border-l-warning bg-warning/5'
                 }`}
                 onClick={() => handleCondoClick(item.condominiumId)}
               >
@@ -174,8 +174,8 @@ export function UnifiedDashboardPage() {
                       <Badge
                         className={`text-xs ${
                           item.priority === 'CRITICAL'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-orange-500 text-white'
+                            ? 'bg-destructive text-destructive-foreground'
+                            : 'bg-warning text-warning-foreground'
                         }`}
                       >
                         {item.priority === 'CRITICAL' ? 'Crítico' : 'Alto'}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { NotificationToast } from "./NotificationToast";
@@ -12,10 +13,22 @@ import { useAppSelector, useCondominiumSync } from "@/shared/hooks";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useComplaints } from "@/features/complaints/hooks/useComplaintsApi";
 
+const pageVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
+const pageTransition = {
+  type: "tween" as const,
+  ease: "easeOut",
+  duration: 0.25,
+};
+
 export function MainLayout() {
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    // Recuperar estado salvo no localStorage
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved ? JSON.parse(saved) : false;
   });
@@ -28,11 +41,11 @@ export function MainLayout() {
 
   // SUPER_ADMIN vê ocorrências globais, RESIDENT vê apenas suas, outros veem do condomínio selecionado
   const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
-  
+
   const { data: complaints = [] } = useComplaints(condoIdToFetch);
 
   // Contar ocorrências abertas
-  const openComplaintsCount = user?.role === 'RESIDENT' 
+  const openComplaintsCount = user?.role === 'RESIDENT'
     ? complaints.filter(c => c.residentId === (user as any)?.residentId && c.status === 'OPEN').length
     : complaints.filter(c => c.status === 'OPEN').length;
 
@@ -76,21 +89,33 @@ export function MainLayout() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header (Desktop e Mobile) */}
+        {/* Header */}
         <Header
           onMenuClick={() => setMobileMenuOpen(true)}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
 
-        {/* Page Content */}
+        {/* Page Content with transitions */}
         <main
           id="main-content"
-          className="flex-1 overflow-y-auto bg-background p-4 md:p-6"
+          className="flex-1 overflow-y-auto scrollbar-thin"
           role="main"
           aria-label="Conteúdo principal"
         >
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+              className="p-4 md:p-6"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

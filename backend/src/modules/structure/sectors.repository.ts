@@ -110,3 +110,18 @@ export const findSectorWithMembers = (prisma: PrismaClient, sectorId: string) =>
     where: { id: sectorId },
     include: sectorWithMembersInclude,
   });
+
+export const countComplaintsBySector = (prisma: PrismaClient, sectorId: string) =>
+  prisma.complaint.count({
+    where: { sectorId },
+  });
+
+export const deleteAllSectorMembers = (prisma: PrismaClient, sectorId: string) =>
+  prisma.sectorMember.deleteMany({
+    where: { sectorId },
+  });
+
+export const deleteSector = (prisma: PrismaClient, sectorId: string) =>
+  prisma.sector.delete({
+    where: { id: sectorId },
+  });

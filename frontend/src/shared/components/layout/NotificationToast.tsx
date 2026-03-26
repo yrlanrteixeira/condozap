@@ -10,8 +10,10 @@ export function NotificationToast() {
   return (
     <div
       className={cn(
-        'fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-slide-in flex items-center gap-2 max-w-md',
-        notification.type === 'error' ? 'bg-red-500' : 'bg-green-600'
+        'fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg font-medium animate-slide-in flex items-center gap-2 max-w-md',
+        notification.type === 'error'
+          ? 'bg-destructive text-destructive-foreground'
+          : 'bg-success text-success-foreground'
       )}
       role="alert"
       aria-live="polite"

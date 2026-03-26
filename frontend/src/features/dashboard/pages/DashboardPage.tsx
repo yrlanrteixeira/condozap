@@ -92,22 +92,22 @@ export function DashboardPage() {
           title="Total Moradores"
           value={metrics.residents.total}
           icon={<Users size={24} />}
-          iconBgColor="bg-blue-50"
-          iconColor="text-blue-600"
+          iconBgColor="bg-info/10"
+          iconColor="text-info"
         />
         <DashboardStatCard
           title="Mensagens Enviadas"
           value={metrics.messages.totalSent}
           icon={<MessageSquare size={24} />}
-          iconBgColor="bg-green-50"
-          iconColor="text-green-600"
+          iconBgColor="bg-success/10"
+          iconColor="text-success"
         />
         <DashboardStatCard
           title="Ocorrências Abertas"
           value={metrics.complaints.open}
           icon={<AlertTriangle size={24} />}
-          iconBgColor="bg-red-50"
-          iconColor="text-red-600"
+          iconBgColor="bg-destructive/10"
+          iconColor="text-destructive"
         />
       </div>
 

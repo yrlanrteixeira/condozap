@@ -4,6 +4,7 @@ import { AuthUser } from "../../types/auth";
 import { isSyndic, isSuperAdmin } from "../../auth/roles";
 import {
   createSector,
+  deleteSector,
   listSectors,
   setSectorMembers,
   updateSector,
@@ -83,5 +84,17 @@ export const setSectorMembersHandler = async (
   return reply.send(sector);
 };
 
-
-
+export const deleteSectorHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  const user = request.user as AuthUser;
+  try {
+    ensureCanManageSector(user);
+  } catch {
+    return reply.status(403).send({ error: "Acesso negado" });
+  }
+  const { condominiumId, sectorId } = sectorParamsSchema.parse(request.params);
+  await deleteSector(prisma, condominiumId, sectorId);
+  return reply.send({ message: "Setor removido com sucesso" });
+};

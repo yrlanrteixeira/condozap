@@ -24,17 +24,17 @@ export function StatCard({
   trend,
 }: StatCardProps) {
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         {icon && (
-          <div className={cn("p-2 rounded-lg", iconBgColor, iconColor)}>
+          <div className={cn("p-2.5 rounded-xl", iconBgColor, iconColor)}>
             {icon}
           </div>
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-3xl font-bold tracking-tight">{value}</div>
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
         )}
@@ -42,8 +42,8 @@ export function StatCard({
           <div className="flex items-center mt-2 text-xs">
             <span
               className={cn(
-                "font-medium",
-                trend.isPositive ? "text-green-600" : "text-red-600"
+                "font-semibold",
+                trend.isPositive ? "text-success" : "text-destructive"
               )}
             >
               {trend.isPositive ? "+" : ""}

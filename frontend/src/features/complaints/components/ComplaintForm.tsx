@@ -12,10 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { useSectors } from "@/features/structure/hooks/useSectorsApi";
+import { useAppSelector } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { COMPLAINT_CATEGORIES } from "@/config/constants";
 
 const ComplaintFormSchema = z.object({
-  category: z.enum(COMPLAINT_CATEGORIES as [string, ...string[]]),
+  category: z.string().min(1, "Selecione uma categoria"),
   content: z.string().min(10, "Descrição deve ter ao menos 10 caracteres"),
 });
 
@@ -26,6 +29,14 @@ interface ComplaintFormProps {
 }
 
 export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const { data: sectors } = useSectors(currentCondominiumId || '');
+
+  // Extract unique categories from all sectors, fallback to hardcoded if no sectors
+  const dynamicCategories = sectors && sectors.length > 0
+    ? [...new Set(sectors.flatMap((s) => s.categories))].sort()
+    : [...COMPLAINT_CATEGORIES];
+
   const {
     register,
     handleSubmit: handleFormSubmit,
@@ -38,7 +49,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     mode: "onBlur",
     reValidateMode: "onChange",
     defaultValues: {
-      category: COMPLAINT_CATEGORIES[0],
+      category: "",
       content: "",
     },
   });
@@ -70,7 +81,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                 onValueChange={(value) =>
                   setValue(
                     "category",
-                    value as (typeof COMPLAINT_CATEGORIES)[number]
+                    value as string
                   )
                 }
               >
@@ -80,7 +91,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COMPLAINT_CATEGORIES.map((c) => (
+                  {dynamicCategories.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>

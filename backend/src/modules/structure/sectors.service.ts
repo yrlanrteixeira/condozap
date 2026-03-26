@@ -11,6 +11,9 @@ import {
   deleteRemovedSectorMembers,
   upsertSectorMember,
   findSectorWithMembers,
+  countComplaintsBySector,
+  deleteAllSectorMembers,
+  deleteSector as repoDeleteSector,
 } from "./sectors.repository";
 
 export const listSectors = async (
@@ -86,5 +89,26 @@ export const setSectorMembers = async (
       await upsertSectorMember(trx as unknown as PrismaClient, sectorId, member);
     }
     return findSectorWithMembers(trx as unknown as PrismaClient, sectorId);
+  });
+};
+
+export const deleteSector = async (
+  prisma: PrismaClient,
+  condominiumId: string,
+  sectorId: string
+) => {
+  const sector = await findSectorInCondominium(prisma, condominiumId, sectorId);
+  if (!sector) {
+    throw new NotFoundError("Setor");
+  }
+  const complaintsCount = await countComplaintsBySector(prisma, sectorId);
+  if (complaintsCount > 0) {
+    throw new BadRequestError(
+      "Setor possui chamados vinculados e não pode ser removido"
+    );
+  }
+  return prisma.$transaction(async (trx) => {
+    await deleteAllSectorMembers(trx as unknown as PrismaClient, sectorId);
+    await repoDeleteSector(trx as unknown as PrismaClient, sectorId);
   });
 };
