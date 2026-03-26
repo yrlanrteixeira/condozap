@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { apiClient } from "@/lib/api-client";
-import { toast } from "sonner";
 
 interface UseFileUploadOptions {
   maxSizeMB?: number;
@@ -105,8 +104,6 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
 
       if (onError) {
         onError(uploadError);
-      } else {
-        toast.error(errorMessage);
       }
 
       throw uploadError;

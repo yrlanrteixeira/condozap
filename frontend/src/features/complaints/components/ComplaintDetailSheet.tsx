@@ -18,7 +18,6 @@ import {
 } from "@/shared/components/ui/select";
 import {
   MessageSquare,
-  FileText,
   User,
   Loader2,
   AlertTriangle,
@@ -32,6 +31,7 @@ import {
   useUpdateComplaintStatus,
 } from "../hooks/useComplaintsApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
+import { ComplaintAttachmentUpload } from "./ComplaintAttachmentUpload";
 import type { ComplaintDetail, ComplaintStatus } from "../types";
 import { formatDateTime } from "@/shared/utils/helpers";
 
@@ -265,6 +265,12 @@ function ComplaintDetailContent({
         </div>
       )}
 
+      {/* Anexos */}
+      <ComplaintAttachmentUpload
+        complaintId={complaint.id}
+        attachments={attachments}
+      />
+
       {/* Histórico */}
       {history.length > 0 && (
         <div>
@@ -297,30 +303,6 @@ function ComplaintDetailContent({
                     {entry.notes}
                   </p>
                 )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Anexos */}
-      {attachments.length > 0 && (
-        <div>
-          <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Anexos
-          </p>
-          <ul className="space-y-1">
-            {attachments.map((att) => (
-              <li key={att.id}>
-                <a
-                  href={att.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
-                >
-                  {att.fileName}
-                </a>
               </li>
             ))}
           </ul>

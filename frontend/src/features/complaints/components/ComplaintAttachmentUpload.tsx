@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileUpload } from "@/shared/components/FileUpload";
 import { useComplaintAttachmentUpload } from "@/shared/hooks/useFileUpload";
 import { apiClient } from "@/lib/api-client";
-import { toast } from "sonner";
+import { useToast } from "@/shared/components/ui/use-toast";
 import { Button } from "@/shared/components/ui/button";
 import { Image, Music, Trash2, Download } from "lucide-react";
 import {
@@ -39,6 +39,7 @@ export function ComplaintAttachmentUpload({
 }: ComplaintAttachmentUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   const { uploadFile, isUploading, progress } = useComplaintAttachmentUpload(complaintId);
 
   const handleFileSelect = (file: File) => {
@@ -58,7 +59,7 @@ export function ComplaintAttachmentUpload({
         `/uploads/complaints/${complaintId}/attachments`
       );
 
-      toast.success("Anexo enviado com sucesso!");
+      toast({ title: "Anexo enviado com sucesso!", variant: "success" });
       setSelectedFile(null);
       setIsDialogOpen(false);
 
@@ -77,13 +78,14 @@ export function ComplaintAttachmentUpload({
 
     try {
       await apiClient.delete(`/uploads/complaints/attachments/${attachmentId}`);
-      toast.success("Anexo deletado com sucesso!");
+      toast({ title: "Anexo deletado com sucesso!", variant: "success" });
 
       if (onAttachmentDeleted) {
         onAttachmentDeleted(attachmentId);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao deletar anexo");
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      toast({ title: "Erro", description: axiosError?.response?.data?.message || "Erro ao deletar anexo", variant: "destructive" });
     }
   };
 

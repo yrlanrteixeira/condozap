@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileUpload } from "@/shared/components/FileUpload";
 import { useResidentDocumentUpload } from "@/shared/hooks/useFileUpload";
 import { apiClient } from "@/lib/api-client";
-import { toast } from "sonner";
+import { useToast } from "@/shared/components/ui/use-toast";
 import { Button } from "@/shared/components/ui/button";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -69,6 +69,7 @@ export function ResidentDocumentUpload({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [documentType, setDocumentType] = useState<keyof typeof DOCUMENT_TYPES>("RG");
   const [documentNumber, setDocumentNumber] = useState("");
+  const { toast } = useToast();
   const [observation, setObservation] = useState("");
   const { uploadFile, isUploading, progress } = useResidentDocumentUpload();
 
@@ -95,7 +96,7 @@ export function ResidentDocumentUpload({
         }
       );
 
-      toast.success("Documento enviado com sucesso!");
+      toast({ title: "Documento enviado com sucesso!", variant: "success" });
       setSelectedFile(null);
       setDocumentNumber("");
       setObservation("");
@@ -116,13 +117,14 @@ export function ResidentDocumentUpload({
 
     try {
       await apiClient.delete(`/uploads/documents/${documentId}`);
-      toast.success("Documento deletado com sucesso!");
+      toast({ title: "Documento deletado com sucesso!", variant: "success" });
 
       if (onDocumentDeleted) {
         onDocumentDeleted(documentId);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao deletar documento");
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      toast({ title: "Erro", description: axiosError?.response?.data?.message || "Erro ao deletar documento", variant: "destructive" });
     }
   };
 

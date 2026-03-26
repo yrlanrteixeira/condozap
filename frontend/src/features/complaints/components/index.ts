@@ -9,6 +9,7 @@ export { ComplaintForm } from './ComplaintForm';
 export { ComplaintViewModeToggle } from './ComplaintViewModeToggle';
 export { ComplaintHistoryList } from './ComplaintHistoryList';
 export { ComplaintDetailSheet } from './ComplaintDetailSheet';
+export { ResidentComplaintDetailSheet } from './ResidentComplaintDetailSheet';
 export { AdminComplaintsMobileList } from './AdminComplaintsMobileList';
 
 

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Complaint } from '@/features/complaints/types';
-import { ComplaintForm, ComplaintHistoryList } from '../components';
+import { ComplaintForm, ComplaintHistoryList, ResidentComplaintDetailSheet } from '../components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useAnnouncements, AnnouncementsCarousel } from '@/features/announcements';
 
@@ -13,6 +14,7 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
   const { user } = useAuth();
   const residentId = user?.residentId;
   const { data: announcements = [] } = useAnnouncements(condominiumId);
+  const [selectedComplaintId, setSelectedComplaintId] = useState<number | null>(null);
 
   // Filter complaints to show only user's own complaints
   const myComplaints = complaints.filter((c) => c.residentId === residentId);
@@ -28,10 +30,10 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
 
       <div className="mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-          Central de Denúncias (Anônimo)
+          Central de Denuncias (Anonimo)
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground">
-          Relate problemas com segurança total. Sua identidade é preservada.
+          Relate problemas com seguranca total. Sua identidade e preservada.
         </p>
       </div>
 
@@ -39,7 +41,16 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
         <ComplaintForm onSubmit={onSubmit} />
       </div>
 
-      <ComplaintHistoryList complaints={myComplaints} />
+      <ComplaintHistoryList
+        complaints={myComplaints}
+        onComplaintClick={(complaint) => setSelectedComplaintId(complaint.id)}
+      />
+
+      <ResidentComplaintDetailSheet
+        complaintId={selectedComplaintId}
+        open={selectedComplaintId !== null}
+        onOpenChange={(open) => { if (!open) setSelectedComplaintId(null); }}
+      />
     </div>
   );
 }
