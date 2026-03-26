@@ -67,13 +67,15 @@ export const createApp = async (): Promise<FastifyInstance> => {
     },
   });
 
-  fastify.get("/health", async () => {
-    return {
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      version: "1.0.0",
-    };
+  const healthPayload = async () => ({
+    status: "ok" as const,
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
   });
+
+  fastify.get("/health", healthPayload);
+  /** Alias útil se CDN/proxy tiver regra de redirect só em `/health` (evita loop 301→mesma URL). */
+  fastify.get("/api/health", healthPayload);
 
   await fastify.register(authRoutes, { prefix: "/api/auth" });
   await fastify.register(userApprovalRoutes, { prefix: "/api" });
