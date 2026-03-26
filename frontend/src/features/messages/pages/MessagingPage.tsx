@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { FormSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
-import type { TargetData } from "@/features/messages/types";
+import type { TargetData, MessageType, MessageScope } from "@/features/messages/types";
 import { TEMPLATES } from "@/config/constants";
 import { filterResidentsByTarget } from "@/shared/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
@@ -110,12 +110,12 @@ export function MessagingPage() {
 
       await sendMessage.mutateAsync({
         condominiumId: currentCondominiumId,
-        type: msgType.toUpperCase() as any,
+        type: msgType.toUpperCase() as MessageType,
         content: {
           text: contentString,
         },
         target: {
-          scope: scope.toUpperCase() as any,
+          scope: scope.toUpperCase() as MessageScope,
           tower: selectedTower,
           floor: selectedFloor,
           unit: selectedUnit,
@@ -135,9 +135,7 @@ export function MessagingPage() {
       if (msgType === "template") {
         setTemplateId(TEMPLATES[0]?.name || "");
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-
+    } catch {
       toast({
         title: "Erro ao enviar",
         description: "Não foi possível enviar a mensagem. Tente novamente.",

@@ -22,5 +22,15 @@ export default defineConfig({
     outDir: "dist",
     copyPublicDir: true,
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-redux": ["@reduxjs/toolkit", "react-redux", "redux-persist"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-form": ["react-hook-form", "@hookform/resolvers", "zod"],
+        },
+      },
+    },
   },
 });

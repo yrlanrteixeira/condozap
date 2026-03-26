@@ -56,8 +56,6 @@ export const useResident = createQuery({
 export const useTowers = createQuery({
   queryKey: (condominiumId: string) => queryKeys.towers(condominiumId),
   queryFn: async (condominiumId: string): Promise<string[]> => {
-    // TODO: Backend doesn't have this endpoint yet
-    // Get unique towers from residents
     const { data } = await api.get(`/residents/${condominiumId}`);
     const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
     return uniqueTowers.sort() as string[];
@@ -116,9 +114,6 @@ export const useImportResidents = createMutationWithInvalidation<
   Resident[]
 >({
   mutationFn: async (input) => {
-    // TODO: Backend doesn't have this endpoint yet
-    // For now, create residents one by one
-    console.warn('Bulk import not implemented yet - creating individually');
     const { data } = await api.post('/residents/import', input);
     return data.map((resident: Resident) => ResidentSchema.parse(resident));
   },

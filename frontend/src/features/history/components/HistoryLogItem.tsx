@@ -1,10 +1,10 @@
 import { Clock, Phone, FileJson } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
-import type { Message } from '@/types';
+import type { HistoryLog } from '../types';
 import { formatDateTime } from '@/shared/utils/helpers';
 
 interface HistoryLogItemProps {
-  log: Message;
+  log: HistoryLog;
 }
 
 const getStatusColor = (type: string) => {
@@ -22,7 +22,7 @@ const getStatusColor = (type: string) => {
 
 export const HistoryLogItem = ({ log }: HistoryLogItemProps) => {
   // Suporta tanto timestamp (compatibilidade) quanto sentAt (padrão)
-  const dateField = (log as any).timestamp || (log as any).sentAt || (log as any).createdAt;
+  const dateField = log.timestamp || log.sentAt || log.createdAt;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 hover:bg-muted/30 transition-colors">

@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/shared/hooks/useAuth";
-// import { useRole } from "@/shared/hooks/useRole";
 import { usePermissions } from "@/shared/hooks/usePermissions";
 import { Permissions } from "@/config/permissions";
 import { useState, useEffect, useCallback } from "react";
@@ -12,7 +11,6 @@ import {
   Building2,
   AlertTriangle,
   Users,
-  // History,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -20,7 +18,6 @@ import {
   UserCheck,
   UsersRound,
 } from "lucide-react";
-// Avatar será implementado inline por enquanto
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
 import { Logo } from "@/shared/components/Logo";
@@ -106,26 +103,7 @@ export const Sidebar = ({
       // Both admins (VIEW_COMPLAINTS) and residents (VIEW_OWN_COMPLAINTS) can access
       badge: openComplaintsCount,
     },
-    // {
-    //   title: "Histórico",
-    //   href: "/history",
-    //   icon: History,
-    //   permission: Permissions.VIEW_HISTORY,
-    // },
   ];
-
-  // Dashboard Unificado para quem gerencia múltiplos condomínios
-  // - SUPER_ADMIN: sempre tem acesso (gerencia todos)
-  // - SYNDIC: se tiver mais de 1 condomínio vinculado pelo SUPER_ADMIN
-  const hasMultipleCondos = user?.condominiums && user.condominiums.length > 1;
-  // if (isSuperAdmin || isProfessionalSyndic || (isSyndic && hasMultipleCondos)) {
-  //   navItems.unshift({
-  //     title: "Dashboard Unificado",
-  //     href: "/unified-dashboard",
-  //     icon: LayoutDashboard,
-  //     permission: Permissions.VIEW_UNIFIED_DASHBOARD,
-  //   });
-  // }
 
   const bottomNavItems: NavItem[] = [
     {

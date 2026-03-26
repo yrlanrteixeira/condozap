@@ -38,12 +38,18 @@ export interface Condominium {
 /**
  * Usuário do sistema
  */
+/**
+ * Status de aprovação do usuário
+ */
+export type UserStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   permissionScope: PermissionScope;
+  status?: UserStatus; // Status de aprovação do usuário
   condominiums?: Condominium[]; // Lista de condomínios que o usuário tem acesso
   currentCondominiumId?: string; // ID do condomínio ativo no momento
   residentId?: string; // ID do cadastro de morador (para role RESIDENT)

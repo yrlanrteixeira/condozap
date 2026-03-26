@@ -22,7 +22,7 @@ export function ApprovalGuard({ children }: ApprovalGuardProps) {
   }
 
   // Check user status from Redux store (synced from JWT)
-  const userStatus = (user as any).status;
+  const userStatus = user.status;
 
   // If user is pending approval, redirect to pending page
   if (userStatus === 'PENDING') {

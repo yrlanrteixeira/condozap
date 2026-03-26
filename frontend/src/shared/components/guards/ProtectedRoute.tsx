@@ -28,7 +28,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     // Verificar se o usuário está autenticado mas tem perfil inválido
     if (isAuthenticated && !isValidUserRole(userRole)) {
-      console.warn('⚠️ Perfil de usuário inválido detectado no ProtectedRoute:', userRole);
       setShowInvalidRoleModal(true);
     }
   }, [isAuthenticated, userRole]);

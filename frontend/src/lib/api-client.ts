@@ -77,7 +77,6 @@ let reduxStore: any = null;
  */
 export const setReduxStore = (store: any) => {
   reduxStore = store;
-  console.log("✅ Redux store configurado no apiClient");
 };
 
 /**
@@ -128,7 +127,6 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error: AxiosError) => {
-    console.error("❌ Erro no request interceptor:", error);
     return Promise.reject(error);
   }
 );
@@ -161,9 +159,6 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Se não tem store configurado, redireciona para login
       if (!reduxStore) {
-        console.warn(
-          "⚠️ Redux store não configurado, redirecionando para login"
-        );
         if (!window.location.pathname.includes("/login")) {
           window.location.href = "/login";
         }
@@ -192,7 +187,6 @@ apiClient.interceptors.response.use(
 
         // Se não tem refresh token, faz logout
         if (!refreshToken) {
-          console.warn("⚠️ Refresh token não disponível, fazendo logout");
           reduxStore.dispatch({ type: "auth/logout" });
           if (!window.location.pathname.includes("/login")) {
             window.location.href = "/login";
@@ -201,14 +195,12 @@ apiClient.interceptors.response.use(
         }
 
         // Tenta renovar o token
-        console.log("🔄 Tentando renovar token via interceptor...");
         const { refreshAccessToken } =
           await import("../shared/store/slices/authSlice");
         const result = await reduxStore.dispatch(refreshAccessToken()).unwrap();
 
         // Token renovado com sucesso
         const newToken = result.token;
-        console.log("✅ Token renovado com sucesso via interceptor");
 
         // Atualiza header da requisição original
         if (originalRequest.headers) {
@@ -223,10 +215,6 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Falha ao renovar token - fazer logout
-        console.error(
-          "❌ Falha ao renovar token via interceptor:",
-          refreshError
-        );
         isRefreshing = false;
         refreshSubscribers = [];
 

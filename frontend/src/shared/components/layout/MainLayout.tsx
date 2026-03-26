@@ -46,7 +46,7 @@ export function MainLayout() {
 
   // Contar ocorrências abertas
   const openComplaintsCount = user?.role === 'RESIDENT'
-    ? complaints.filter(c => c.residentId === (user as any)?.residentId && c.status === 'OPEN').length
+    ? complaints.filter(c => c.residentId === user?.residentId && c.status === 'OPEN').length
     : complaints.filter(c => c.status === 'OPEN').length;
 
   // Salvar estado no localStorage quando mudar

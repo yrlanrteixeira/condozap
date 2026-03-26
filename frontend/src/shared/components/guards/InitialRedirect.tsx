@@ -22,12 +22,10 @@ export const InitialRedirect = () => {
   // Morador → Suas Denúncias
   if (userRole === UserRoles.RESIDENT) {
     redirectTo = "/complaints";
-    console.log("🔄 Redirecionando RESIDENT para /complaints");
   }
   // Todos os outros perfis (ADMIN, SYNDIC, SUPER_ADMIN, PROFESSIONAL_SYNDIC) → Dashboard
   else {
     redirectTo = "/dashboard";
-    console.log(`🔄 Redirecionando ${userRole} para /dashboard`);
   }
 
   return <Navigate to={redirectTo} replace />;

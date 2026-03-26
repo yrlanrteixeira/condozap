@@ -38,7 +38,6 @@ const getTokenExpiry = (token: string): number | null => {
     const decoded = jwtDecode<JWTPayload>(token);
 
     if (!decoded.exp) {
-      console.warn("⚠️ Token JWT não contém campo 'exp' (expiração)");
       return null;
     }
 
@@ -46,22 +45,11 @@ const getTokenExpiry = (token: string): number | null => {
     const expiryMs = decoded.exp * 1000;
 
     if (expiryMs <= Date.now()) {
-      console.warn("⚠️ Token JWT já está expirado");
       return null;
     }
 
-    const expiryDate = new Date(expiryMs);
-    const timeUntilExpiry = expiryMs - Date.now();
-    const hoursUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60 * 60));
-
-    console.log("✅ Validade do token extraída:", {
-      expiresAt: expiryDate.toLocaleString("pt-BR"),
-      hoursRemaining: hoursUntilExpiry,
-    });
-
     return expiryMs;
-  } catch (error) {
-    console.error("❌ Erro ao decodificar token JWT:", error);
+  } catch {
     return null;
   }
 };
@@ -77,9 +65,6 @@ const calculateTokenExpiry = (token: string): number => {
   }
 
   // Fallback para 15 minutos se não conseguir decodificar
-  console.warn(
-    "⚠️ Não foi possível extrair validade do token, usando fallback de 15 minutos"
-  );
   return Date.now() + TOKEN_EXPIRY_TIME_FALLBACK;
 };
 
@@ -107,7 +92,6 @@ export const login = createAsyncThunk(
 
       // Validar o perfil do usuário
       if (!isValidUserRole(response.data.user.role)) {
-        console.warn("⚠️ Perfil inválido detectado:", response.data.user.role);
         return rejectWithValue("INVALID_ROLE");
       }
 
@@ -202,7 +186,6 @@ export const refreshAccessToken = createAsyncThunk(
         error.response?.data?.message ||
         error.message ||
         "Erro ao renovar token";
-      console.error("❌ Erro ao renovar token:", message);
       return rejectWithValue(message);
     }
   }
@@ -248,7 +231,6 @@ const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
       }
       state.tokenExpiresAt = calculateTokenExpiry(action.payload.token);
-      console.log("🔄 Access token atualizado");
     },
 
     /**
@@ -288,14 +270,6 @@ const authSlice = createSlice({
           state.refreshToken = action.payload.refreshToken;
           state.tokenExpiresAt = calculateTokenExpiry(action.payload.token);
           state.error = null;
-
-          console.log("✅ Login realizado com sucesso:", {
-            userId: state.user.id,
-            role: state.user.role,
-            tokenExpiresAt: new Date(
-              state.tokenExpiresAt || 0
-            ).toLocaleString(),
-          });
         }
       )
       .addCase(login.rejected, (state, action) => {
@@ -316,13 +290,8 @@ const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
         state.tokenExpiresAt = calculateTokenExpiry(action.payload.token);
         state.error = null;
-        console.log(
-          "✅ Token renovado - Expira em:",
-          new Date(state.tokenExpiresAt).toLocaleString()
-        );
       })
       .addCase(refreshAccessToken.rejected, (state) => {
-        console.error("❌ Falha ao renovar token - Realizando logout");
         state.user = null;
         state.token = null;
         state.refreshToken = null;

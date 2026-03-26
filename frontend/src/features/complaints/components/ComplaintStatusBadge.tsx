@@ -82,7 +82,6 @@ export const ComplaintStatusBadge = ({
   const sizeConfig = SIZE_CONFIG[size];
 
   if (!statusConfig) {
-    console.error("Invalid status:", status);
     return null;
   }
 

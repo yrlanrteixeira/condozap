@@ -63,19 +63,24 @@ export const StructureConfigDialog = ({
     setTowers(towers.filter((_, i) => i !== index));
   };
 
-  const handleUpdateTower = (index: number, field: keyof TowerStructure, value: any) => {
+  const handleUpdateTower = (index: number, field: keyof TowerStructure, value: string | number) => {
     const newTowers = [...towers];
+    const tower = newTowers[index];
+    if (!tower) return;
+
     if (field === "floors") {
       // Parse floors string like "1-5" or "1,2,3"
       const floorsStr = value as string;
       if (floorsStr.includes("-")) {
         const [start, end] = floorsStr.split("-").map(Number);
-        newTowers[index].floors = Array.from({ length: end - start + 1 }, (_, i) => String(start + i));
+        tower.floors = Array.from({ length: end - start + 1 }, (_, i) => String(start + i));
       } else {
-        newTowers[index].floors = floorsStr.split(",").map(f => f.trim());
+        tower.floors = floorsStr.split(",").map(f => f.trim());
       }
-    } else {
-      (newTowers[index] as any)[field] = value;
+    } else if (field === "name") {
+      tower.name = value as string;
+    } else if (field === "unitsPerFloor") {
+      tower.unitsPerFloor = value as number;
     }
     setTowers(newTowers);
   };
@@ -118,12 +123,13 @@ export const StructureConfigDialog = ({
       });
 
       onOpenChange(false);
-    } catch (error: any) {
-      console.error("Failed to update structure:", error);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Não foi possível atualizar a estrutura. Tente novamente.";
 
       toast({
         title: "Erro ao salvar",
-        description: error?.response?.data?.error || "Não foi possível atualizar a estrutura. Tente novamente.",
+        description: message,
         variant: "error",
         duration: 5000,
       });

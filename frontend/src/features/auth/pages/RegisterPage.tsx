@@ -68,8 +68,8 @@ export function RegisterPage() {
         consentWhatsapp: values.consentWhatsapp,
       });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao criar conta");
     }
   };
 
@@ -86,10 +86,6 @@ export function RegisterPage() {
     if (!form.getValues("consentWhatsapp")) {
       setShowWhatsappDialog(true);
     }
-    // Não permite desmarcar - comentado propositalmente
-    // else {
-    //   form.setValue("consentWhatsapp", false);
-    // }
   };
 
   const handleDataConsentAccept = () => {

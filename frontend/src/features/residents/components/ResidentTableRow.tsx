@@ -34,9 +34,7 @@ export const ResidentTableRow = ({
       });
       
       setShowDeleteDialog(false);
-    } catch (error) {
-      console.error("Failed to delete resident:", error);
-      
+    } catch {
       toast({
         title: "Erro ao remover",
         description: "Não foi possível remover o morador. Tente novamente.",
@@ -54,7 +52,7 @@ export const ResidentTableRow = ({
         </TableCell>
         {showCondominium && (
           <TableCell className="text-sm text-muted-foreground">
-            {(resident as any).condominium?.name || '-'}
+            {resident.condominium?.name || '-'}
           </TableCell>
         )}
         <TableCell className="font-mono text-muted-foreground">

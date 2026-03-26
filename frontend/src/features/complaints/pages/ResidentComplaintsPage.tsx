@@ -11,7 +11,7 @@ interface ResidentComplaintsPageProps {
 
 export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: ResidentComplaintsPageProps) {
   const { user } = useAuth();
-  const residentId = (user as any)?.residentId;
+  const residentId = user?.residentId;
   const { data: announcements = [] } = useAnnouncements(condominiumId);
 
   // Filter complaints to show only user's own complaints

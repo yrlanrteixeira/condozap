@@ -1,9 +1,9 @@
 import { Card, CardContent } from '@/shared/components/ui/card';
-import type { Message } from '@/types';
+import type { HistoryLog } from '../types';
 import { HistoryLogItem } from './HistoryLogItem';
 
 interface HistoryLogListProps {
-  logs: Message[];
+  logs: HistoryLog[];
 }
 
 export const HistoryLogList = ({ logs }: HistoryLogListProps) => {

@@ -63,6 +63,10 @@ export interface MessageHistory {
   sentBy: string;
   sentByName?: string;
   sentAt: string;
+  timestamp?: string; // Legacy/compatibility field
+  createdAt?: string; // Alternative date field from API
+  phone?: string; // Recipient phone number
+  payload?: Record<string, unknown>; // Raw message payload data
 }
 
 /**

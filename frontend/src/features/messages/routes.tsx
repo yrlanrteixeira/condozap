@@ -1,16 +1,20 @@
+import { lazy, Suspense } from "react";
 import { PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
-import { MessagingPage } from "./pages/MessagingPage";
+import { PageLoader } from "@/shared/components/ui/page-loader";
+
+const MessagingPage = lazy(() => import("./pages/MessagingPage"));
 
 export const messagesRoutes: FeatureRoute[] = [
   {
     path: "messages",
     element: (
       <PermissionGuard permission={Permissions.SEND_MESSAGE}>
-        <MessagingPage />
+        <Suspense fallback={<PageLoader />}>
+          <MessagingPage />
+        </Suspense>
       </PermissionGuard>
     ),
   },
 ];
-

@@ -37,7 +37,6 @@ export const authMiddleware: Middleware = (store) => {
 
     // Se o token já expirou, fazer logout
     if (isExpired) {
-      console.warn("⚠️ Token expirado - Realizando logout");
       store.dispatch(logout());
       stopTokenCheck();
       return;
@@ -46,7 +45,6 @@ export const authMiddleware: Middleware = (store) => {
     // Se o token está próximo de expirar e não estamos já renovando
     if (shouldRefresh && !isRefreshing) {
       isRefreshing = true;
-      console.log("🔄 Iniciando renovação automática de token...");
 
       try {
         const result = store.dispatch(
@@ -55,12 +53,7 @@ export const authMiddleware: Middleware = (store) => {
         if ("unwrap" in result && typeof result.unwrap === "function") {
           await result.unwrap();
         }
-        console.log("✅ Token renovado automaticamente com sucesso");
-      } catch (error) {
-        console.error(
-          "❌ Erro na renovação automática - Fazendo logout:",
-          error
-        );
+      } catch {
         store.dispatch(logout());
         stopTokenCheck();
       } finally {
@@ -75,7 +68,6 @@ export const authMiddleware: Middleware = (store) => {
   const startTokenCheck = () => {
     if (tokenCheckInterval) return; // Já está rodando
 
-    console.log("🕐 Iniciando verificações periódicas de token");
     tokenCheckInterval = setInterval(() => {
       checkAndRefreshToken();
     }, 30000); // Verifica a cada 30 segundos
@@ -86,7 +78,6 @@ export const authMiddleware: Middleware = (store) => {
    */
   const stopTokenCheck = () => {
     if (tokenCheckInterval) {
-      console.log("🛑 Parando verificações periódicas de token");
       clearInterval(tokenCheckInterval);
       tokenCheckInterval = null;
     }
@@ -124,16 +115,3 @@ export const authMiddleware: Middleware = (store) => {
     return result;
   };
 };
-
-/**
- * Middleware de logging para debug (desabilitado em produção)
- */
-export const authLoggingMiddleware: Middleware =
-  () => (next) => (action: unknown) => {
-    const typedAction = action as { type?: string; payload?: unknown };
-    // Apenas loga ações relacionadas à autenticação em desenvolvimento
-    if (import.meta.env.DEV && typedAction.type?.startsWith("auth/")) {
-      console.log("🔐 Auth Action:", typedAction.type, typedAction.payload);
-    }
-    return next(action as Parameters<Parameters<ReturnType<Middleware>>[0]>[0]);
-  };

@@ -15,10 +15,7 @@ import themeReducer from "./slices/themeSlice";
 import uiReducer from "./slices/uiSlice";
 import userReducer from "./slices/userSlice";
 import condominiumReducer from "./slices/condominiumSlice";
-import {
-  authMiddleware,
-  authLoggingMiddleware,
-} from "./middleware/authMiddleware";
+import { authMiddleware } from "./middleware/authMiddleware";
 
 // Persist config - persiste theme, condominium, ui e user
 const persistConfig = {
@@ -65,8 +62,7 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
-      .concat(authMiddleware) // Middleware de renovação automática de tokens
-      .concat(authLoggingMiddleware), // Middleware de logging (apenas dev)
+      .concat(authMiddleware),
   devTools: import.meta.env.DEV,
 });
 

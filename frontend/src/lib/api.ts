@@ -114,7 +114,6 @@ api.interceptors.request.use(
     return requestConfig;
   },
   (error: AxiosError) => {
-    console.error("❌ Erro no request interceptor:", error);
     return Promise.reject(error);
   }
 );
@@ -158,7 +157,6 @@ api.interceptors.response.use(
 
         // Se não tem refresh token, faz logout
         if (!refreshToken) {
-          console.warn("⚠️ Refresh token não disponível, fazendo logout");
           localStorage.removeItem("auth_token");
           localStorage.removeItem("refresh_token");
           if (!window.location.pathname.includes("/auth/login")) {
@@ -168,7 +166,6 @@ api.interceptors.response.use(
         }
 
         // Tenta renovar o token
-        console.log("🔄 Tentando renovar token via interceptor...");
         const response = await axios.post(`${config.apiUrl}/auth/refresh`, {
           refreshToken,
         });
@@ -203,10 +200,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Falha ao renovar token - fazer logout
-        console.error(
-          "❌ Falha ao renovar token via interceptor:",
-          refreshError
-        );
         isRefreshing = false;
         refreshSubscribers = [];
         localStorage.removeItem("auth_token");

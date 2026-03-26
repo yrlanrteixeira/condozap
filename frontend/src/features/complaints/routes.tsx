@@ -1,7 +1,12 @@
+import { lazy, Suspense } from "react";
 import { AnyPermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
-import { ComplaintsPage } from "./pages/ComplaintsPage";
+import { PageLoader } from "@/shared/components/ui/page-loader";
+
+const ComplaintsPage = lazy(() =>
+  import("./pages/ComplaintsPage").then((m) => ({ default: m.ComplaintsPage }))
+);
 
 export const complaintsRoutes: FeatureRoute[] = [
   {
@@ -13,9 +18,10 @@ export const complaintsRoutes: FeatureRoute[] = [
           Permissions.VIEW_OWN_COMPLAINTS,
         ]}
       >
-        <ComplaintsPage />
+        <Suspense fallback={<PageLoader />}>
+          <ComplaintsPage />
+        </Suspense>
       </AnyPermissionGuard>
     ),
   },
 ];
-

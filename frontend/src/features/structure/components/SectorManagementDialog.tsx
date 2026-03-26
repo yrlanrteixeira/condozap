@@ -49,7 +49,6 @@ export const SectorManagementDialog = ({
     updateSector.isPending ||
     deleteSector.isPending;
 
-  // Reset form state when dialog closes
   useEffect(() => {
     if (!open) {
       resetForm();
@@ -185,7 +184,6 @@ export const SectorManagementDialog = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* New sector button */}
           {!showForm && (
             <Button
               variant="outline"
@@ -201,7 +199,6 @@ export const SectorManagementDialog = ({
             </Button>
           )}
 
-          {/* Create/Edit form */}
           {showForm && (
             <Card className="border-primary/30">
               <CardContent className="p-4 space-y-4">
@@ -288,7 +285,6 @@ export const SectorManagementDialog = ({
             </Card>
           )}
 
-          {/* Existing sectors list */}
           {isLoading ? (
             <div className="text-center text-muted-foreground py-8">
               Carregando setores...

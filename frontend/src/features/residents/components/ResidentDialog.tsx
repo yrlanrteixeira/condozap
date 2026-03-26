@@ -125,9 +125,7 @@ export const ResidentDialog = ({
       }
 
       handleClose();
-    } catch (error) {
-      console.error("Failed to save resident:", error);
-
+    } catch {
       toast({
         title: "Erro ao salvar",
         description: resident

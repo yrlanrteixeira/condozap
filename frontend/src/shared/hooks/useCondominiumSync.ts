@@ -25,13 +25,6 @@ export function useCondominiumSync() {
 
     // Only invalidate if condominium actually changed
     if (previousCondominiumId.current !== currentCondominiumId) {
-      console.log(
-        '🏢 Condomínio alterado:',
-        previousCondominiumId.current,
-        '→',
-        currentCondominiumId
-      );
-
       // Invalidate all data-related queries
       // This forces refetch with the new condominium ID
       queryClient.invalidateQueries({ queryKey: ['residents'] });
@@ -39,8 +32,6 @@ export function useCondominiumSync() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['history'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-
-      console.log('✅ Queries invalidadas - dados serão atualizados');
 
       // Update ref for next comparison
       previousCondominiumId.current = currentCondominiumId;

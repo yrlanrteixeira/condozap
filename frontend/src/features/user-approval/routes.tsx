@@ -1,15 +1,29 @@
+import { lazy, Suspense } from "react";
 import { ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
-import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
-import { UserApprovalPage } from "./pages/UserApprovalPage";
+import { PageLoader } from "@/shared/components/ui/page-loader";
+
+const UserApprovalPage = lazy(() =>
+  import("./pages/UserApprovalPage").then((m) => ({
+    default: m.UserApprovalPage,
+  }))
+);
+
+const PendingApprovalPage = lazy(() =>
+  import("@/pages/PendingApprovalPage").then((m) => ({
+    default: m.PendingApprovalPage,
+  }))
+);
 
 export const userApprovalRoutes: FeatureRoute[] = [
   {
     path: "user-approval",
     element: (
       <PermissionGuard permission={Permissions.MANAGE_RESIDENTS}>
-        <UserApprovalPage />
+        <Suspense fallback={<PageLoader />}>
+          <UserApprovalPage />
+        </Suspense>
       </PermissionGuard>
     ),
   },
@@ -19,7 +33,9 @@ export const pendingApprovalRoute: FeatureRoute = {
   path: "/pending-approval",
   element: (
     <ProtectedRoute>
-      <PendingApprovalPage />
+      <Suspense fallback={<PageLoader />}>
+        <PendingApprovalPage />
+      </Suspense>
     </ProtectedRoute>
   ),
 };

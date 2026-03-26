@@ -73,7 +73,7 @@ export function ComplaintsPage() {
       return;
     }
 
-    const residentId = (user as any)?.residentId;
+    const residentId = user?.residentId;
 
     if (!residentId) {
       toast({
@@ -103,9 +103,7 @@ export function ComplaintsPage() {
         variant: "success",
         duration: 3000,
       });
-    } catch (error) {
-      console.error("Failed to create complaint:", error);
-
+    } catch {
       toast({
         title: "Erro ao registrar",
         description:
@@ -144,9 +142,7 @@ export function ComplaintsPage() {
           variant: "success",
           duration: 3000,
         });
-      } catch (error) {
-        console.error("Failed to update complaint:", error);
-
+      } catch {
         toast({
           title: "Erro ao atualizar",
           description: "Não foi possível atualizar o status. Tente novamente.",
@@ -174,9 +170,7 @@ export function ComplaintsPage() {
         variant: "success",
         duration: 3000,
       });
-    } catch (error) {
-      console.error("Failed to update complaint:", error);
-
+    } catch {
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar o status. Tente novamente.",

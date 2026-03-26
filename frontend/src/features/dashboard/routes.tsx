@@ -1,15 +1,20 @@
+import { lazy, Suspense } from "react";
 import { PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
-import { DashboardPage } from "./pages/DashboardPage";
-import { UnifiedDashboardPage } from "./pages/UnifiedDashboardPage";
+import { PageLoader } from "@/shared/components/ui/page-loader";
+
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const UnifiedDashboardPage = lazy(() => import("./pages/UnifiedDashboardPage"));
 
 export const dashboardRoutes: FeatureRoute[] = [
   {
     path: "unified-dashboard",
     element: (
       <PermissionGuard permission={Permissions.VIEW_UNIFIED_DASHBOARD}>
-        <UnifiedDashboardPage />
+        <Suspense fallback={<PageLoader />}>
+          <UnifiedDashboardPage />
+        </Suspense>
       </PermissionGuard>
     ),
   },
@@ -17,9 +22,10 @@ export const dashboardRoutes: FeatureRoute[] = [
     path: "dashboard",
     element: (
       <PermissionGuard permission={Permissions.VIEW_DASHBOARD}>
-        <DashboardPage />
+        <Suspense fallback={<PageLoader />}>
+          <DashboardPage />
+        </Suspense>
       </PermissionGuard>
     ),
   },
 ];
-

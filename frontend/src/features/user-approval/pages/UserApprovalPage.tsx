@@ -82,7 +82,6 @@ export function UserApprovalPage() {
         description: "Usuário aprovado e alocado com sucesso.",
       });
     } catch (error: any) {
-      console.error("Failed to approve user:", error);
       toast({
         title: "Erro ao aprovar usuário",
         description: error.message || "Ocorreu um erro inesperado.",
@@ -101,7 +100,6 @@ export function UserApprovalPage() {
         variant: "default",
       });
     } catch (error: any) {
-      console.error("Failed to reject user:", error);
       toast({
         title: "Erro ao rejeitar cadastro",
         description: error.message || "Ocorreu um erro inesperado.",

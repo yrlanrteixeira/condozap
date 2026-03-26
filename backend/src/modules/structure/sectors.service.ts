@@ -11,7 +11,6 @@ import {
   deleteRemovedSectorMembers,
   upsertSectorMember,
   findSectorWithMembers,
-  countComplaintsBySector,
   deleteAllSectorMembers,
   deleteSector as repoDeleteSector,
 } from "./sectors.repository";
@@ -97,12 +96,14 @@ export const deleteSector = async (
   condominiumId: string,
   sectorId: string
 ) => {
-  const sector = await findSectorInCondominium(prisma, condominiumId, sectorId);
+  const sector = await prisma.sector.findFirst({
+    where: { id: sectorId, condominiumId },
+    select: { id: true, _count: { select: { complaints: true } } },
+  });
   if (!sector) {
     throw new NotFoundError("Setor");
   }
-  const complaintsCount = await countComplaintsBySector(prisma, sectorId);
-  if (complaintsCount > 0) {
+  if (sector._count.complaints > 0) {
     throw new BadRequestError(
       "Setor possui chamados vinculados e não pode ser removido"
     );

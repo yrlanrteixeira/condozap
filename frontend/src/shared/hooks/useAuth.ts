@@ -16,9 +16,9 @@ import {
   setCurrentCondominium,
   clearCondominiums,
 } from "@/shared/store/slices/condominiumSlice";
-import { store } from "@/shared/store";
+import { store, type RootState } from "@/shared/store";
 import { api } from "@/lib/api";
-import type { LoginRequest } from "@/types/user";
+import type { LoginRequest, Condominium } from "@/types/user";
 import type { User } from "@/types";
 
 /**
@@ -45,9 +45,9 @@ export const useAuth = () => {
 
       if (result.user.condominiums && result.user.condominiums.length > 0) {
         dispatch(setCondominiums(result.user.condominiums));
-        const state = store.getState() as any;
+        const state = store.getState() as RootState;
         const currentCondoId = state?.condominium?.currentCondominiumId;
-        const ids = result.user.condominiums.map((c: any) => c.id);
+        const ids = result.user.condominiums.map((c: Condominium) => c.id);
 
         if (!currentCondoId || !ids.includes(currentCondoId)) {
           const firstCondo = result.user.condominiums[0];

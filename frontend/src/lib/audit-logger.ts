@@ -78,9 +78,6 @@ class AuditLogger {
     if (!this.isProduction) {
       this.logToConsole(entry);
     }
-
-    // TODO: Enviar para backend quando API estiver disponível
-    // this.sendToBackend(entry);
   }
 
   /**

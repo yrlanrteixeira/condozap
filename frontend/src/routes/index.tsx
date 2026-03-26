@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ApprovalGuard, InitialRedirect, ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
 import { MainLayout } from "@/shared/components/layout";
@@ -13,8 +14,15 @@ import { structureRoutes } from "@/features/structure/routes";
 import { pendingApprovalRoute, userApprovalRoutes } from "@/features/user-approval/routes";
 import { userManagementRoutes } from "@/features/user-management/routes";
 import type { FeatureRoute } from "@/routes/types";
-import { AccessDeniedPage } from "@/pages/AccessDenied";
-import { SettingsPage } from "@/pages/SettingsPage";
+import { PageLoader } from "@/shared/components/ui/page-loader";
+
+const AccessDeniedPage = lazy(() =>
+  import("@/pages/AccessDenied").then((m) => ({ default: m.AccessDeniedPage }))
+);
+
+const SettingsPage = lazy(() =>
+  import("@/pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
+);
 
 export function AppRoutes() {
   const protectedRoutes: FeatureRoute[] = [
@@ -40,7 +48,14 @@ export function AppRoutes() {
         element={pendingApprovalRoute.element}
       />
 
-      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      <Route
+        path="/access-denied"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <AccessDeniedPage />
+          </Suspense>
+        }
+      />
 
       <Route
         path="/*"
@@ -66,7 +81,9 @@ export function AppRoutes() {
           path="settings"
           element={
             <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
-              <SettingsPage />
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
+              </Suspense>
             </PermissionGuard>
           }
         />

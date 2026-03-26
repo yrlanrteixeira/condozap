@@ -31,12 +31,14 @@ interface ComplaintFormProps {
 
 export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
-  const { data: sectors } = useSectors(currentCondominiumId || '');
+  const { data: sectors } = useSectors(currentCondominiumId ?? '');
 
-  // Extract unique categories from all sectors, fallback to hardcoded if no sectors
-  const dynamicCategories = sectors && sectors.length > 0
-    ? [...new Set(sectors.flatMap((s) => s.categories))].sort()
-    : [...COMPLAINT_CATEGORIES];
+  const dynamicCategories = useMemo(() => {
+    if (sectors?.length) {
+      return [...new Set(sectors.flatMap((s) => s.categories))].sort();
+    }
+    return [...COMPLAINT_CATEGORIES];
+  }, [sectors]);
 
   const {
     register,
