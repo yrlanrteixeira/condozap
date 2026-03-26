@@ -72,10 +72,10 @@ const roleIcons: Record<string, typeof Shield> = {
 };
 
 const statusColors: Record<string, string> = {
-  APPROVED: 'bg-green-500/10 text-green-500 border-green-500/20',
-  PENDING: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  REJECTED: 'bg-red-500/10 text-red-500 border-red-500/20',
-  SUSPENDED: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+  APPROVED: 'bg-success/10 text-success border-success/20',
+  PENDING: 'bg-warning/10 text-warning border-warning/20',
+  REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
+  SUSPENDED: 'bg-muted text-muted-foreground border-border',
 };
 
 const statusLabels: Record<string, string> = {

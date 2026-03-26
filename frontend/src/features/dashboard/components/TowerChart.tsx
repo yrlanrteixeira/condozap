@@ -14,7 +14,7 @@ export function ComplaintsByTowerChart({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
-          <Building className="text-orange-500" size={20} />
+          <Building className="text-warning" size={20} />
           Ocorrências por Torre
         </CardTitle>
       </CardHeader>
@@ -23,13 +23,13 @@ export function ComplaintsByTowerChart({
           {Object.entries(complaintsByTower).map(([tower, count]) => (
             <div key={tower} className="flex flex-col items-center gap-2 group flex-shrink-0">
               <div
-                className="relative w-12 sm:w-16 bg-orange-100 rounded-t-lg transition-all duration-500 group-hover:bg-orange-200 flex items-end justify-center"
+                className="relative w-12 sm:w-16 bg-primary/15 rounded-t-lg transition-all duration-500 group-hover:bg-primary/25 flex items-end justify-center"
                 style={{
                   height: `${totalComplaints > 0 ? (count / totalComplaints) * 100 : 0}%`,
                   minHeight: '20px',
                 }}
               >
-                <span className="mb-2 font-bold text-orange-700">{count}</span>
+                <span className="mb-2 font-bold text-primary">{count}</span>
               </div>
               <span className="text-sm font-bold text-muted-foreground">Torre {tower}</span>
             </div>

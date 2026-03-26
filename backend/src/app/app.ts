@@ -40,6 +40,10 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(cors, {
     origin: config.CORS_ORIGIN,
     credentials: true,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    preflight: true,
+    strictPreflight: false,
   });
 
   await fastify.register(helmet, {

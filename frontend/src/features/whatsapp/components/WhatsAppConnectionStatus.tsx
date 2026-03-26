@@ -72,11 +72,11 @@ export function WhatsAppConnectionStatus() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isConnected ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
+            <div className={`p-2 rounded-lg ${isConnected ? 'bg-success/10' : 'bg-warning/10'}`}>
               {isConnected ? (
-                <Wifi className="h-5 w-5 text-green-500" />
+                <Wifi className="h-5 w-5 text-success" />
               ) : (
-                <WifiOff className="h-5 w-5 text-yellow-500" />
+                <WifiOff className="h-5 w-5 text-warning" />
               )}
             </div>
             <div>
@@ -94,8 +94,8 @@ export function WhatsAppConnectionStatus() {
         {isConnected ? (
           // Estado conectado
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <Smartphone className="h-5 w-5 text-green-500" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
+              <Smartphone className="h-5 w-5 text-success" />
               <div className="flex-1">
                 <p className="font-medium text-foreground">WhatsApp conectado</p>
                 <p className="text-sm text-muted-foreground">
@@ -146,8 +146,8 @@ export function WhatsAppConnectionStatus() {
         ) : (
           // Estado desconectado
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-              <WifiOff className="h-5 w-5 text-yellow-500" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <WifiOff className="h-5 w-5 text-warning" />
               <div className="flex-1">
                 <p className="font-medium text-foreground">WhatsApp desconectado</p>
                 <p className="text-sm text-muted-foreground">
@@ -179,7 +179,7 @@ export function WhatsAppConnectionStatus() {
                     </div>
                   ) : qrcode?.qrcode ? (
                     <div className="space-y-4">
-                      <div className="p-4 bg-white rounded-lg">
+                      <div className="p-4 bg-white dark:bg-white rounded-lg">
                         <img
                           src={`data:image/png;base64,${qrcode.qrcode}`}
                           alt="QR Code WhatsApp"

@@ -10,13 +10,13 @@ interface HistoryLogItemProps {
 const getStatusColor = (type: string) => {
   switch (type?.toUpperCase()) {
     case 'TEXT':
-      return 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20';
+      return 'bg-info/10 text-info hover:bg-info/20';
     case 'TEMPLATE':
-      return 'bg-purple-500/10 text-purple-500 hover:bg-purple-500/20';
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20';
     case 'IMAGE':
-      return 'bg-green-500/10 text-green-500 hover:bg-green-500/20';
+      return 'bg-success/10 text-success hover:bg-success/20';
     default:
-      return 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20';
+      return 'bg-muted text-muted-foreground hover:bg-muted/80';
   }
 };
 

@@ -175,26 +175,26 @@ export function AdminComplaintsTablePage({
                             <div className="flex items-center gap-2">
                               <AlertTriangle
                                 size={14}
-                                className="text-amber-500"
+                                className="text-amber-600 dark:text-amber-400"
                               />
                               Triagem
                             </div>
                           </SelectItem>
                           <SelectItem value="IN_PROGRESS">
                             <div className="flex items-center gap-2">
-                              <Clock size={14} className="text-blue-500" />
+                              <Clock size={14} className="text-blue-600 dark:text-blue-400" />
                               Em atendimento
                             </div>
                           </SelectItem>
                           <SelectItem value="WAITING_USER">
                             <div className="flex items-center gap-2">
-                              <Clock size={14} className="text-amber-500" />
+                              <Clock size={14} className="text-amber-600 dark:text-amber-400" />
                               Aguardando usuário
                             </div>
                           </SelectItem>
                           <SelectItem value="WAITING_THIRD_PARTY">
                             <div className="flex items-center gap-2">
-                              <Clock size={14} className="text-amber-500" />
+                              <Clock size={14} className="text-amber-600 dark:text-amber-400" />
                               Aguardando terceiro
                             </div>
                           </SelectItem>
@@ -202,7 +202,7 @@ export function AdminComplaintsTablePage({
                             <div className="flex items-center gap-2">
                               <CheckCircle
                                 size={14}
-                                className="text-green-500"
+                                className="text-green-600 dark:text-green-400"
                               />
                               Resolvido
                             </div>
@@ -211,7 +211,7 @@ export function AdminComplaintsTablePage({
                             <div className="flex items-center gap-2">
                               <CheckCircle
                                 size={14}
-                                className="text-emerald-500"
+                                className="text-emerald-600 dark:text-emerald-400"
                               />
                               Encerrado
                             </div>
@@ -220,7 +220,7 @@ export function AdminComplaintsTablePage({
                             <div className="flex items-center gap-2">
                               <AlertTriangle
                                 size={14}
-                                className="text-gray-500"
+                                className="text-muted-foreground"
                               />
                               Cancelado
                             </div>

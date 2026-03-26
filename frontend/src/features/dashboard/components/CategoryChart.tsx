@@ -19,7 +19,7 @@ export function ComplaintsByCategoryChart({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
-          <PieChart className="text-purple-500" size={20} />
+          <PieChart className="text-primary" size={20} />
           Tipos de Reclamação
         </CardTitle>
       </CardHeader>
@@ -32,7 +32,7 @@ export function ComplaintsByCategoryChart({
             </div>
             <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-purple-500 h-2.5 rounded-full transition-all duration-500"
+                className="bg-primary h-2.5 rounded-full transition-all duration-500"
                 style={{
                   width: `${totalComplaints > 0 ? (item.count / totalComplaints) * 100 : 0}%`,
                 }}

@@ -41,5 +41,5 @@ COPY --from=builder /app/dist ./dist
 # Expose port
 EXPOSE 3001
 
-# Start server (Railway handles healthcheck and startCommand via railway.toml)
-CMD ["node", "dist/server.js"]
+# Run migrations and start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
