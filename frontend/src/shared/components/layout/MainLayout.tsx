@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { NotificationToast } from "./NotificationToast";
@@ -13,20 +12,7 @@ import { useAppSelector, useCondominiumSync } from "@/shared/hooks";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useComplaints } from "@/features/complaints/hooks/useComplaintsApi";
 
-const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
-
-const pageTransition = {
-  type: "tween" as const,
-  ease: "easeOut",
-  duration: 0.25,
-};
-
 export function MainLayout() {
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -103,18 +89,7 @@ export function MainLayout() {
           role="main"
           aria-label="Conteúdo principal"
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={pageTransition}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </main>
       </div>
 
