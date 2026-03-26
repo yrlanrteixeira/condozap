@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { Role, Scope, isGlobalScope, isSuperAdmin } from "./roles";
+import { Role, Scope, isGlobalScope } from "./roles";
 
 export interface AccessContext {
   role: Role;
@@ -19,7 +19,7 @@ export const resolveAccessContext = async (
   user: AccessUser
 ): Promise<AccessContext> => {
   const scope = user.permissionScope ?? ("LOCAL" as Scope);
-  if (isSuperAdmin(user.role) || isGlobalScope(scope)) {
+  if (isGlobalScope(scope)) {
     return {
       role: user.role,
       scope: "GLOBAL",
@@ -55,7 +55,6 @@ export const isCondominiumAllowed = (
   context: AccessContext,
   condominiumId: string
 ): boolean =>
-  isSuperAdmin(context.role) ||
   isGlobalScope(context.scope) ||
   context.allowedCondominiumIds.includes(condominiumId);
 
