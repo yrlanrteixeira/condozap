@@ -99,7 +99,7 @@ export function MainLayout() {
         {/* Page Content with transitions */}
         <main
           id="main-content"
-          className="flex-1 overflow-y-auto scrollbar-thin"
+          className="flex-1 overflow-y-auto scrollbar-thin bg-background"
           role="main"
           aria-label="Conteúdo principal"
         >
@@ -111,7 +111,6 @@ export function MainLayout() {
               animate="animate"
               exit="exit"
               transition={pageTransition}
-              className="p-4 md:p-6"
             >
               <Outlet />
             </motion.div>
