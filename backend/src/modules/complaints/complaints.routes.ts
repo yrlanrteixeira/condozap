@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin, requireRole } from "../../shared/middlewares";
+import { requireRole, requireSyndicStrict, requireGlobalScope } from "../../shared/middlewares";
 import {
   requireAttachmentUpload,
   requireCondoAccess,
@@ -30,7 +30,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/all",
     {
-      onRequest: [fastify.authenticate, requireSuperAdmin()],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     getAllComplaintsHandler
   );
@@ -137,10 +137,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/sla/scan",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
-      ],
+      onRequest: [fastify.authenticate, requireSyndicStrict()],
     },
     runSlaScanHandler
   );

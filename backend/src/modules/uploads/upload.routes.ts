@@ -195,7 +195,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       }
 
       // Check authorization (only admins can delete)
-      if (!["ADMIN", "SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"].includes(user.role)) {
+      if (!["ADMIN", "SYNDIC", "PROFESSIONAL_SYNDIC"].includes(user.role)) {
         throw new Error("Você não tem permissão para deletar anexos");
       }
 

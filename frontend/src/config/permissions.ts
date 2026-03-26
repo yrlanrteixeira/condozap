@@ -5,7 +5,7 @@
  * Perfis:
  * - SUPER_ADMIN: Acesso total ao sistema (gerencia todos os condomínios)
  * - PROFESSIONAL_SYNDIC: Síndico profissional (gerencia múltiplos condomínios)
- * - ADMIN: Administrador de condomínio (gerencia um ou mais condomínios)
+ * - ADMIN: Conselheiro (admin do síndico)
  * - SYNDIC: Síndico de condomínio (gerencia um condomínio específico)
  * - RESIDENT: Morador (acesso limitado ao próprio condomínio)
  */
@@ -26,7 +26,7 @@ export type UserRole = (typeof UserRoles)[keyof typeof UserRoles];
 export const UserRoleLabels: Record<UserRole, string> = {
   [UserRoles.SUPER_ADMIN]: "Super Administrador",
   [UserRoles.PROFESSIONAL_SYNDIC]: "Síndico Profissional",
-  [UserRoles.ADMIN]: "Administrador",
+  [UserRoles.ADMIN]: "Conselheiro",
   [UserRoles.SYNDIC]: "Síndico",
   [UserRoles.TRIAGE]: "Triagem",
   [UserRoles.SETOR_MANAGER]: "Gestor de Setor",
@@ -113,86 +113,26 @@ export const Permissions = {
   VIEW_SETTINGS: "view:settings",
   EDIT_SETTINGS: "edit:settings",
   EDIT_SYSTEM_SETTINGS: "edit:system_settings", // Configurações globais do sistema
+
+  // Plataforma
+  VIEW_PLATFORM_DASHBOARD: "view:platform_dashboard",
+  MANAGE_SYNDICS: "manage:syndics",
+  MANAGE_TEAM: "manage:team",
 } as const;
 
 /**
  * Mapeamento de permissões por perfil de usuário
  */
 export const RolePermissions: Record<UserRole, string[]> = {
-  // SUPER_ADMIN: Acesso total a todas as funcionalidades
+  // SUPER_ADMIN: Acesso restrito à plataforma (gerencia condomínios e síndicos)
   [UserRoles.SUPER_ADMIN]: [
-    // Dashboard
-    Permissions.VIEW_DASHBOARD,
-    Permissions.VIEW_UNIFIED_DASHBOARD,
-    Permissions.VIEW_METRICS,
-    Permissions.VIEW_ALL_METRICS,
-
-    // Condomínios
     Permissions.VIEW_CONDOMINIUMS,
     Permissions.CREATE_CONDOMINIUM,
     Permissions.EDIT_CONDOMINIUM,
     Permissions.DELETE_CONDOMINIUM,
-    Permissions.SWITCH_CONDOMINIUM,
-
-    // Estrutura
-    Permissions.VIEW_STRUCTURE,
-    Permissions.EDIT_STRUCTURE,
-    Permissions.MANAGE_STRUCTURE,
-
-    // Moradores
-    Permissions.VIEW_RESIDENTS,
-    Permissions.VIEW_ALL_RESIDENTS,
-    Permissions.CREATE_RESIDENT,
-    Permissions.EDIT_RESIDENT,
-    Permissions.DELETE_RESIDENT,
-    Permissions.MANAGE_CONSENT,
-    Permissions.MANAGE_RESIDENTS,
-
-    // Denúncias
-    Permissions.VIEW_COMPLAINTS,
-    Permissions.VIEW_ALL_COMPLAINTS,
-    Permissions.CREATE_COMPLAINT,
-    Permissions.EDIT_COMPLAINT,
-    Permissions.UPDATE_COMPLAINT_STATUS,
-    Permissions.UPDATE_COMPLAINT_PRIORITY,
-    Permissions.DELETE_COMPLAINT,
-    Permissions.VIEW_ANONYMOUS_COMPLAINTS,
-
-    // Mensagens
-    Permissions.VIEW_MESSAGES,
-    Permissions.VIEW_MESSAGE_HISTORY,
-    Permissions.SEND_MESSAGE,
-    Permissions.SEND_BULK_MESSAGE,
-    Permissions.SEND_TO_ALL,
-    Permissions.SEND_TO_TOWER,
-    Permissions.SEND_TO_FLOOR,
-    Permissions.SEND_TO_UNIT,
-
-    // WhatsApp
-    Permissions.VIEW_WHATSAPP_STATUS,
-    Permissions.MANAGE_WHATSAPP,
-
-    // Histórico
-    Permissions.VIEW_HISTORY,
-    Permissions.VIEW_ALL_HISTORY,
-    Permissions.VIEW_AUDIT_LOG,
-
-    // Usuários
-    Permissions.VIEW_USERS,
-    Permissions.CREATE_USER,
-    Permissions.EDIT_USER,
-    Permissions.DELETE_USER,
-    Permissions.MANAGE_ROLES,
-
-    // Relatórios
-    Permissions.VIEW_REPORTS,
-    Permissions.EXPORT_REPORTS,
-    Permissions.EXPORT_RESIDENTS,
-
-    // Configurações
+    Permissions.VIEW_PLATFORM_DASHBOARD,
+    Permissions.MANAGE_SYNDICS,
     Permissions.VIEW_SETTINGS,
-    Permissions.EDIT_SETTINGS,
-    Permissions.EDIT_SYSTEM_SETTINGS,
   ],
 
   // PROFESSIONAL_SYNDIC: Gerencia múltiplos condomínios (quase todas as permissões, exceto sistema)
@@ -262,6 +202,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     // Configurações
     Permissions.VIEW_SETTINGS,
     Permissions.EDIT_SETTINGS,
+
+    // Equipe
+    Permissions.MANAGE_TEAM,
   ],
 
   // ADMIN: Administrador de condomínio(s) específico(s)
@@ -318,8 +261,6 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Usuários
     Permissions.VIEW_USERS,
-    Permissions.CREATE_USER,
-    Permissions.EDIT_USER,
 
     // Relatórios
     Permissions.VIEW_REPORTS,
@@ -388,6 +329,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Configurações
     Permissions.VIEW_SETTINGS,
+
+    // Equipe
+    Permissions.MANAGE_TEAM,
   ],
   // TRIAGE: gestor local de triagem
   [UserRoles.TRIAGE]: [
@@ -431,6 +375,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.VIEW_COMPLAINTS,
     Permissions.CREATE_COMPLAINT,
     Permissions.VIEW_MESSAGES,
+    Permissions.VIEW_HISTORY,
   ],
 
   // RESIDENT: Morador (acesso limitado)

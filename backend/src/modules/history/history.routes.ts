@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireRole, requireGlobalScope } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   getAllHistoryHandler,
@@ -11,7 +11,7 @@ export const historyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/all",
     {
-      onRequest: [fastify.authenticate, requireSuperAdmin()],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     getAllHistoryHandler
   );

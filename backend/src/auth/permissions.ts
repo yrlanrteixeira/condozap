@@ -12,7 +12,7 @@ export const TicketActions = {
 export type TicketAction = (typeof TicketActions)[keyof typeof TicketActions];
 
 export const rolePermissions: Record<Role, TicketAction[]> = {
-  [Roles.SUPER_ADMIN]: Object.values(TicketActions),
+  [Roles.SUPER_ADMIN]: [],
   [Roles.PROFESSIONAL_SYNDIC]: Object.values(TicketActions),
   [Roles.ADMIN]: Object.values(TicketActions),
   [Roles.SYNDIC]: Object.values(TicketActions),

@@ -1,9 +1,8 @@
 /**
  * Team Management Page (Conselheiros)
- * 
+ *
  * Página para síndicos gerenciarem conselheiros e pessoas de confiança
  * - Síndico pode cadastrar ADMINs (conselheiros)
- * - Apenas SUPER_ADMIN (desenvolvedor) pode criar/vincular síndicos
  */
 
 import { useState } from 'react';
@@ -14,7 +13,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/shared/components/ui/dropdown-menu';
 import {
@@ -43,20 +41,17 @@ import {
   User,
   Trash2,
   Loader2,
-  Crown,
 } from 'lucide-react';
 import { PageHeaderSkeleton, ListItemSkeleton } from '@/shared/components/ui/skeleton';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
-import { useCondominiumUsers, useRemoveUser, useUpdateUserRole, useUpdateCouncilPosition } from '../hooks/useUserManagementApi';
+import { useCondominiumUsers, useRemoveUser, useUpdateCouncilPosition } from '../hooks/useUserManagementApi';
 import { CreateAdminDialog } from '../components/CreateAdminDialog';
-import { CreateSyndicDialog } from '../components/CreateSyndicDialog';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
 import type { CondominiumUser } from '../types';
 
 const roleLabels: Record<string, string> = {
-  SUPER_ADMIN: 'Desenvolvedor',
   PROFESSIONAL_SYNDIC: 'Síndico Profissional',
   ADMIN: 'Conselheiro',
   SYNDIC: 'Síndico',
@@ -64,7 +59,6 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleIcons: Record<string, typeof Shield> = {
-  SUPER_ADMIN: Crown,
   PROFESSIONAL_SYNDIC: ShieldCheck,
   ADMIN: Shield,
   SYNDIC: ShieldCheck,
@@ -101,21 +95,15 @@ export function TeamManagementPage() {
   const { toast } = useToast();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showCreateSyndicDialog, setShowCreateSyndicDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<CondominiumUser | null>(null);
 
   const { data: users = [], isLoading, refetch } = useCondominiumUsers(currentCondominiumId || '');
   const removeUserMutation = useRemoveUser();
-  const updateRoleMutation = useUpdateUserRole();
   const updateCouncilPositionMutation = useUpdateCouncilPosition();
 
   // Filtrar conselheiros (ADMINs) e síndicos deste condomínio
-  // SUPER_ADMIN não aparece aqui pois é o desenvolvedor
   const managers = users.filter(u => ['ADMIN', 'SYNDIC'].includes(u.role));
   const residents = users.filter(u => u.role === 'RESIDENT');
-  
-  // Verificar se o usuário atual é SUPER_ADMIN
-  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
   const handleRemoveUser = async () => {
     if (!userToDelete || !currentCondominiumId) return;
@@ -136,23 +124,6 @@ export function TeamManagementPage() {
     } catch (error: any) {
       toast({
         title: 'Erro ao remover usuário',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleChangeRole = async (userId: string, newRole: 'ADMIN' | 'SYNDIC' | 'RESIDENT') => {
-    try {
-      await updateRoleMutation.mutateAsync({ userId, newRole });
-      toast({
-        title: 'Função atualizada',
-        description: `Usuário agora é ${roleLabels[newRole]}.`,
-      });
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar função',
         description: error.message,
         variant: 'destructive',
       });
@@ -325,28 +296,23 @@ export function TeamManagementPage() {
                       </Select>
 
                       {/* Síndico só pode gerenciar ADMINs (conselheiros), não outros síndicos */}
-                      {/* SUPER_ADMIN pode gerenciar todos */}
-                      {!isCurrentUser && (
-                        (isSuperAdmin || (user.role === 'ADMIN')) && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {/* Apenas SUPER_ADMIN pode alterar roles */}
-
-                              <DropdownMenuItem 
-                                onClick={() => setUserToDelete(user)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Remover do Condomínio
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )
+                      {!isCurrentUser && user.role === 'ADMIN' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setUserToDelete(user)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Remover do Condomínio
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>
@@ -399,9 +365,6 @@ export function TeamManagementPage() {
         onOpenChange={setShowCreateDialog}
         onSuccess={() => refetch()}
       />
-
-      {/* Create Syndic Dialog (SUPER_ADMIN only) */}
-
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>

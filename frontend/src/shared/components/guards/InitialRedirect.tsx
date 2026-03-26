@@ -7,7 +7,7 @@ import { UserRoles } from "@/config/permissions";
  * Componente que redireciona para a rota inicial apropriada baseada no perfil do usuário
  *
  * Lógica de redirecionamento TalkZap:
- * - SUPER_ADMIN → /dashboard (todos admins vão para dashboard)
+ * - SUPER_ADMIN → /platform (painel da plataforma)
  * - PROFESSIONAL_SYNDIC → /dashboard (gerencia múltiplos condomínios)
  * - ADMIN → /dashboard (administrador de condomínio)
  * - SYNDIC → /dashboard (síndico de condomínio)
@@ -19,13 +19,10 @@ export const InitialRedirect = () => {
 
   let redirectTo = "/dashboard"; // Fallback padrão
 
-  // Morador → Suas Denúncias
-  if (userRole === UserRoles.RESIDENT) {
+  if (userRole === UserRoles.SUPER_ADMIN) {
+    redirectTo = "/platform";
+  } else if (userRole === UserRoles.RESIDENT) {
     redirectTo = "/complaints";
-  }
-  // Todos os outros perfis (ADMIN, SYNDIC, SUPER_ADMIN, PROFESSIONAL_SYNDIC) → Dashboard
-  else {
-    redirectTo = "/dashboard";
   }
 
   return <Navigate to={redirectTo} replace />;

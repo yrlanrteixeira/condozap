@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireRole, requireSuperAdmin, requireAdmin } from "../../shared/middlewares";
+import { requireSuperAdmin, requireAdmin, requireSyndicStrict } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   createAdminHandler,
@@ -9,6 +9,7 @@ import {
   updateCouncilPositionHandler,
   removeUserHandler,
   inviteUserHandler,
+  listSyndicsHandler,
 } from "./user-management.controller";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
@@ -17,7 +18,7 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireAdmin(),
+        requireSyndicStrict(),
         requireCondoAccess({ source: "body" }),
       ],
     },
@@ -45,7 +46,7 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "SYNDIC"]),
+        requireSyndicStrict(),
       ],
     },
     updateUserRoleHandler
@@ -66,7 +67,7 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     "/users/remove",
     {
-      onRequest: [fastify.authenticate, requireAdmin()],
+      onRequest: [fastify.authenticate, requireSyndicStrict()],
     },
     removeUserHandler
   );
@@ -77,6 +78,12 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireAdmin()],
     },
     inviteUserHandler
+  );
+
+  fastify.get(
+    "/users/syndics",
+    { onRequest: [fastify.authenticate, requireSuperAdmin()] },
+    listSyndicsHandler
   );
 };
 

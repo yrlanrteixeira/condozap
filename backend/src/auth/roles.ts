@@ -29,7 +29,6 @@ export const syndicRoles: Role[] = [
 export const triageRoles: Role[] = [Roles.TRIAGE];
 
 export const powerRoles: Role[] = [
-  Roles.SUPER_ADMIN,
   Roles.PROFESSIONAL_SYNDIC,
   Roles.SYNDIC,
   Roles.TRIAGE,

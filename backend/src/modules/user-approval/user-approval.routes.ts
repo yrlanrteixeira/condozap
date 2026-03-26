@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireAdmin, requireRole } from "../../shared/middlewares";
+import { requireAdmin, requireRole, requireGlobalScope } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   approveUserHandler,
@@ -10,15 +10,11 @@ import {
   rejectUserHandler,
 } from "./user-approval.controller";
 
-/** SUPER_ADMIN e PROFESSIONAL_SYNDIC podem listar todos os condomínios e pendentes */
-const requireSuperOrProfessionalSyndic = () =>
-  requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC"]);
-
 export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/condominiums/list",
     {
-      onRequest: [fastify.authenticate, requireSuperOrProfessionalSyndic()],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     listCondominiumsHandler
   );
@@ -26,7 +22,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/users/pending/all",
     {
-      onRequest: [fastify.authenticate, requireSuperOrProfessionalSyndic()],
+      onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     listPendingUsersHandler
   );

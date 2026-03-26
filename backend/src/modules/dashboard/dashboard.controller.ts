@@ -15,7 +15,6 @@ import {
 } from "./dashboard.service";
 import { AuthUser } from "../../types/auth";
 import { isCondominiumAllowed, resolveAccessContext } from "../../auth/context";
-import { isSuperAdmin } from "../../auth/roles";
 
 export async function getAllMetricsHandler(
   _request: FastifyRequest,
@@ -75,9 +74,7 @@ export async function getUnifiedDashboardHandler(
     });
   }
 
-  const filteredCondoIds = isSuperAdmin(context.role)
-    ? condoIds
-    : condoIds.filter((id) => isCondominiumAllowed(context, id));
+  const filteredCondoIds = condoIds.filter((id) => isCondominiumAllowed(context, id));
   if (!filteredCondoIds.length) {
     return reply
       .status(403)

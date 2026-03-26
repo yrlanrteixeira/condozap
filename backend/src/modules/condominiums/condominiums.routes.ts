@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin } from "../../shared/middlewares";
+import { requireSuperAdmin, requireSyndicStrict } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   listCondominiumsHandler,
@@ -11,7 +11,6 @@ import {
   updateCondominiumSettingsHandler,
 } from "./condominiums.controller";
 import { getAnnouncementsByCondominiumHandler } from "../announcements";
-import { requireRole } from "../../shared/middlewares";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -66,7 +65,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [
         fastify.authenticate,
         requireCondoAccess({ paramName: "id" }),
-        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
+        requireSyndicStrict(),
       ],
     },
     updateCondominiumSettingsHandler

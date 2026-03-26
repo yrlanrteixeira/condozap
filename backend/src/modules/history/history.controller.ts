@@ -1,7 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
-import { isSuperAdmin } from "../../auth/roles";
 import type { AuthUser } from "../../types/auth";
 import {
   historyLogIdParamSchema,
@@ -41,7 +40,7 @@ export async function getHistoryLogByIdHandler(
   }
 
   const user = request.user as AuthUser;
-  if (!isSuperAdmin(user.role) && log.complaint) {
+  if (log.complaint) {
     const context = await resolveAccessContext(prisma, {
       id: user.id,
       role: user.role,
