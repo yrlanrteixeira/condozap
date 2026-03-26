@@ -22,7 +22,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             <input
               ref={ref}
               type={showPassword ? "text" : "password"}
-              className={`w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none ${className}`}
+              className={`w-full bg-transparent text-sm text-foreground p-4 pr-12 rounded-2xl focus:outline-none ${className}`}
               {...props}
             />
             <button

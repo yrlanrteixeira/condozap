@@ -108,19 +108,19 @@ export function ComplaintAttachmentUpload({
       {/* Lista de anexos */}
       {attachments.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-700">Anexos</h3>
+          <h3 className="text-sm font-medium text-foreground">Anexos</h3>
           <div className="grid grid-cols-1 gap-2">
             {attachments.map((attachment) => (
               <div
                 key={attachment.id}
-                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors"
               >
                 {getFileIcon(attachment.fileType)}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {attachment.fileName}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatFileSize(attachment.fileSize)}</span>
                     <span>•</span>
                     <span>

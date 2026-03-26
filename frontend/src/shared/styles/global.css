@@ -127,6 +127,13 @@
     @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
+  /* Cor do texto em inputs para dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color: hsl(var(--foreground));
+  }
+
   /* Placeholder mais sutil para inputs */
   input::placeholder,
   textarea::placeholder {

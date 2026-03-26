@@ -42,23 +42,23 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Hook pré-configurado para detectar mobile
+ * Hook pré-configurado para detectar mobile (< md breakpoint do Tailwind)
  */
 export function useIsMobile(): boolean {
-  return useMediaQuery('(max-width: 768px)');
+  return useMediaQuery('(max-width: 767px)');
 }
 
 /**
- * Hook pré-configurado para detectar tablet
+ * Hook pré-configurado para detectar tablet (md a lg breakpoint do Tailwind)
  */
 export function useIsTablet(): boolean {
-  return useMediaQuery('(min-width: 769px) and (max-width: 1024px)');
+  return useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
 }
 
 /**
- * Hook pré-configurado para detectar desktop
+ * Hook pré-configurado para detectar desktop (>= lg breakpoint do Tailwind)
  */
 export function useIsDesktop(): boolean {
-  return useMediaQuery('(min-width: 1025px)');
+  return useMediaQuery('(min-width: 1024px)');
 }
 

@@ -46,6 +46,60 @@ async function main() {
 
   console.log("✅ Condominiums created");
 
+  // =====================================================
+  // Create default sectors (service queues)
+  // =====================================================
+
+  const sectorManutencao = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Manutenção",
+      categories: ["Manutenção"],
+    },
+  });
+
+  const sectorLimpeza = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Limpeza",
+      categories: ["Limpeza"],
+    },
+  });
+
+  const sectorSeguranca = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Segurança",
+      categories: ["Segurança"],
+    },
+  });
+
+  const sectorSindico = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Síndico",
+      categories: [],
+    },
+  });
+
+  const sectorAdministrativo = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Administrativo",
+      categories: ["Barulho", "Estacionamento", "Área Comum", "Outros"],
+    },
+  });
+
+  const sectorConselho = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Conselho",
+      categories: [],
+    },
+  });
+
+  console.log("✅ Sectors (service queues) created");
+
   // Novidades da semana (announcements) para o morador
   const now = new Date();
   const weekStart = new Date(now);
@@ -650,6 +704,7 @@ async function main() {
 
   console.log("\n🏠 Moradores: 10 (8 no Vista Verde, 2 no Bela Vista)");
   console.log("📋 Ocorrências: 6");
+  console.log("🏷️  Setores: 6 (Manutenção, Limpeza, Segurança, Síndico, Administrativo, Conselho)");
   console.log("💬 Mensagens: 5");
 
   console.log("\n" + "=".repeat(60));

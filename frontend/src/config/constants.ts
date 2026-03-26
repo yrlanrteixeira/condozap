@@ -8,10 +8,12 @@
 // =====================================================
 
 export const COMPLAINT_CATEGORIES = [
-  'Barulho',
   'Manutenção',
-  'Segurança',
   'Limpeza',
+  'Segurança',
+  'Barulho',
+  'Estacionamento',
+  'Área Comum',
   'Outros',
 ] as const;
 

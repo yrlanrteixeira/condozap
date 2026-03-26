@@ -17,7 +17,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
         <GlassInputWrapper>
           <input
             ref={ref}
-            className={`w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none ${className}`}
+            className={`w-full bg-transparent text-sm text-foreground p-4 rounded-2xl focus:outline-none ${className}`}
             {...props}
           />
         </GlassInputWrapper>

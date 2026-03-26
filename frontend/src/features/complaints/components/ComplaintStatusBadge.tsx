@@ -20,42 +20,42 @@ const STATUS_CONFIG: Record<
   NEW: {
     label: "Novo",
     icon: AlertTriangle,
-    className: "bg-red-50 text-red-700 border-red-100",
+    className: "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900",
   },
   TRIAGE: {
     label: "Triagem",
     icon: Clock,
-    className: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    className: "bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-900",
   },
   IN_PROGRESS: {
     label: "Em atendimento",
     icon: Clock,
-    className: "bg-blue-50 text-blue-700 border-blue-100",
+    className: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
   },
   WAITING_USER: {
     label: "Aguardando usuário",
     icon: PauseCircle,
-    className: "bg-amber-50 text-amber-700 border-amber-100",
+    className: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
   },
   WAITING_THIRD_PARTY: {
     label: "Aguardando terceiro",
     icon: PauseCircle,
-    className: "bg-amber-50 text-amber-700 border-amber-100",
+    className: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
   },
   RESOLVED: {
     label: "Resolvido",
     icon: CheckCircle,
-    className: "bg-green-50 text-green-700 border-green-100",
+    className: "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900",
   },
   CLOSED: {
     label: "Encerrado",
     icon: CheckCircle,
-    className: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
   },
   CANCELLED: {
     label: "Cancelado",
     icon: XCircle,
-    className: "bg-gray-50 text-gray-700 border-gray-100",
+    className: "bg-muted text-muted-foreground border-border",
   },
 };
 

@@ -78,7 +78,7 @@ export function FileUpload({
     if (file.type.startsWith("audio/")) {
       return <FileAudio className="w-8 h-8 text-purple-500" />;
     }
-    return <File className="w-8 h-8 text-gray-500" />;
+    return <File className="w-8 h-8 text-muted-foreground" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -109,14 +109,14 @@ export function FileUpload({
             "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
             dragActive
               ? "border-primary bg-primary/5"
-              : "border-gray-300 hover:border-gray-400",
+              : "border-border hover:border-muted-foreground",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
-          <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-sm font-medium text-foreground mb-1">{label}</p>
           {description && (
-            <p className="text-xs text-gray-500 mb-4">{description}</p>
+            <p className="text-xs text-muted-foreground mb-4">{description}</p>
           )}
           <Button
             type="button"
@@ -127,11 +127,11 @@ export function FileUpload({
           >
             Escolher arquivo
           </Button>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             ou arraste e solte aqui
           </p>
           {maxSizeMB && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground/70 mt-1">
               Tamanho máximo: {maxSizeMB}MB
             </p>
           )}
@@ -141,16 +141,16 @@ export function FileUpload({
           <div className="flex items-start gap-3">
             {getFileIcon(selectedFile)}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-foreground truncate">
                 {selectedFile.name}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {formatFileSize(selectedFile.size)}
               </p>
               {isUploading && progress !== undefined && (
                 <div className="mt-2">
                   <Progress value={progress} className="h-1" />
-                  <p className="text-xs text-gray-500 mt-1">{progress}%</p>
+                  <p className="text-xs text-muted-foreground mt-1">{progress}%</p>
                 </div>
               )}
             </div>
