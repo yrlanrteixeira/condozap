@@ -4,9 +4,9 @@ import axios, {
   type AxiosResponse,
 } from "axios";
 import qs from "qs";
+import { config } from "./config";
 
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const BASE_URL = config.apiUrl;
 
 /**
  * Serializa parâmetros de query mantendo + literal para espaços em campos específicos

@@ -8,7 +8,8 @@
       "Bash(npm install:*)",
       "Bash(npx -p typescript tsc --noEmit)",
       "Bash(npx tsc:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []
