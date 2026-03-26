@@ -11,7 +11,6 @@ import {
   Role,
   isResident,
   isSectorRole,
-  isSuperAdmin,
   isSyndic,
   isTriage,
 } from "./roles";
@@ -60,7 +59,7 @@ const canAccessTicket = (
     residentId: string;
   }
 ): boolean => {
-  if (isSuperAdmin(user.role) || isTriage(user.role)) {
+  if (isTriage(user.role)) {
     return true;
   }
   if (!isCondominiumAllowed(context, ticket.condominiumId)) {
@@ -111,9 +110,6 @@ export const requireCondoAccess = (config: CondoAccessConfig = {}) => {
     const user = request.user as AuthUser | undefined;
     if (!user) {
       return deny(reply, 401, "Usuário não autenticado");
-    }
-    if (isSuperAdmin(user.role)) {
-      return;
     }
     const context = await buildAccessContext(user);
     let condominiumId: string | undefined;
@@ -196,5 +192,20 @@ export const requireRole = (roles: string[]) => {
 export const requireSuperAdmin = () => requireRole(["SUPER_ADMIN"]);
 
 export const requireAdmin = () =>
-  requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
+  requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
+
+export const requireSyndicStrict = () =>
+  requireRole(["PROFESSIONAL_SYNDIC", "SYNDIC"]);
+
+export const requireGlobalScope = () => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return reply.status(401).send({ error: "Usuário não autenticado" });
+    }
+    if (user.permissionScope !== "GLOBAL") {
+      return reply.status(403).send({ error: "Acesso global necessário" });
+    }
+  };
+};
 

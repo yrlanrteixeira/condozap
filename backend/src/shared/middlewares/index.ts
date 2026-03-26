@@ -9,5 +9,7 @@ export {
   requireRole,
   requireSuperAdmin,
   requireAdmin,
+  requireSyndicStrict,
+  requireGlobalScope,
   requireCondoAccess,
 } from "../../auth/authorize";
