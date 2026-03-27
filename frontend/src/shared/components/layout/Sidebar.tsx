@@ -17,6 +17,7 @@ import {
   Settings,
   UserCheck,
   UsersRound,
+  Megaphone,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -65,6 +66,12 @@ export const Sidebar = ({
       href: "/messages",
       icon: Send,
       permission: Permissions.SEND_MESSAGE,
+    },
+    {
+      title: "Comunicados",
+      href: "/announcements",
+      icon: Megaphone,
+      permission: Permissions.VIEW_ANNOUNCEMENTS,
     },
     {
       title: "Moradores",

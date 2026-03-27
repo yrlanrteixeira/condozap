@@ -32,6 +32,9 @@ import {
 } from "../hooks/useComplaintsApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintAttachmentUpload } from "./ComplaintAttachmentUpload";
+import { ComplaintChat } from "./ComplaintChat";
+import { CsatDisplay } from "./CsatDisplay";
+import { useAuth } from "@/shared/hooks/useAuth";
 import type { ComplaintDetail, ComplaintStatus } from "../types";
 import { formatDateTime } from "@/shared/utils/helpers";
 
@@ -60,6 +63,7 @@ export function ComplaintDetailSheet({
 }: ComplaintDetailSheetProps) {
   const [commentText, setCommentText] = useState("");
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
   const updateStatus = useUpdateComplaintStatus();
@@ -120,6 +124,7 @@ export function ComplaintDetailSheet({
                 complaint={complaint as ComplaintDetail}
                 onStatusChange={handleStatusChange}
                 isUpdatingStatus={updateStatus.isPending}
+                currentUserId={currentUser?.id ?? ""}
               />
             </ScrollArea>
 
@@ -159,10 +164,12 @@ function ComplaintDetailContent({
   complaint,
   onStatusChange,
   isUpdatingStatus,
+  currentUserId,
 }: {
   complaint: ComplaintDetail;
   onStatusChange: (status: string) => void;
   isUpdatingStatus: boolean;
+  currentUserId: string;
 }) {
   const history = complaint.statusHistory ?? [];
   const attachments = complaint.attachments ?? [];
@@ -270,6 +277,21 @@ function ComplaintDetailContent({
         complaintId={complaint.id}
         attachments={attachments}
       />
+
+      {/* Chat */}
+      <ComplaintChat
+        complaintId={complaint.id}
+        currentUserId={currentUserId}
+      />
+
+      {/* CSAT */}
+      {(complaint.csatScore || ["RESOLVED", "CLOSED"].includes(complaint.status)) && (
+        <CsatDisplay
+          score={complaint.csatScore ?? null}
+          comment={complaint.csatComment ?? null}
+          respondedAt={complaint.csatRespondedAt ?? null}
+        />
+      )}
 
       {/* Histórico */}
       {history.length > 0 && (

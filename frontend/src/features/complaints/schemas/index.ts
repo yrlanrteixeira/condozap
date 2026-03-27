@@ -102,8 +102,11 @@ const complaintAttachmentSchema = z.object({
   uploadedAt: z.string(),
 });
 
-// Detail response includes statusHistory and attachments
+// Detail response includes statusHistory, attachments, and CSAT fields
 export const ComplaintDetailSchema = ComplaintSchema.extend({
   statusHistory: z.array(complaintStatusHistorySchema).optional().default([]),
   attachments: z.array(complaintAttachmentSchema).optional().default([]),
+  csatScore: z.number().nullable().optional(),
+  csatComment: z.string().nullable().optional(),
+  csatRespondedAt: z.string().nullable().optional(),
 });

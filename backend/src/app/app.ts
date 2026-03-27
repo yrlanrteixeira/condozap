@@ -22,6 +22,8 @@ import { structureRoutes } from "../modules/structure/structure.routes";
 import { uploadRoutes } from "../modules/uploads/upload.routes";
 import { platformRoutes } from "../modules/platform/platform.routes";
 import { notificationRoutes } from "../modules/notifications/notifications.routes";
+import { complaintChatRoutes } from "../modules/complaints/complaints-chat.routes";
+import { announcementRoutes } from "../modules/announcements/announcements.routes";
 import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 
 export const createApp = async (): Promise<FastifyInstance> => {
@@ -95,6 +97,8 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
   await fastify.register(platformRoutes, { prefix: "/api/platform" });
   await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
+  await fastify.register(complaintChatRoutes, { prefix: "/api/complaint-messages" });
+  await fastify.register(announcementRoutes, { prefix: "/api/announcements" });
 
   await fastify.register(slaCronPlugin);
 
