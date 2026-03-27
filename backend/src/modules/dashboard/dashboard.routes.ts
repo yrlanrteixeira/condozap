@@ -1,10 +1,10 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireRole, requireGlobalScope } from "../../shared/middlewares";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireRole, requireGlobalScope, requireAdmin, requireCondoAccess } from "../../shared/middlewares";
 import {
   getAllMetricsHandler,
   getCondominiumMetricsHandler,
   getUnifiedDashboardHandler,
+  getActionableDashboardHandler,
 } from "./dashboard.controller";
 
 export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
@@ -30,5 +30,13 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireRole(["PROFESSIONAL_SYNDIC"]), requireGlobalScope()],
     },
     getUnifiedDashboardHandler
+  );
+
+  fastify.get(
+    "/actionable/:condominiumId",
+    {
+      onRequest: [fastify.authenticate, requireAdmin(), requireCondoAccess()],
+    },
+    getActionableDashboardHandler
   );
 };

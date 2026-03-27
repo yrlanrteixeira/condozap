@@ -9,6 +9,8 @@ async function main() {
 
   // Clean existing data (optional - comment if you want to keep data)
   console.log("🧹 Cleaning existing data...");
+  await prisma.notification.deleteMany();
+  await prisma.complaintMessage.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.complaintAssignment.deleteMany();
   await prisma.sectorMember.deleteMany();
@@ -33,6 +35,10 @@ async function main() {
       cnpj: "12345678000190",
       status: "ACTIVE",
       whatsappPhone: "5511999990000",
+      autoTriageEnabled: true,
+      autoAssignEnabled: true,
+      autoCloseAfterDays: 7,
+      waitingAutoResolveDays: 14,
     },
   });
 
@@ -42,6 +48,10 @@ async function main() {
       cnpj: "98765432000199",
       status: "ACTIVE",
       whatsappPhone: "5511999990001",
+      autoTriageEnabled: true,
+      autoAssignEnabled: false,
+      autoCloseAfterDays: 7,
+      waitingAutoResolveDays: 14,
     },
   });
 
@@ -117,6 +127,9 @@ async function main() {
         startsAt: weekStart,
         endsAt: weekEnd,
         createdBy: null,
+        scope: "ALL",
+        sendWhatsApp: false,
+        expiresAt: null,
       },
       {
         condominiumId: condo1.id,
@@ -125,6 +138,9 @@ async function main() {
         startsAt: weekStart,
         endsAt: weekEnd,
         createdBy: null,
+        scope: "ALL",
+        sendWhatsApp: true,
+        expiresAt: null,
       },
     ],
   });
@@ -546,68 +562,165 @@ async function main() {
   // Create complaints
   // =====================================================
 
-  await prisma.complaint.createMany({
+  const complaint1 = await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident1.id,
+      category: "Barulho",
+      content: "Som alto após 22h no apartamento 201",
+      status: "NEW",
+      priority: "HIGH",
+      isAnonymous: false,
+    },
+  });
+
+  const complaint2 = await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident2.id,
+      category: "Limpeza",
+      content: "Lixo acumulado no corredor do 1º andar",
+      status: "IN_PROGRESS",
+      priority: "MEDIUM",
+      isAnonymous: false,
+    },
+  });
+
+  await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident3.id,
+      category: "Segurança",
+      content: "Câmera do elevador não está funcionando",
+      status: "NEW",
+      priority: "CRITICAL",
+      isAnonymous: true,
+    },
+  });
+
+  const complaint4 = await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident4.id,
+      category: "Manutenção",
+      content: "Vazamento no banheiro",
+      status: "RESOLVED",
+      priority: "HIGH",
+      isAnonymous: false,
+      resolvedAt: new Date(),
+      resolvedBy: syndic.id,
+      csatScore: 5,
+      csatComment: "Excelente atendimento, muito rápido!",
+      csatRespondedAt: new Date(),
+    },
+  });
+
+  const complaint5 = await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident5.id,
+      category: "Estacionamento",
+      content: "Veículo estacionado em vaga irregular",
+      status: "RESOLVED",
+      priority: "LOW",
+      isAnonymous: false,
+      resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      resolvedBy: syndic.id,
+      csatScore: 4,
+      csatComment: "Atendimento bom, mas demorou um pouco.",
+      csatRespondedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  const complaint6 = await prisma.complaint.create({
+    data: {
+      condominiumId: condo1.id,
+      residentId: resident1.id,
+      category: "Área Comum",
+      content: "Piscina precisa de manutenção urgente",
+      status: "RESOLVED",
+      priority: "HIGH",
+      isAnonymous: false,
+      resolvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      resolvedBy: admin.id,
+      csatScore: 3,
+      csatComment: "Resolvido, mas poderia ter sido mais ágil.",
+      csatRespondedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  console.log("✅ Complaints created");
+
+  // =====================================================
+  // Create complaint messages (chat)
+  // =====================================================
+
+  await prisma.complaintMessage.createMany({
     data: [
       {
-        condominiumId: condo1.id,
-        residentId: resident1.id,
-        category: "Barulho",
-        content: "Som alto após 22h no apartamento 201",
-        status: "NEW",
-        priority: "HIGH",
-        isAnonymous: false,
+        complaintId: complaint2.id,
+        senderId: residentUser2.id,
+        senderRole: "RESIDENT",
+        content: "Bom dia, gostaria de saber se já tem previsão para o reparo?",
+        source: "WEB",
       },
       {
-        condominiumId: condo1.id,
-        residentId: resident2.id,
-        category: "Limpeza",
-        content: "Lixo acumulado no corredor do 1º andar",
-        status: "IN_PROGRESS",
-        priority: "MEDIUM",
-        isAnonymous: false,
+        complaintId: complaint2.id,
+        senderId: syndic.id,
+        senderRole: "SYNDIC",
+        content: "Bom dia! Já acionamos a equipe de manutenção. Previsão para amanhã às 14h.",
+        source: "WEB",
       },
       {
-        condominiumId: condo1.id,
-        residentId: resident3.id,
-        category: "Segurança",
-        content: "Câmera do elevador não está funcionando",
-        status: "NEW",
-        priority: "CRITICAL",
-        isAnonymous: true,
-      },
-      {
-        condominiumId: condo1.id,
-        residentId: resident4.id,
-        category: "Manutenção",
-        content: "Vazamento no banheiro",
-        status: "RESOLVED",
-        priority: "HIGH",
-        isAnonymous: false,
-        resolvedAt: new Date(),
-        resolvedBy: syndic.id,
-      },
-      {
-        condominiumId: condo1.id,
-        residentId: resident5.id,
-        category: "Estacionamento",
-        content: "Veículo estacionado em vaga irregular",
-        status: "NEW",
-        priority: "LOW",
-        isAnonymous: false,
-      },
-      {
-        condominiumId: condo1.id,
-        residentId: resident1.id,
-        category: "Área Comum",
-        content: "Piscina precisa de manutenção urgente",
-        status: "IN_PROGRESS",
-        priority: "HIGH",
-        isAnonymous: false,
+        complaintId: complaint2.id,
+        senderId: residentUser2.id,
+        senderRole: "RESIDENT",
+        content: "Perfeito, obrigado pela rapidez!",
+        source: "WEB",
       },
     ],
   });
 
-  console.log("✅ Complaints created");
+  console.log("✅ Complaint messages created");
+
+  // =====================================================
+  // Create notifications
+  // =====================================================
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: syndic.id,
+        type: "complaint_status",
+        title: "Nova ocorrência registrada",
+        body: `Ocorrência #${complaint1.id} (Barulho) foi registrada pelo morador Carlos.`,
+        read: false,
+      },
+      {
+        userId: syndic.id,
+        type: "sla_warning",
+        title: "SLA em risco",
+        body: `Ocorrência #${complaint2.id} - 30 minutos para o prazo de resposta.`,
+        read: true,
+      },
+      {
+        userId: residentUser2.id,
+        type: "complaint_status",
+        title: "Status atualizado",
+        body: `Sua ocorrência #${complaint2.id} está Em Andamento.`,
+        read: false,
+      },
+      {
+        userId: residentUser4.id,
+        type: "complaint_status",
+        title: "Ocorrência resolvida",
+        body: `Sua ocorrência #${complaint4.id} foi resolvida. Avalie o atendimento!`,
+        read: true,
+      },
+    ],
+  });
+
+  console.log("✅ Notifications created");
 
   // =====================================================
   // Create messages
@@ -704,9 +817,11 @@ async function main() {
   console.log("   - rejeitado@email.com");
 
   console.log("\n🏠 Moradores: 10 (8 no Vista Verde, 2 no Bela Vista)");
-  console.log("📋 Ocorrências: 6");
+  console.log("📋 Ocorrências: 6 (3 resolvidas com CSAT)");
   console.log("🏷️  Setores: 6 (Manutenção, Limpeza, Segurança, Síndico, Administrativo, Conselho)");
   console.log("💬 Mensagens: 5");
+  console.log("💬 Mensagens de ocorrência: 3 (chat em #2)");
+  console.log("🔔 Notificações: 4");
 
   console.log("\n" + "=".repeat(60));
   console.log("🔑 CREDENCIAIS PARA LOGIN:");

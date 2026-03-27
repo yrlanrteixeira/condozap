@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireRole, requireSyndicStrict, requireGlobalScope } from "../../shared/middlewares";
+import { requireRole, requireSyndicStrict, requireGlobalScope, requireComplaintOwner } from "../../shared/middlewares";
 import {
   requireAttachmentUpload,
   requireCondoAccess,
@@ -21,6 +21,7 @@ import {
   pauseComplaintSlaHandler,
   resumeComplaintSlaHandler,
   runSlaScanHandler,
+  submitCsatHandler,
   updateComplaintHandler,
   updateComplaintPriorityHandler,
   updateComplaintStatusHandler,
@@ -140,6 +141,12 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSyndicStrict()],
     },
     runSlaScanHandler
+  );
+
+  fastify.post(
+    "/:id/csat",
+    { onRequest: [fastify.authenticate, requireComplaintOwner()] },
+    submitCsatHandler
   );
 
   fastify.delete(

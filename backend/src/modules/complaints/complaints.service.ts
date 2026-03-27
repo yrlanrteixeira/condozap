@@ -24,6 +24,8 @@ import type {
 } from "./complaints.schema";
 import { assertValidTransition, SLA_ACTIONS } from "./complaints.transitions";
 import { findSlaConfig, resolveAssignee, addMinutes, runSlaEscalationScan } from "./complaints.sla";
+import { classifyComplaint } from "../automation/automation.engine";
+import { notify } from "../notifier/notifier.service";
 
 export { runSlaEscalationScan };
 
@@ -70,38 +72,54 @@ export async function createComplaint(
 
   let effectiveSectorId = data.sectorId ?? null;
 
-  // Auto-triage: find sector by category (e.g. "Manutenção" → setor Manutenção)
-  if (!effectiveSectorId && data.category) {
-    const sectorByCategory = await prisma.sector.findFirst({
-      where: {
-        condominiumId: data.condominiumId,
-        categories: { has: data.category.trim() },
-      },
+  // Auto-triage via AutomationEngine (keyword + category classification)
+  if (!effectiveSectorId) {
+    const condoSettings = await prisma.condominium.findUnique({
+      where: { id: data.condominiumId },
+      select: { autoTriageEnabled: true },
     });
-    if (sectorByCategory) {
-      effectiveSectorId = sectorByCategory.id;
-      await prisma.complaint.update({
-        where: { id: complaint.id },
-        data: {
-          sectorId: effectiveSectorId,
-          status: ComplaintStatus.TRIAGE,
-        },
+
+    if (condoSettings?.autoTriageEnabled) {
+      const decision = await classifyComplaint(prisma, {
+        condominiumId: data.condominiumId,
+        category: data.category,
+        content: data.content,
       });
-      await prisma.complaintStatusHistory.create({
-        data: {
-          complaintId: complaint.id,
-          fromStatus: ComplaintStatus.NEW,
-          toStatus: ComplaintStatus.TRIAGE,
-          changedBy: "system",
-          notes: "Triagem automática por categoria",
-          action: SLA_ACTIONS.STATUS_CHANGE,
-          metadata: { sectorId: effectiveSectorId, category: data.category },
-        },
-      });
-      logger.info(
-        { complaintId: complaint.id, sectorId: effectiveSectorId, category: data.category },
-        "Auto-triage: complaint assigned to sector by category"
-      );
+
+      if (decision.sectorId) {
+        effectiveSectorId = decision.sectorId;
+        await prisma.complaint.update({
+          where: { id: complaint.id },
+          data: { sectorId: decision.sectorId, status: ComplaintStatus.TRIAGE },
+        });
+        await prisma.complaintStatusHistory.create({
+          data: {
+            complaintId: complaint.id,
+            fromStatus: ComplaintStatus.NEW,
+            toStatus: ComplaintStatus.TRIAGE,
+            changedBy: "system",
+            notes: "Triagem automática por categoria",
+            action: SLA_ACTIONS.STATUS_CHANGE,
+            metadata: { sectorId: effectiveSectorId, category: data.category },
+          },
+        });
+        logger.info(
+          { complaintId: complaint.id, sectorId: decision.sectorId, confidence: decision.confidence, matchedBy: decision.matchedBy },
+          "Auto-triage: complaint classified by AutomationEngine"
+        );
+      }
+
+      // Apply suggested priority if keyword detection elevated it
+      if (decision.suggestedPriority && decision.suggestedPriority !== complaint.priority) {
+        await prisma.complaint.update({
+          where: { id: complaint.id },
+          data: { priority: decision.suggestedPriority },
+        });
+        logger.info(
+          { complaintId: complaint.id, oldPriority: complaint.priority, newPriority: decision.suggestedPriority },
+          "Auto-priority: complaint priority elevated by keyword detection"
+        );
+      }
     }
   }
 
@@ -133,6 +151,17 @@ export async function createComplaint(
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
+  }
+
+  // === IN-APP NOTIFICATION for resident ===
+  if (resident.userId) {
+    notify(prisma, logger, {
+      type: "complaint_created",
+      complaintId: complaint.id,
+      residentPhone: resident.phone,
+      residentName: resident.name,
+      category: data.category,
+    }, resident.userId, data.condominiumId).catch(() => {});
   }
 
   logger.info(`Complaint ${complaint.id} created`);
@@ -222,6 +251,30 @@ export async function updateComplaintStatus(
       });
   }
 
+  // === IN-APP NOTIFICATION for status change ===
+  if (complaint.resident.userId) {
+    notify(prisma, logger, {
+      type: "complaint_status_changed",
+      complaintId: id,
+      residentPhone: complaint.resident.phone,
+      residentName: complaint.resident.name,
+      newStatus: data.status as ComplaintStatus,
+      oldStatus: complaint.status,
+    }, complaint.resident.userId, complaint.condominiumId).catch(() => {});
+  }
+
+  // === CSAT request on resolve ===
+  if (data.status === "RESOLVED" && complaint.resident.userId) {
+    setTimeout(() => {
+      notify(prisma, logger, {
+        type: "csat_request",
+        complaintId: id,
+        residentPhone: complaint.resident.phone,
+        residentName: complaint.resident.name,
+      }, complaint.resident.userId!, complaint.condominiumId).catch(() => {});
+    }, 5000);
+  }
+
   logger.info(`Complaint ${id} status updated to ${data.status}`);
 
   return updated;
@@ -305,6 +358,34 @@ export async function addComplaintComment(
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
+  }
+
+  // === NOTIFY other party about comment ===
+  const complaintForNotify = await prisma.complaint.findUnique({
+    where: { id },
+    include: { resident: true, assignee: true },
+  });
+  if (complaintForNotify) {
+    // If commenter is the resident, notify assignee/syndic
+    // If commenter is admin/syndic, notify resident
+    if (userRole === "RESIDENT" && complaintForNotify.assigneeId) {
+      notify(prisma, logger, {
+        type: "complaint_comment",
+        complaintId: id,
+        recipientPhone: "", // assignee phone not readily available
+        recipientName: complaintForNotify.assignee?.name || "Equipe",
+        authorName: complaintForNotify.resident.name,
+      }, complaintForNotify.assigneeId, complaintForNotify.condominiumId).catch(() => {});
+    } else if (userRole !== "RESIDENT" && complaintForNotify.resident.userId) {
+      const commenter = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      notify(prisma, logger, {
+        type: "complaint_comment",
+        complaintId: id,
+        recipientPhone: complaintForNotify.resident.phone,
+        recipientName: complaintForNotify.resident.name,
+        authorName: commenter?.name || "Administração",
+      }, complaintForNotify.resident.userId, complaintForNotify.condominiumId).catch(() => {});
+    }
   }
 
   logger.info(`Comment added to complaint ${id}`);

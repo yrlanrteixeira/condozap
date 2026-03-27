@@ -6,12 +6,16 @@ import { useAppSelector } from "@/shared/hooks";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useDashboardMetrics } from "../hooks/useDashboardApi";
+import { useActionableDashboard } from "../hooks/useActionableDashboard";
+import { useOnboarding } from "../hooks/useOnboarding";
 import {
   DashboardStatCard,
   DashboardPeriodSelector,
   ComplaintsCategoryChart,
   ComplaintsTowerChart,
   DashboardMessageStats,
+  OnboardingChecklist,
+  ActionableCards,
   type Period,
 } from "../components";
 
@@ -20,16 +24,29 @@ export function DashboardPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
 
-  // SUPER_ADMIN vê métricas globais, outros veem apenas do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN'
-    ? (currentCondominiumId || 'all')
-    : (currentCondominiumId || '');
+  // SUPER_ADMIN goes to /platform — dashboard is for condominium admins only
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  // SUPER_ADMIN sem condomínio selecionado usa 'all' para métricas genéricas
+  const condoIdToFetch = isSuperAdmin
+    ? currentCondominiumId || "all"
+    : currentCondominiumId || "";
 
   const {
     data: metrics,
     isLoading,
     isError,
   } = useDashboardMetrics(condoIdToFetch);
+
+  // Actionable dashboard and onboarding only make sense for a concrete condominium
+  const hasCondominium = !!currentCondominiumId;
+
+  const { data: actionableData, isLoading: isActionableLoading } =
+    useActionableDashboard(hasCondominium ? currentCondominiumId : "");
+
+  const { data: onboardingData } = useOnboarding(
+    hasCondominium ? currentCondominiumId : ""
+  );
 
   if (isLoading) {
     return (
@@ -54,8 +71,8 @@ export function DashboardPage() {
     );
   }
 
-  // Nenhum condomínio selecionado (não-SUPER_ADMIN sem vínculo)
-  if (!currentCondominiumId && user?.role !== 'SUPER_ADMIN') {
+  // No condominium selected (non-SUPER_ADMIN without a linked condominium)
+  if (!currentCondominiumId && !isSuperAdmin) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-8 max-w-md text-center">
@@ -98,6 +115,11 @@ export function DashboardPage() {
 
   const complaintsByTower = metrics.complaints.byTower || {};
 
+  const showOnboarding =
+    hasCondominium &&
+    onboardingData !== undefined &&
+    !onboardingData.completed;
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -110,6 +132,17 @@ export function DashboardPage() {
         <DashboardPeriodSelector period={period} onPeriodChange={setPeriod} />
       </div>
 
+      {/* Onboarding checklist — shown when setup is incomplete */}
+      {showOnboarding && (
+        <OnboardingChecklist steps={onboardingData.steps} />
+      )}
+
+      {/* Actionable dashboard cards — shown when a condominium is selected */}
+      {hasCondominium && !isActionableLoading && actionableData && (
+        <ActionableCards data={actionableData} />
+      )}
+
+      {/* Generic metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <DashboardStatCard
           title="Total Moradores"

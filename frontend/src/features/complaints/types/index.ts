@@ -111,4 +111,7 @@ export interface ComplaintStats {
 export interface ComplaintDetail extends Complaint {
   statusHistory?: ComplaintStatusHistory[];
   attachments?: ComplaintAttachment[];
+  csatScore?: number | null;
+  csatComment?: string | null;
+  csatRespondedAt?: string | null;
 }

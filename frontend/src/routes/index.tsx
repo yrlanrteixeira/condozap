@@ -14,6 +14,8 @@ import { structureRoutes } from "@/features/structure/routes";
 import { pendingApprovalRoute, userApprovalRoutes } from "@/features/user-approval/routes";
 import { userManagementRoutes } from "@/features/user-management/routes";
 import { platformRoutes } from "@/features/platform/routes";
+import { announcementRoutes } from "@/features/announcements/routes";
+import { reportRoutes } from "@/features/reports/routes";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
@@ -37,6 +39,8 @@ export function AppRoutes() {
     ...complaintsRoutes,
     ...historyRoutes,
     ...platformRoutes,
+    ...announcementRoutes,
+    ...reportRoutes,
   ];
 
   return (

@@ -37,12 +37,14 @@
     "dotenv": "^16.4.7",
     "fastify": "^5.2.0",
     "fastify-plugin": "^5.1.0",
+    "node-cron": "^4.2.1",
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "typescript": "^5.7.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.20.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",

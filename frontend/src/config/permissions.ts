@@ -118,6 +118,13 @@ export const Permissions = {
   VIEW_PLATFORM_DASHBOARD: "view:platform_dashboard",
   MANAGE_SYNDICS: "manage:syndics",
   MANAGE_TEAM: "manage:team",
+
+  // Comunicados
+  VIEW_ANNOUNCEMENTS: "view:announcements",
+  CREATE_ANNOUNCEMENT: "create:announcement",
+
+  // Avaliação
+  SUBMIT_CSAT: "submit:csat",
 } as const;
 
 /**
@@ -205,6 +212,10 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Equipe
     Permissions.MANAGE_TEAM,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
+    Permissions.CREATE_ANNOUNCEMENT,
   ],
 
   // ADMIN: Administrador de condomínio(s) específico(s)
@@ -270,6 +281,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     // Configurações
     Permissions.VIEW_SETTINGS,
     Permissions.EDIT_SETTINGS,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
   ],
 
   // SYNDIC: Síndico de condomínio - pode ter múltiplos condomínios atrelados pelo SUPER_ADMIN
@@ -332,6 +346,10 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Equipe
     Permissions.MANAGE_TEAM,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
+    Permissions.CREATE_ANNOUNCEMENT,
   ],
   // TRIAGE: gestor local de triagem
   [UserRoles.TRIAGE]: [
@@ -350,6 +368,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.SEND_BULK_MESSAGE,
     Permissions.VIEW_MESSAGES,
     Permissions.VIEW_MESSAGE_HISTORY,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
   ],
   // Gestor de setor
   [UserRoles.SETOR_MANAGER]: [
@@ -365,6 +386,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.UPDATE_COMPLAINT_PRIORITY,
     Permissions.VIEW_MESSAGES,
     Permissions.SEND_MESSAGE,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
   ],
   // Membro de setor
   [UserRoles.SETOR_MEMBER]: [
@@ -376,6 +400,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.CREATE_COMPLAINT,
     Permissions.VIEW_MESSAGES,
     Permissions.VIEW_HISTORY,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
   ],
 
   // RESIDENT: Morador (acesso limitado)
@@ -389,6 +416,12 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Mensagens (apenas visualizar)
     Permissions.VIEW_MESSAGES,
+
+    // Comunicados
+    Permissions.VIEW_ANNOUNCEMENTS,
+
+    // Avaliação
+    Permissions.SUBMIT_CSAT,
   ],
 };
 

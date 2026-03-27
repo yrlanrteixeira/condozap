@@ -12,4 +12,5 @@ export {
   requireSyndicStrict,
   requireGlobalScope,
   requireCondoAccess,
+  requireComplaintOwner,
 } from "../../auth/authorize";

@@ -116,6 +116,12 @@ model Condominium {
   // Formato: { "towers": [{ "name": "A", "floors": ["1", "2", "3"], "unitsPerFloor": 4 }] }
   structure Json? @db.JsonB
 
+  // Automation flags
+  autoTriageEnabled      Boolean @default(true)  @map("auto_triage_enabled")
+  autoAssignEnabled      Boolean @default(true)  @map("auto_assign_enabled")
+  autoCloseAfterDays     Int     @default(7)     @map("auto_close_after_days")
+  waitingAutoResolveDays Int     @default(14)    @map("waiting_auto_resolve_days")
+
   // Relations
   users         UserCondominium[]
   residents     Resident[]
@@ -130,17 +136,24 @@ model Condominium {
 }
 
 model Announcement {
-  id            String   @id @default(cuid())
-  condominiumId String   @map("condominium_id")
+  id            String       @id @default(cuid())
+  condominiumId String       @map("condominium_id")
   title         String
-  content       String   @db.Text
-  imageUrl      String?  @map("image_url")
-  startsAt      DateTime @map("starts_at")
-  endsAt        DateTime @map("ends_at")
-  createdAt     DateTime @default(now()) @map("created_at")
-  createdBy     String?  @map("created_by")
+  content       String       @db.Text
+  imageUrl      String?      @map("image_url")
+  startsAt      DateTime     @map("starts_at")
+  endsAt        DateTime     @map("ends_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  createdBy     String?      @map("created_by")
+  scope         MessageScope @default(ALL)
+  targetTower   String?      @map("target_tower")
+  targetFloor   String?      @map("target_floor")
+  targetUnit    String?      @map("target_unit")
+  sendWhatsApp  Boolean      @default(false) @map("send_whatsapp")
+  expiresAt     DateTime?    @map("expires_at")
 
   condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  author      User?       @relation("AnnouncementAuthor", fields: [createdBy], references: [id])
 
   @@index([condominiumId])
   @@index([condominiumId, startsAt, endsAt])
@@ -180,13 +193,16 @@ model User {
   mfaSecret  String? @map("mfa_secret")
 
   // Relations
-  condominiums         UserCondominium[]
-  resident             Resident?
-  sectorMembers        SectorMember[]
-  assigneeComplaints   Complaint[]           @relation("ComplaintAssignee")
-  escalatedComplaints  Complaint[]           @relation("ComplaintEscalationTarget")
-  assignedComplaints   ComplaintAssignment[] @relation("ComplaintAssignmentAssignedBy")
-  assignedToComplaints ComplaintAssignment[] @relation("ComplaintAssignmentAssignee")
+  condominiums           UserCondominium[]
+  resident               Resident?
+  sectorMembers          SectorMember[]
+  assigneeComplaints     Complaint[]           @relation("ComplaintAssignee")
+  escalatedComplaints    Complaint[]           @relation("ComplaintEscalationTarget")
+  assignedComplaints     ComplaintAssignment[] @relation("ComplaintAssignmentAssignedBy")
+  assignedToComplaints   ComplaintAssignment[] @relation("ComplaintAssignmentAssignee")
+  notifications          Notification[]        @relation("UserNotifications")
+  sentComplaintMessages  ComplaintMessage[]    @relation("ComplaintMessageSender")
+  createdAnnouncements   Announcement[]        @relation("AnnouncementAuthor")
 
   @@index([email])
   @@index([status])
@@ -263,6 +279,9 @@ model Complaint {
   pauseReason        String?           @map("pause_reason") @db.Text
   escalatedAt        DateTime?         @map("escalated_at")
   escalationTargetId String?           @map("escalation_target_id")
+  csatScore          Int?              @map("csat_score")
+  csatComment        String?           @map("csat_comment") @db.Text
+  csatRespondedAt    DateTime?         @map("csat_responded_at")
 
   // Relations
   condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
@@ -273,6 +292,7 @@ model Complaint {
   attachments      ComplaintAttachment[]
   statusHistory    ComplaintStatusHistory[]
   assignments      ComplaintAssignment[]
+  messages         ComplaintMessage[]
 
   @@index([condominiumId, status])
   @@index([condominiumId, priority])
@@ -436,4 +456,39 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([resource])
   @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  body      String   @db.Text
+  data      Json?    @db.JsonB
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model ComplaintMessage {
+  id            String   @id @default(cuid())
+  complaintId   Int      @map("complaint_id")
+  senderId      String   @map("sender_id")
+  senderRole    String   @map("sender_role")
+  content       String   @db.Text
+  attachmentUrl String?  @map("attachment_url")
+  source        String   @default("WEB")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  sender    User      @relation("ComplaintMessageSender", fields: [senderId], references: [id])
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_messages")
 }
