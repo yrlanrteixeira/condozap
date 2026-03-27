@@ -115,8 +115,6 @@ export function MessagingPage() {
         contentString = textContent;
       } else if (msgType === "template") {
         contentString = templateId;
-      } else if (msgType === "image") {
-        contentString = textContent; // Caption for image
       }
 
       await sendMessage.mutateAsync({
@@ -126,6 +124,7 @@ export function MessagingPage() {
           text: contentString,
         },
         mediaUrl: msgType === "image" ? mediaUrl : undefined,
+        caption: msgType === "image" ? textContent : undefined,
         target: {
           scope: scope.toUpperCase() as MessageScope,
           tower: selectedTower,

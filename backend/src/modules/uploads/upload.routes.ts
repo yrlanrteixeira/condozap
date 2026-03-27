@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import {
   uploadComplaintAttachment,
   uploadResidentDocument,
+  uploadFile,
   deleteFile,
   extractFilePathFromUrl,
   BUCKETS,
@@ -14,7 +15,46 @@ import { addComplaintAttachment } from "../complaints/complaints.service";
 import { prisma } from "../../shared/db/prisma";
 import { NotFoundError, BadRequestError } from "../../shared/errors";
 
+const ALLOWED_MEDIA_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "video/mp4",
+];
+const MEDIA_BUCKET = "message-media";
+
 export async function uploadRoutes(app: FastifyInstance) {
+
+  /**
+   * POST /uploads/media
+   * Upload general media file (image/video) for messaging
+   */
+  app.post(
+    "/media",
+    { onRequest: [app.authenticate] },
+    async (request, reply) => {
+      if (!request.user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const data = await request.file();
+      if (!data) {
+        throw new BadRequestError("Nenhum arquivo foi enviado");
+      }
+
+      const fileBuffer = await data.toBuffer();
+
+      const { publicUrl } = await uploadFile(app.log, {
+        fileBuffer,
+        filename: data.filename,
+        mimetype: data.mimetype,
+        bucketName: MEDIA_BUCKET,
+        allowedTypes: ALLOWED_MEDIA_TYPES,
+      });
+
+      return reply.code(201).send({ url: publicUrl });
+    }
+  );
 
   /**
    * POST /uploads/complaints/:complaintId/attachments

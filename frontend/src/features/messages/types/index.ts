@@ -30,6 +30,7 @@ export interface SendMessageInput {
     text: string;
   };
   mediaUrl?: string;
+  caption?: string;
   target: {
     scope: MessageScope;
     tower?: string;
