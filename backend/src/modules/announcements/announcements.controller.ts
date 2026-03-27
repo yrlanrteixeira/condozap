@@ -98,6 +98,17 @@ export async function createAnnouncementHandler(
   if (!data.condominiumId) {
     return reply.status(400).send({ error: "condominiumId é obrigatório" });
   }
+
+  // Verify the requesting syndic is actually allowed to act on this condominium
+  const context = await resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role,
+    permissionScope: user.permissionScope as any,
+  });
+  if (!isCondominiumAllowed(context, data.condominiumId)) {
+    return reply.status(403).send({ error: "Acesso negado a este condomínio" });
+  }
+
   if (!data.title || data.title.length < 3) {
     return reply.status(400).send({ error: "title deve ter no mínimo 3 caracteres" });
   }

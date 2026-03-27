@@ -27,7 +27,7 @@ import { findSlaConfig, resolveAssignee, addMinutes, runSlaEscalationScan } from
 import { classifyComplaint } from "../automation/automation.engine";
 import { notify } from "../notifier/notifier.service";
 
-export { runSlaEscalationScan, classifyComplaint };
+export { runSlaEscalationScan };
 
 export async function createComplaint(
   prisma: PrismaClient,
@@ -72,38 +72,54 @@ export async function createComplaint(
 
   let effectiveSectorId = data.sectorId ?? null;
 
-  // Auto-triage: find sector by category (e.g. "Manutenção" → setor Manutenção)
-  if (!effectiveSectorId && data.category) {
-    const sectorByCategory = await prisma.sector.findFirst({
-      where: {
-        condominiumId: data.condominiumId,
-        categories: { has: data.category.trim() },
-      },
+  // Auto-triage via AutomationEngine (keyword + category classification)
+  if (!effectiveSectorId) {
+    const condoSettings = await prisma.condominium.findUnique({
+      where: { id: data.condominiumId },
+      select: { autoTriageEnabled: true },
     });
-    if (sectorByCategory) {
-      effectiveSectorId = sectorByCategory.id;
-      await prisma.complaint.update({
-        where: { id: complaint.id },
-        data: {
-          sectorId: effectiveSectorId,
-          status: ComplaintStatus.TRIAGE,
-        },
+
+    if (condoSettings?.autoTriageEnabled) {
+      const decision = await classifyComplaint(prisma, {
+        condominiumId: data.condominiumId,
+        category: data.category,
+        content: data.content,
       });
-      await prisma.complaintStatusHistory.create({
-        data: {
-          complaintId: complaint.id,
-          fromStatus: ComplaintStatus.NEW,
-          toStatus: ComplaintStatus.TRIAGE,
-          changedBy: "system",
-          notes: "Triagem automática por categoria",
-          action: SLA_ACTIONS.STATUS_CHANGE,
-          metadata: { sectorId: effectiveSectorId, category: data.category },
-        },
-      });
-      logger.info(
-        { complaintId: complaint.id, sectorId: effectiveSectorId, category: data.category },
-        "Auto-triage: complaint assigned to sector by category"
-      );
+
+      if (decision.sectorId) {
+        effectiveSectorId = decision.sectorId;
+        await prisma.complaint.update({
+          where: { id: complaint.id },
+          data: { sectorId: decision.sectorId, status: ComplaintStatus.TRIAGE },
+        });
+        await prisma.complaintStatusHistory.create({
+          data: {
+            complaintId: complaint.id,
+            fromStatus: ComplaintStatus.NEW,
+            toStatus: ComplaintStatus.TRIAGE,
+            changedBy: "system",
+            notes: "Triagem automática por categoria",
+            action: SLA_ACTIONS.STATUS_CHANGE,
+            metadata: { sectorId: effectiveSectorId, category: data.category },
+          },
+        });
+        logger.info(
+          { complaintId: complaint.id, sectorId: decision.sectorId, confidence: decision.confidence, matchedBy: decision.matchedBy },
+          "Auto-triage: complaint classified by AutomationEngine"
+        );
+      }
+
+      // Apply suggested priority if keyword detection elevated it
+      if (decision.suggestedPriority && decision.suggestedPriority !== complaint.priority) {
+        await prisma.complaint.update({
+          where: { id: complaint.id },
+          data: { priority: decision.suggestedPriority },
+        });
+        logger.info(
+          { complaintId: complaint.id, oldPriority: complaint.priority, newPriority: decision.suggestedPriority },
+          "Auto-priority: complaint priority elevated by keyword detection"
+        );
+      }
     }
   }
 

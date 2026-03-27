@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import type { AuthUser } from "../../types/auth";
 import { notify } from "../notifier/notifier.service";
+import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
 
 export async function listComplaintMessagesHandler(
   request: FastifyRequest,
@@ -25,6 +26,14 @@ export async function listComplaintMessagesHandler(
   // Access check: residents may only see their own complaint messages
   if (user.role === "RESIDENT" && user.residentId !== complaint.residentId) {
     return reply.status(403).send({ error: "Acesso negado" });
+  }
+
+  // Access check: non-residents must belong to the complaint's condominium
+  if (user.role !== "RESIDENT") {
+    const context = await resolveAccessContext(prisma, user);
+    if (!isCondominiumAllowed(context, complaint.condominiumId)) {
+      return reply.status(403).send({ error: "Acesso negado a este condomínio" });
+    }
   }
 
   // Resolve cursor to a createdAt timestamp for keyset pagination
@@ -91,6 +100,14 @@ export async function sendComplaintMessageHandler(
 
   if (user.role === "RESIDENT" && user.residentId !== complaint.residentId) {
     return reply.status(403).send({ error: "Acesso negado" });
+  }
+
+  // Access check: non-residents must belong to the complaint's condominium
+  if (user.role !== "RESIDENT") {
+    const context = await resolveAccessContext(prisma, user);
+    if (!isCondominiumAllowed(context, complaint.condominiumId)) {
+      return reply.status(403).send({ error: "Acesso negado a este condomínio" });
+    }
   }
 
   const message = await prisma.complaintMessage.create({
