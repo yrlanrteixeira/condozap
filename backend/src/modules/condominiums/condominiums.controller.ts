@@ -112,3 +112,31 @@ export async function updateCondominiumSettingsHandler(
 
   return reply.send(condominium);
 }
+
+export async function getOnboardingHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const condominiumId = (request.params as any).id;
+
+  const [condominium, sectorCount, residentCount, messageCount, handledComplaintCount] = await Promise.all([
+    prisma.condominium.findUnique({ where: { id: condominiumId }, select: { structure: true } }),
+    prisma.sector.count({ where: { condominiumId } }),
+    prisma.resident.count({ where: { condominiumId } }),
+    prisma.message.count({ where: { condominiumId } }),
+    prisma.complaint.count({ where: { condominiumId, status: { notIn: ["NEW", "TRIAGE"] } } }),
+  ]);
+
+  const steps = {
+    structureConfigured: condominium?.structure != null && JSON.stringify(condominium.structure) !== "null",
+    sectorCreated: sectorCount > 0,
+    residentCreated: residentCount > 0,
+    messageSent: messageCount > 0,
+    complaintHandled: handledComplaintCount > 0,
+  };
+
+  return reply.send({
+    completed: Object.values(steps).every(Boolean),
+    steps,
+  });
+}

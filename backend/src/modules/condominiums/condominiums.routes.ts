@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireSyndicStrict } from "../../shared/middlewares";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireAdmin, requireCondoAccess } from "../../auth/authorize";
 import {
   listCondominiumsHandler,
   getCondominiumHandler,
@@ -9,6 +9,7 @@ import {
   deleteCondominiumHandler,
   getCondominiumStatsHandler,
   updateCondominiumSettingsHandler,
+  getOnboardingHandler,
 } from "./condominiums.controller";
 import { getAnnouncementsByCondominiumHandler } from "../announcements";
 
@@ -88,5 +89,17 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     getCondominiumStatsHandler
+  );
+
+  fastify.get(
+    "/:id/onboarding",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireAdmin(),
+        requireCondoAccess({ paramName: "id" }),
+      ],
+    },
+    getOnboardingHandler
   );
 };

@@ -10,4 +10,6 @@ export * from './PeriodSelector';
 export * from './ComplaintsCategoryChart';
 export * from './ComplaintsTowerChart';
 export * from './DashboardMessageStats';
+export * from './OnboardingChecklist';
+export * from './ActionableCards';
 

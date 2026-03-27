@@ -15,6 +15,7 @@ import { pendingApprovalRoute, userApprovalRoutes } from "@/features/user-approv
 import { userManagementRoutes } from "@/features/user-management/routes";
 import { platformRoutes } from "@/features/platform/routes";
 import { announcementRoutes } from "@/features/announcements/routes";
+import { reportRoutes } from "@/features/reports/routes";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
@@ -39,6 +40,7 @@ export function AppRoutes() {
     ...historyRoutes,
     ...platformRoutes,
     ...announcementRoutes,
+    ...reportRoutes,
   ];
 
   return (

@@ -18,6 +18,7 @@ import {
   UserCheck,
   UsersRound,
   Megaphone,
+  FileBarChart,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -115,6 +116,12 @@ export const Sidebar = ({
       icon: AlertTriangle,
       // Both admins (VIEW_COMPLAINTS) and residents (VIEW_OWN_COMPLAINTS) can access
       badge: openComplaintsCount,
+    },
+    {
+      title: "Relatórios",
+      href: "/reports",
+      icon: FileBarChart,
+      permission: Permissions.VIEW_REPORTS,
     },
   ];
 
