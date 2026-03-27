@@ -211,7 +211,20 @@ api.interceptors.response.use(
       }
     }
 
-    // Outros erros: apenas rejeita
+    // Outros erros com resposta do servidor: extrai mensagem amigável
+    if (error.response) {
+      const data = error.response.data as any;
+      // Suporta tanto o formato flat { message } quanto o nested { error: { message } }
+      const message =
+        data?.message ||
+        data?.error?.message ||
+        "Ocorreu um erro inesperado";
+      error.message = message;
+    } else if (error.request) {
+      // Erro de rede: sem resposta do servidor
+      error.message = "Sem conexão com o servidor. Verifique sua internet.";
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,9 +1,9 @@
 /**
  * Application Error Classes (DIP - Dependency Inversion)
- * 
+ *
  * Custom error classes that allow routes to throw semantic errors
  * and the global handler to convert them to HTTP responses.
- * 
+ *
  * WHY: Removes the need for try/catch in every route handler.
  * Routes just throw errors, the middleware handles response formatting.
  */
@@ -11,11 +11,13 @@
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
+  public readonly code: string;
 
-  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
+  constructor(message: string, statusCode: number = 500, isOperational: boolean = true, code: string = "INTERNAL_ERROR") {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    this.code = code;
     Object.setPrototypeOf(this, AppError.prototype);
   }
 }
@@ -23,35 +25,35 @@ export class AppError extends Error {
 // 400 - Bad Request (validation errors, invalid input)
 export class BadRequestError extends AppError {
   constructor(message: string = "Requisicao invalida") {
-    super(message, 400);
+    super(message, 400, true, "BAD_REQUEST");
   }
 }
 
 // 401 - Unauthorized (not authenticated)
 export class UnauthorizedError extends AppError {
   constructor(message: string = "Nao autenticado") {
-    super(message, 401);
+    super(message, 401, true, "UNAUTHORIZED");
   }
 }
 
 // 403 - Forbidden (authenticated but not allowed)
 export class ForbiddenError extends AppError {
   constructor(message: string = "Acesso negado") {
-    super(message, 403);
+    super(message, 403, true, "FORBIDDEN");
   }
 }
 
 // 404 - Not Found
 export class NotFoundError extends AppError {
   constructor(resource: string = "Recurso") {
-    super(`${resource} nao encontrado`, 404);
+    super(`${resource} nao encontrado`, 404, true, "NOT_FOUND");
   }
 }
 
 // 409 - Conflict (duplicate entry, already exists)
 export class ConflictError extends AppError {
   constructor(message: string = "Recurso ja existe") {
-    super(message, 409);
+    super(message, 409, true, "CONFLICT");
   }
 }
 
@@ -60,7 +62,7 @@ export class ValidationError extends AppError {
   public readonly errors: Record<string, string[]>;
 
   constructor(message: string = "Erro de validacao", errors: Record<string, string[]> = {}) {
-    super(message, 422);
+    super(message, 422, true, "VALIDATION_ERROR");
     this.errors = errors;
   }
 }

@@ -88,6 +88,7 @@ export function createErrorHandler(logger: {
     if (error instanceof AppError) {
       response.error.message = error.message;
       response.error.statusCode = error.statusCode;
+      response.error.code = error.code;
 
       if (
         error instanceof ValidationError &&
@@ -170,6 +171,7 @@ export function createErrorHandler(logger: {
     );
 
     // In production, don't expose internal error details
+    response.error.code = "INTERNAL_ERROR";
     if (process.env.NODE_ENV === "production") {
       response.error.message = "Erro interno do servidor";
     } else {
