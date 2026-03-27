@@ -21,6 +21,8 @@ import { historyRoutes } from "../modules/history/history.routes";
 import { structureRoutes } from "../modules/structure/structure.routes";
 import { uploadRoutes } from "../modules/uploads/upload.routes";
 import { platformRoutes } from "../modules/platform/platform.routes";
+import { notificationRoutes } from "../modules/notifications/notifications.routes";
+import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const fastify = Fastify({
@@ -92,6 +94,9 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(structureRoutes, { prefix: "/api/structure" });
   await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
   await fastify.register(platformRoutes, { prefix: "/api/platform" });
+  await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
+
+  await fastify.register(slaCronPlugin);
 
   fastify.setErrorHandler(createErrorHandler(fastify.log));
 

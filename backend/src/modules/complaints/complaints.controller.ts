@@ -288,3 +288,44 @@ export async function getComplaintDetailHandler(
 
   return reply.send(complaint);
 }
+
+export async function submitCsatHandler(
+  request: FastifyRequest<{ Params: { id: string }; Body: { score: number; comment?: string } }>,
+  reply: FastifyReply
+) {
+  const complaintId = Number(request.params.id);
+  const { score, comment } = request.body;
+
+  if (!Number.isInteger(score) || score < 1 || score > 5) {
+    return reply.status(400).send({ error: "Nota deve ser um número inteiro de 1 a 5" });
+  }
+
+  const complaint = await prisma.complaint.findUnique({ where: { id: complaintId } });
+  if (!complaint) {
+    return reply.status(404).send({ error: "Ocorrência não encontrada" });
+  }
+
+  if (!["RESOLVED", "CLOSED"].includes(complaint.status)) {
+    return reply.status(400).send({ error: "Ocorrência deve estar resolvida ou fechada para avaliação" });
+  }
+
+  if (complaint.csatRespondedAt) {
+    return reply.status(409).send({ error: "Avaliação já enviada para esta ocorrência" });
+  }
+
+  const updated = await prisma.complaint.update({
+    where: { id: complaintId },
+    data: {
+      csatScore: score,
+      csatComment: comment || null,
+      csatRespondedAt: new Date(),
+    },
+  });
+
+  return reply.send({
+    complaintId: updated.id,
+    csatScore: updated.csatScore,
+    csatComment: updated.csatComment,
+    csatRespondedAt: updated.csatRespondedAt?.toISOString(),
+  });
+}

@@ -17,6 +17,7 @@ import {
   setCurrentCondominium,
 } from "@/shared/store/slices/condominiumSlice";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -124,6 +125,7 @@ export const Header = ({
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <ModeToggle />
       </div>
     </header>

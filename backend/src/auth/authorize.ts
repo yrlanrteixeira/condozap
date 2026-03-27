@@ -209,3 +209,23 @@ export const requireGlobalScope = () => {
   };
 };
 
+export const requireComplaintOwner = () => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return reply.status(401).send({ error: "Usuário não autenticado" });
+    }
+    if (user.role !== "RESIDENT" || !user.residentId) {
+      return reply.status(403).send({ error: "Apenas moradores podem avaliar" });
+    }
+    const complaintId = Number((request.params as Record<string, string>).id);
+    const complaint = await prisma.complaint.findUnique({ where: { id: complaintId } });
+    if (!complaint) {
+      return reply.status(404).send({ error: "Ocorrência não encontrada" });
+    }
+    if (complaint.residentId !== user.residentId) {
+      return reply.status(403).send({ error: "Você só pode avaliar suas próprias ocorrências" });
+    }
+  };
+};
+
