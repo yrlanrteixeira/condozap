@@ -9,9 +9,16 @@
       "Bash(npx -p typescript tsc --noEmit)",
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(grep -r \"animate\\\\|transition\\\\|duration\\\\|motion\\\\|framer\" src/ --include=*.tsx --include=*.ts --include=*.css -l)",
+      "Bash(grep -r \"animate\\\\|framer-motion\\\\|motion\\\\.\" src/ --include=*.tsx --include=*.ts -l)",
+      "Bash(xargs grep:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "attribution": {
+      "commit": "",
+      "pr": ""
+    }
   }
 }

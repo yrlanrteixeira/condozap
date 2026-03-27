@@ -59,6 +59,7 @@ export const ResidentDialog = ({
 }: ResidentDialogProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const [formData, setFormData] = useState<ResidentFormData>(initialFormData);
+  const [originalData, setOriginalData] = useState<ResidentFormData | null>(null);
   const { toast } = useToast();
 
   const createResident = useCreateResident();
@@ -76,16 +77,35 @@ export const ResidentDialog = ({
         unit: resident.unit,
         condominiumId: resident.condominiumId,
       });
+      setOriginalData({
+        name: resident.name,
+        email: resident.email,
+        phone: resident.phone,
+        tower: resident.tower,
+        floor: resident.floor,
+        unit: resident.unit,
+        condominiumId: resident.condominiumId,
+      });
     } else if (open && !resident) {
       setFormData({
         ...initialFormData,
         condominiumId: currentCondominiumId || "",
       });
+      setOriginalData(null);
     }
   }, [open, resident, currentCondominiumId]);
 
   const isFormValid =
-    formData.name && formData.email && formData.phone && formData.floor && formData.unit;
+    formData.name &&
+    formData.email &&
+    formData.phone &&
+    formData.tower &&
+    formData.floor &&
+    formData.unit;
+
+  const hasChanges = !resident
+    ? true
+    : !originalData || JSON.stringify(formData) !== JSON.stringify(originalData);
 
   const handleSave = async () => {
     const condoId = formData.condominiumId || currentCondominiumId;
@@ -165,7 +185,7 @@ export const ResidentDialog = ({
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={!isFormValid || isLoading}>
+          <Button onClick={handleSave} disabled={!isFormValid || isLoading || !hasChanges}>
             {isLoading
               ? "Salvando..."
               : resident

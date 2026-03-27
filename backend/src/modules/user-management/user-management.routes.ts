@@ -4,6 +4,7 @@ import { requireCondoAccess } from "../../auth/authorize";
 import {
   createAdminHandler,
   createSyndicHandler,
+  createProfessionalSyndicHandler,
   listUsersByCondoHandler,
   updateUserRoleHandler,
   updateCouncilPositionHandler,
@@ -31,6 +32,14 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
     },
     createSyndicHandler
+  );
+
+  fastify.post(
+    "/users/create-professional-syndic",
+    {
+      onRequest: [fastify.authenticate, requireSuperAdmin()],
+    },
+    createProfessionalSyndicHandler
   );
 
   fastify.get(

@@ -12,8 +12,10 @@ export const sendMessageSchema = z.object({
   condominiumId: z.string().min(1),
   type: z.enum(["TEXT", "TEMPLATE", "IMAGE"]),
   content: z.object({
-    text: z.string().min(1),
+    text: z.string(),
   }),
+  mediaUrl: z.string().url().optional(),
+  caption: z.string().optional(),
   target: z.object({
     scope: z.enum(["ALL", "TOWER", "FLOOR", "UNIT"]),
     tower: z.string().optional(),
@@ -21,7 +23,13 @@ export const sendMessageSchema = z.object({
     unit: z.string().optional(),
   }),
   sentBy: z.string().optional(),
-});
+}).refine(
+  (data) => data.type !== "IMAGE" || !!data.mediaUrl,
+  { message: "mediaUrl é obrigatório para mensagens do tipo IMAGE", path: ["mediaUrl"] }
+).refine(
+  (data) => data.type !== "TEXT" || !!data.content.text?.trim(),
+  { message: "content.text é obrigatório para mensagens do tipo TEXT", path: ["content", "text"] }
+);
 
 export const messageIdParamSchema = z.object({
   id: z.string().min(1),

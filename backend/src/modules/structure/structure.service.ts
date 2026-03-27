@@ -34,6 +34,26 @@ export async function updateStructure(
     throw new NotFoundError("Condomínio");
   }
 
+  // Identify towers being removed
+  const currentStructure = (condominium.structure as { towers: Array<{ name: string }> } | null);
+  const currentTowerNames = new Set(
+    currentStructure?.towers?.map((t) => t.name) ?? []
+  );
+  const newTowerNames = new Set(body.structure.towers.map((t) => t.name));
+  const removedTowers = [...currentTowerNames].filter((name) => !newTowerNames.has(name));
+
+  // Block deletion if any removed tower has residents
+  for (const towerName of removedTowers) {
+    const residentCount = await prisma.resident.count({
+      where: { condominiumId, tower: towerName },
+    });
+    if (residentCount > 0) {
+      throw new BadRequestError(
+        `Torre "${towerName}" possui ${residentCount} morador(es). Realoque-os antes de excluir.`
+      );
+    }
+  }
+
   const updated = await updateCondominiumStructure(
     prisma,
     condominiumId,

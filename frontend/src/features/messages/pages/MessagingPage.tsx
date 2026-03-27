@@ -50,6 +50,7 @@ export function MessagingPage() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [textContent, setTextContent] = useState("");
   const [templateId, setTemplateId] = useState(TEMPLATES[0]?.name || "");
+  const [mediaUrl, setMediaUrl] = useState("");
   const isSending = sendMessage.isPending;
 
   const recipientCount = useMemo(() => {
@@ -97,6 +98,16 @@ export function MessagingPage() {
       return;
     }
 
+    if (msgType === "image" && !mediaUrl) {
+      toast({
+        title: "Mídia obrigatória",
+        description: "Anexe uma imagem ou vídeo antes de enviar.",
+        variant: "warning",
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       // Prepare content based on message type
       let contentString = "";
@@ -114,6 +125,7 @@ export function MessagingPage() {
         content: {
           text: contentString,
         },
+        mediaUrl: msgType === "image" ? mediaUrl : undefined,
         target: {
           scope: scope.toUpperCase() as MessageScope,
           tower: selectedTower,
@@ -134,6 +146,9 @@ export function MessagingPage() {
       setTextContent("");
       if (msgType === "template") {
         setTemplateId(TEMPLATES[0]?.name || "");
+      }
+      if (msgType === "image") {
+        setMediaUrl("");
       }
     } catch {
       toast({
@@ -211,6 +226,8 @@ export function MessagingPage() {
 
             {msgType === "image" && (
               <MessageImageInput
+                mediaUrl={mediaUrl}
+                onMediaUrlChange={setMediaUrl}
                 caption={textContent}
                 onCaptionChange={setTextContent}
               />
@@ -223,7 +240,8 @@ export function MessagingPage() {
                 disabled={
                   isSending ||
                   recipientCount === 0 ||
-                  (msgType === "text" && !textContent.trim())
+                  (msgType === "text" && !textContent.trim()) ||
+                  (msgType === "image" && !mediaUrl)
                 }
                 isSending={isSending}
               />

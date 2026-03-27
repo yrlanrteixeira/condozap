@@ -5,6 +5,7 @@ import { ConflictError, NotFoundError, BadRequestError } from "../../shared/erro
 import type {
   CreateAdminRequest,
   CreateSyndicRequest,
+  CreateProfessionalSyndicRequest,
   UpdateUserRoleRequest,
   UpdateCouncilPositionRequest,
   RemoveUserRequest,
@@ -88,6 +89,48 @@ export async function createSyndic(
 
   return {
     user: newSyndic,
+    condominiumsCount: data.condominiumIds.length,
+  };
+}
+
+export async function createProfessionalSyndic(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  data: CreateProfessionalSyndicRequest,
+  createdBy: string
+) {
+  const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
+  if (existingUser) {
+    throw new ConflictError("Email já está cadastrado no sistema");
+  }
+
+  const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  const newUser = await usersRepository.createUser(prisma, {
+    email: data.email,
+    password: hashedPassword,
+    name: data.name,
+    role: "PROFESSIONAL_SYNDIC" as PrismaUserRole,
+    permissionScope: "GLOBAL",
+    status: "APPROVED",
+    approvedAt: new Date(),
+    approvedBy: createdBy,
+  });
+
+  const userCondominiumsData = data.condominiumIds.map((condoId) => ({
+    userId: newUser.id,
+    condominiumId: condoId,
+    role: "PROFESSIONAL_SYNDIC" as PrismaUserRole,
+  }));
+
+  await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
+
+  logger.info(
+    `ProfessionalSyndic ${newUser.email} created by ${createdBy} for ${data.condominiumIds.length} condominiums`
+  );
+
+  return {
+    user: newUser,
     condominiumsCount: data.condominiumIds.length,
   };
 }

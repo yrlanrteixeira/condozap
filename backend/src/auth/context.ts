@@ -18,7 +18,8 @@ export const resolveAccessContext = async (
   prisma: PrismaClient,
   user: AccessUser
 ): Promise<AccessContext> => {
-  const scope = user.permissionScope ?? ("LOCAL" as Scope);
+  const scope = user.permissionScope
+    ?? (user.role === "PROFESSIONAL_SYNDIC" ? ("GLOBAL" as Scope) : ("LOCAL" as Scope));
   if (isGlobalScope(scope)) {
     return {
       role: user.role,

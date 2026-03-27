@@ -36,7 +36,6 @@ export function StructurePage() {
   // Group residents by tower
   const residentsByTower = useMemo(() => {
     if (!residents) return {};
-    
     return residents.reduce((acc, resident) => {
       if (!acc[resident.tower]) {
         acc[resident.tower] = [];
@@ -46,8 +45,19 @@ export function StructurePage() {
     }, {} as Record<string, Resident[]>);
   }, [residents]);
 
-  // Sort towers alphabetically
-  const towers = Object.keys(residentsByTower).sort();
+  // All towers = configured structure towers + any towers from residents (union)
+  const allTowers = useMemo(() => {
+    const towerSet = new Set<string>();
+    if (structureData?.structure?.towers) {
+      (structureData.structure.towers as Array<{ name: string }>).forEach((t) =>
+        towerSet.add(t.name)
+      );
+    }
+    if (residents) {
+      residents.forEach((r) => towerSet.add(r.tower));
+    }
+    return Array.from(towerSet).sort();
+  }, [structureData, residents]);
 
   const handleAddResident = () => {
     setSelectedResident(undefined);
@@ -143,7 +153,7 @@ export function StructurePage() {
       </div>
 
       {/* Statistics */}
-      {residents && residents.length > 0 && (
+      {(residents && residents.length > 0) || allTowers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border-border">
             <CardContent className="p-4">
@@ -153,7 +163,7 @@ export function StructurePage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Torres</p>
-                  <p className="text-2xl font-bold text-foreground">{towers.length}</p>
+                  <p className="text-2xl font-bold text-foreground">{allTowers.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -167,7 +177,7 @@ export function StructurePage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Unidades</p>
-                  <p className="text-2xl font-bold text-foreground">{residents.length}</p>
+                  <p className="text-2xl font-bold text-foreground">{residents?.length ?? 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -187,16 +197,16 @@ export function StructurePage() {
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : null}
 
       {/* Towers Grid */}
-      {residents && residents.length > 0 ? (
+      {allTowers.length > 0 ? (
         <div className="space-y-4">
-          {towers.map((tower) => (
+          {allTowers.map((tower) => (
             <TowerCard
               key={tower}
               towerName={tower}
-              residents={residentsByTower[tower]}
+              residents={residentsByTower[tower] ?? []}
             />
           ))}
         </div>

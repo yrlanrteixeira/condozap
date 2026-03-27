@@ -2,12 +2,14 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
   createAdminSchema,
   createSyndicSchema,
+  createProfessionalSyndicSchema,
   updateUserRoleSchema,
   updateCouncilPositionSchema,
   removeUserSchema,
   inviteUserSchema,
   type CreateAdminRequest,
   type CreateSyndicRequest,
+  type CreateProfessionalSyndicRequest,
   type UpdateUserRoleRequest,
   type UpdateCouncilPositionRequest,
   type RemoveUserRequest,
@@ -53,6 +55,29 @@ export async function createSyndicHandler(
 
   return reply.status(201).send({
     message: "Síndico criado com sucesso",
+    user: result.user,
+    condominiumsCount: result.condominiumsCount,
+  });
+}
+
+export async function createProfessionalSyndicHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const currentUser = request.user as AuthUser;
+  const body = createProfessionalSyndicSchema.parse(
+    request.body
+  ) as CreateProfessionalSyndicRequest;
+
+  const result = await userService.createProfessionalSyndic(
+    prisma,
+    request.log,
+    body,
+    currentUser.id
+  );
+
+  return reply.status(201).send({
+    message: "Síndico Profissional criado com sucesso",
     user: result.user,
     condominiumsCount: result.condominiumsCount,
   });

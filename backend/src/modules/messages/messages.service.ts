@@ -80,7 +80,10 @@ export async function sendMessage(
       phone: resident.phone,
       name: resident.name,
     })),
-    message: body.content.text,
+    message: body.content.text || body.caption || "",
+    type: body.type === "IMAGE" ? "image" : "text",
+    mediaUrl: body.mediaUrl,
+    caption: body.caption,
   });
 
   const message = await createMessage(prisma, {
@@ -90,7 +93,7 @@ export async function sendMessage(
     targetTower: body.target.tower,
     targetFloor: body.target.floor,
     targetUnit: body.target.unit,
-    content: body.content.text,
+    content: body.mediaUrl ?? body.content.text,
     recipientCount: result.total,
     sentBy: body.sentBy || userId,
     whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
