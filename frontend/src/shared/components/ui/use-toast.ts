@@ -20,7 +20,7 @@ export interface Toast {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
-  variant?: "default" | "success" | "error" | "warning"
+  variant?: "default" | "success" | "error" | "warning" | "destructive"
   duration?: number
 }
 
@@ -156,7 +156,7 @@ interface ToastOptions {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
-  variant?: "default" | "success" | "error" | "warning"
+  variant?: "default" | "success" | "error" | "warning" | "destructive"
   duration?: number
 }
 
