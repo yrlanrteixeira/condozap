@@ -235,12 +235,12 @@ class EvolutionService {
   private formatPhoneNumber(phone: string): string {
     let cleaned = phone.replace(/\D/g, "");
 
-    if (cleaned.length === 13 && cleaned.startsWith("55")) {
-      const ddd = cleaned.substring(2, 4);
-      const number = cleaned.substring(5);
-      cleaned = `55${ddd}${number}`;
+    // Já está no formato internacional brasileiro (12 = fixo, 13 = celular)
+    if (cleaned.startsWith("55") && (cleaned.length === 12 || cleaned.length === 13)) {
+      return cleaned;
     }
 
+    // Número nacional (10 = fixo, 11 = celular com 9): adiciona prefixo 55
     if (cleaned.length === 10 || cleaned.length === 11) {
       cleaned = `55${cleaned}`;
     }

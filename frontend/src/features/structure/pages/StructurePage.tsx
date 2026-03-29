@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { PageHeaderSkeleton, StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
 import type { Resident } from "@/features/residents/types";
 import { useAppSelector } from "@/shared/hooks";
@@ -49,9 +48,7 @@ export function StructurePage() {
   const allTowers = useMemo(() => {
     const towerSet = new Set<string>();
     if (structureData?.structure?.towers) {
-      (structureData.structure.towers as Array<{ name: string }>).forEach((t) =>
-        towerSet.add(t.name)
-      );
+      structureData.structure.towers.forEach((t) => towerSet.add(t.name));
     }
     if (residents) {
       residents.forEach((r) => towerSet.add(r.tower));

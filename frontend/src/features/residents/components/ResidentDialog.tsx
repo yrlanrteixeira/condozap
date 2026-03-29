@@ -32,21 +32,22 @@ const initialFormData: ResidentFormData = {
   condominiumId: "",
 };
 
-// Formata telefone para o padrão brasileiro esperado pelo backend (55XXXXXXXXXX)
+// Formata telefone para o padrão brasileiro esperado pelo backend (55DXXXXXXXXX ou 55DDXXXXXXXXX)
 function formatPhoneForApi(phone: string): string {
-  // Remove tudo que não é número
   const digits = phone.replace(/\D/g, '');
-  
-  // Se já começar com 55, retorna como está
-  if (digits.startsWith('55') && digits.length >= 12) {
+
+  if (!digits) return '';
+
+  // Já está no formato internacional brasileiro (12-13 dígitos com prefixo 55)
+  if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
     return digits;
   }
-  
-  // Se tiver 10 ou 11 dígitos, adiciona 55
-  if (digits.length >= 10 && digits.length <= 11) {
+
+  // Número nacional (10 = fixo, 11 = celular com 9): adiciona prefixo 55
+  if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
   }
-  
+
   // Retorna o que foi digitado (o backend vai validar)
   return digits;
 }

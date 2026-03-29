@@ -12,7 +12,7 @@ const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 interface MessageImageInputProps {
   mediaUrl: string;
-  onMediaUrlChange: (url: string) => void;
+  onMediaUrlChange: (url: string, mimeType?: string) => void;
   caption: string;
   onCaptionChange: (caption: string) => void;
 }
@@ -24,6 +24,7 @@ export const MessageImageInput = ({
   onCaptionChange,
 }: MessageImageInputProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [mediaMimeType, setMediaMimeType] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const condominiumId = useAppSelector(selectCurrentCondominiumId);
@@ -70,7 +71,8 @@ export const MessageImageInput = ({
       }
 
       const data = await response.json();
-      onMediaUrlChange(data.url);
+      setMediaMimeType(data.mimeType || file.type);
+      onMediaUrlChange(data.url, data.mimeType || file.type);
     } catch {
       toast({
         title: 'Erro no upload',
@@ -90,10 +92,11 @@ export const MessageImageInput = ({
 
   const handleRemove = () => {
     onMediaUrlChange('');
+    setMediaMimeType('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const isImage = mediaUrl && !mediaUrl.includes('.mp4');
+  const isImage = mediaUrl && mediaMimeType.startsWith('image/');
 
   return (
     <div className="space-y-3">

@@ -52,7 +52,7 @@ export async function uploadRoutes(app: FastifyInstance) {
         allowedTypes: ALLOWED_MEDIA_TYPES,
       });
 
-      return reply.code(201).send({ url: publicUrl });
+      return reply.code(201).send({ url: publicUrl, mimeType: data.mimetype });
     }
   );
 

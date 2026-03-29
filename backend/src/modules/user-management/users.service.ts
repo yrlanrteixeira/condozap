@@ -117,21 +117,23 @@ export async function createProfessionalSyndic(
     approvedBy: createdBy,
   });
 
-  const userCondominiumsData = data.condominiumIds.map((condoId) => ({
-    userId: newUser.id,
-    condominiumId: condoId,
-    role: "PROFESSIONAL_SYNDIC" as PrismaUserRole,
-  }));
+  if (data.condominiumIds && data.condominiumIds.length > 0) {
+    const userCondominiumsData = data.condominiumIds.map((condoId) => ({
+      userId: newUser.id,
+      condominiumId: condoId,
+      role: "PROFESSIONAL_SYNDIC" as PrismaUserRole,
+    }));
 
-  await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
+    await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
+  }
 
   logger.info(
-    `ProfessionalSyndic ${newUser.email} created by ${createdBy} for ${data.condominiumIds.length} condominiums`
+    `ProfessionalSyndic ${newUser.email} created by ${createdBy} with GLOBAL scope`
   );
 
   return {
     user: newUser,
-    condominiumsCount: data.condominiumIds.length,
+    condominiumsCount: data.condominiumIds?.length ?? 0,
   };
 }
 

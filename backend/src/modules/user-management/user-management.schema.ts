@@ -18,7 +18,7 @@ export const createProfessionalSyndicSchema = z.object({
   email: z.string().email(),
   name: z.string().min(3),
   password: z.string().min(8),
-  condominiumIds: z.array(z.string().min(1)).min(1),
+  condominiumIds: z.array(z.string().min(1)).optional(),
 });
 
 export type CreateProfessionalSyndicRequest = z.infer<typeof createProfessionalSyndicSchema>;
