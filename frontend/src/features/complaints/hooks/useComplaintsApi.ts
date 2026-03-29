@@ -2,7 +2,7 @@
  * Complaints Feature - API Hooks
  */
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
   createQuery,
@@ -243,6 +243,23 @@ export const useDeleteComplaint = createMutationWithInvalidation<number, void>({
   },
   invalidateKeys: () => [queryKeys.lists()],
 });
+
+// =====================================================
+// Mutation: Nudge Sector (cobrar posicionamento)
+// =====================================================
+
+export function useNudgeComplaint() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (complaintId: number) => {
+      const { data } = await api.post(`/complaints/${complaintId}/nudge`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+    },
+  });
+}
 
 // =====================================================
 // Query: Get Complaint Statistics

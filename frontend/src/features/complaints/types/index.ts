@@ -34,6 +34,7 @@ export interface Complaint {
   escalatedAt?: string | null;
   resolvedAt?: string | null;
   resolvedBy?: string | null;
+  lastNudgedAt?: string | null;
   timestamp?: string; // Alias para createdAt (compatibilidade)
   resident?: {
     name: string;

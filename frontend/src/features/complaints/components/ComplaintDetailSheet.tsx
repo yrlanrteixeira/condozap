@@ -23,12 +23,14 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
+  Bell,
 } from "lucide-react";
 import { useToast } from "@/shared/components/ui/use-toast";
 import {
   useComplaint,
   useAddComplaintComment,
   useUpdateComplaintStatus,
+  useNudgeComplaint,
 } from "../hooks/useComplaintsApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintAttachmentUpload } from "./ComplaintAttachmentUpload";
@@ -67,6 +69,27 @@ export function ComplaintDetailSheet({
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
   const updateStatus = useUpdateComplaintStatus();
+  const nudgeMutation = useNudgeComplaint();
+
+  const handleNudge = async () => {
+    if (!complaintId) return;
+    try {
+      const result = await nudgeMutation.mutateAsync(complaintId);
+      toast({
+        title: "Cobrança enviada",
+        description: `${result.notifiedCount} membro(s) do setor notificado(s).`,
+        variant: "success",
+        duration: 3000,
+      });
+    } catch {
+      toast({
+        title: "Erro ao cobrar setor",
+        description: "Não foi possível enviar a cobrança. Tente novamente.",
+        variant: "error",
+        duration: 3000,
+      });
+    }
+  };
 
   const handleAddComment = async () => {
     if (!complaintId || !commentText.trim()) return;
@@ -125,6 +148,8 @@ export function ComplaintDetailSheet({
                 onStatusChange={handleStatusChange}
                 isUpdatingStatus={updateStatus.isPending}
                 currentUserId={currentUser?.id ?? ""}
+                onNudge={handleNudge}
+                isNudgePending={nudgeMutation.isPending}
               />
             </ScrollArea>
 
@@ -165,11 +190,15 @@ function ComplaintDetailContent({
   onStatusChange,
   isUpdatingStatus,
   currentUserId,
+  onNudge,
+  isNudgePending,
 }: {
   complaint: ComplaintDetail;
   onStatusChange: (status: string) => void;
   isUpdatingStatus: boolean;
   currentUserId: string;
+  onNudge: () => void;
+  isNudgePending: boolean;
 }) {
   const history = complaint.statusHistory ?? [];
   const attachments = complaint.attachments ?? [];
@@ -210,6 +239,35 @@ function ComplaintDetailContent({
           </Select>
         </div>
       </div>
+
+      {/* Nudge: cobrar posicionamento do setor */}
+      {(() => {
+        const canNudge =
+          complaint.sectorId &&
+          !["RESOLVED", "CLOSED", "CANCELLED"].includes(complaint.status);
+        const nudgeCooldown =
+          complaint.lastNudgedAt &&
+          Date.now() - new Date(complaint.lastNudgedAt).getTime() <
+            24 * 60 * 60 * 1000;
+        return canNudge ? (
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onNudge}
+              disabled={!!nudgeCooldown || isNudgePending}
+              title={
+                nudgeCooldown
+                  ? "Aguarde 24h entre cobranças"
+                  : "Cobrar posicionamento do setor"
+              }
+            >
+              <Bell className="h-4 w-4 mr-1" />
+              {nudgeCooldown ? "Cobrado" : "Cobrar Setor"}
+            </Button>
+          </div>
+        ) : null;
+      })()}
 
       {/* Categoria */}
       <div className="flex items-center gap-2">
