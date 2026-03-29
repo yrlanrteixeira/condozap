@@ -11,5 +11,6 @@ export { ComplaintHistoryList } from './ComplaintHistoryList';
 export { ComplaintDetailSheet } from './ComplaintDetailSheet';
 export { ResidentComplaintDetailSheet } from './ResidentComplaintDetailSheet';
 export { AdminComplaintsMobileList } from './AdminComplaintsMobileList';
+export { ComplaintTimeline } from './ComplaintTimeline';
 
 
