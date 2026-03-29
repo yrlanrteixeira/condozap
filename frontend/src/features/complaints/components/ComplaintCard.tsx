@@ -39,9 +39,16 @@ export const ComplaintCard = ({
     >
       <CardContent className="p-3 sm:p-4">
         <div className="flex justify-between items-start mb-2">
-          <Badge className="text-xs bg-muted text-muted-foreground">
-            {complaint.category}
-          </Badge>
+          <div className="flex gap-2">
+            <Badge className="text-xs bg-muted text-muted-foreground">
+              {complaint.category}
+            </Badge>
+            {complaint.sector && (
+              <Badge variant="outline" className="text-xs">
+                {complaint.sector.name}
+              </Badge>
+            )}
+          </div>
           <span className="text-xs text-muted-foreground">
             {formatDate(dateField)}
           </span>

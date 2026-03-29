@@ -103,6 +103,7 @@ export function AdminComplaintsTablePage({
               <TableRow className="bg-muted/50">
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="font-bold">Categoria</TableHead>
+                <TableHead className="font-bold hidden sm:table-cell">Setor</TableHead>
                 <TableHead className="font-bold">Descrição</TableHead>
                 <TableHead className="font-bold hidden sm:table-cell">Unidade</TableHead>
                 <TableHead className="font-bold hidden sm:table-cell">Data</TableHead>
@@ -113,7 +114,7 @@ export function AdminComplaintsTablePage({
               {complaints.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-8 text-muted-foreground"
                   >
                     Nenhuma ocorrência registrada
@@ -132,6 +133,9 @@ export function AdminComplaintsTablePage({
                       <Badge variant="secondary" className="text-xs">
                         {complaint.category}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
+                      {complaint.sector?.name ?? "—"}
                     </TableCell>
                     <TableCell className="max-w-xs">
                       <p className="text-sm text-foreground truncate">
