@@ -55,6 +55,14 @@ export interface User {
   residentId?: string; // ID do cadastro de morador (para role RESIDENT)
   consentWhatsapp?: boolean;
   consentDataProcessing?: boolean;
+  // Extended syndic profile fields
+  photoUrl?: string;
+  contactPhone?: string;
+  officeHours?: string;
+  publicNotes?: string;
+  address?: string;
+  websiteUrl?: string;
+  privateNotes?: string;
 }
 
 /**

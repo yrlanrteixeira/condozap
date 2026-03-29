@@ -8,6 +8,7 @@ import {
   SettingsCondominiumCard,
   SettingsNotificationsCard,
   SettingsSecurityCard,
+  SyndicProfileCard,
 } from "@/features/settings";
 
 export function SettingsPage() {
@@ -70,6 +71,13 @@ export function SettingsPage() {
         UserRoles.RESIDENT,
       ],
       component: SettingsSecurityCard,
+    },
+    {
+      icon: User,
+      title: "Seu Síndico",
+      description: "Contato do síndico do condomínio",
+      roles: [UserRoles.RESIDENT],
+      component: SyndicProfileCard,
     },
     {
       icon: MessageSquare,
