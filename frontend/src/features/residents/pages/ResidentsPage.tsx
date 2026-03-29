@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Users } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -10,6 +10,7 @@ import {
   ResidentPageHeader,
   ResidentList,
   ResidentDialog,
+  ResidentsFilterBar,
 } from "../components";
 import { useResidents } from "../hooks/useResidentsApi";
 import type { Resident } from "../types";
@@ -17,8 +18,13 @@ import type { Resident } from "../types";
 export function ResidentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
+  const [filteredResidents, setFilteredResidents] = useState<Resident[]>([]);
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
+
+  const handleFilteredChange = useCallback((filtered: Resident[]) => {
+    setFilteredResidents(filtered);
+  }, []);
 
   // SUPER_ADMIN vê moradores do condomínio selecionado, outros veem do seu condomínio
   const condoIdToFetch = currentCondominiumId || '';
@@ -79,12 +85,26 @@ export function ResidentsPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <ResidentPageHeader onAddResident={handleAddResident} />
 
+      {residents && residents.length > 0 && (
+        <>
+          <ResidentsFilterBar
+            residents={residents}
+            onFilteredChange={handleFilteredChange}
+          />
+          {filteredResidents.length !== residents.length && (
+            <p className="text-sm text-muted-foreground mb-2">
+              {filteredResidents.length} morador{filteredResidents.length !== 1 ? "es" : ""} encontrado{filteredResidents.length !== 1 ? "s" : ""}
+            </p>
+          )}
+        </>
+      )}
+
       {residents && residents.length > 0 ? (
         <Card className="border-border">
           <CardContent className="p-0 md:p-0">
             <div className="p-3 md:p-0">
               <ResidentList
-                residents={residents}
+                residents={filteredResidents.length > 0 || residents.length === 0 ? filteredResidents : residents}
                 onEdit={handleEditResident}
               />
             </div>

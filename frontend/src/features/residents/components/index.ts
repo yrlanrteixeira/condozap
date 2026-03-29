@@ -11,4 +11,5 @@ export { ResidentPageHeader } from './ResidentPageHeader';
 export { ResidentCard } from './ResidentCard';
 export { ResidentMobileCard } from './ResidentMobileCard';
 export { ResidentList } from './ResidentList';
+export { ResidentsFilterBar } from './ResidentsFilterBar';
 
