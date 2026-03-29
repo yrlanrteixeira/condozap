@@ -8,6 +8,7 @@ import {
   requireTicketModify,
   requireTicketView,
 } from "../../auth/authorize";
+import { nudgeComplaintHandler } from "./complaints-nudge.controller";
 import {
   addComplaintCommentHandler,
   addComplaintAttachmentHandler,
@@ -147,6 +148,18 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     "/:id/csat",
     { onRequest: [fastify.authenticate, requireComplaintOwner()] },
     submitCsatHandler
+  );
+
+  fastify.post(
+    "/:id/nudge",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireTicketView(),
+      ],
+    },
+    nudgeComplaintHandler
   );
 
   fastify.delete(
