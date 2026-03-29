@@ -192,6 +192,20 @@ model User {
   mfaEnabled Boolean @default(false) @map("mfa_enabled")
   mfaSecret  String? @map("mfa_secret")
 
+  // Syndic Profile (public)
+  contactPhone    String?
+  photoUrl        String?
+  officeHours     String?
+  publicNotes     String?   @db.Text
+
+  // Syndic Profile (private)
+  address         String?
+  websiteUrl      String?
+  privateNotes    String?   @db.Text
+
+  // Account Expiration
+  accountExpiresAt DateTime?
+
   // Relations
   condominiums           UserCondominium[]
   resident               Resident?
@@ -282,6 +296,7 @@ model Complaint {
   csatScore          Int?              @map("csat_score")
   csatComment        String?           @map("csat_comment") @db.Text
   csatRespondedAt    DateTime?         @map("csat_responded_at")
+  lastNudgedAt       DateTime?         @map("last_nudged_at")
 
   // Relations
   condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
