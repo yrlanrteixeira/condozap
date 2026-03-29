@@ -1,7 +1,7 @@
 /**
- * Team Management Page (Conselheiros)
+ * Team Management Page (Corpo Diretivo)
  *
- * Página para síndicos gerenciarem conselheiros e pessoas de confiança
+ * Página para síndicos gerenciarem o corpo diretivo e pessoas de confiança
  * - Síndico pode cadastrar ADMINs (conselheiros)
  */
 
@@ -209,7 +209,7 @@ export function TeamManagementPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              Conselheiros
+              Corpo Diretivo
             </h1>
             <p className="text-sm text-muted-foreground">
               Cadastre pessoas de confiança para ajudar a gerenciar o condomínio

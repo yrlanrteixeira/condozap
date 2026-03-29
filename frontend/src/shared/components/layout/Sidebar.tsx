@@ -87,7 +87,7 @@ export const Sidebar = ({
       permission: Permissions.MANAGE_RESIDENTS,
     },
     {
-      title: "Conselheiros",
+      title: "Corpo Diretivo",
       href: "/team",
       icon: UsersRound,
       permission: Permissions.MANAGE_TEAM,
