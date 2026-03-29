@@ -217,11 +217,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const body = updateProfileSchema.parse(request.body) as UpdateProfileBody;
 
       const updateData: Record<string, unknown> = {};
-      if (body.name !== undefined) updateData.name = body.name;
-      if (body.consentWhatsapp !== undefined)
-        updateData.consentWhatsapp = body.consentWhatsapp;
-      if (body.consentDataProcessing !== undefined)
-        updateData.consentDataProcessing = body.consentDataProcessing;
+      for (const [key, value] of Object.entries(body)) {
+        if (value !== undefined) {
+          updateData[key] = value;
+        }
+      }
 
       const user = await prisma.user.update({
         where: { id: userId },

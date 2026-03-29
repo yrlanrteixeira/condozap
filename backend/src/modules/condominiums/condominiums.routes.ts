@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireSyndicStrict } from "../../shared/middlewares";
 import { requireAdmin, requireCondoAccess } from "../../auth/authorize";
+import { prisma } from "../../shared/db/prisma";
 import {
   listCondominiumsHandler,
   getCondominiumHandler,
@@ -101,5 +102,37 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     getOnboardingHandler
+  );
+
+  fastify.get(
+    "/:id/syndic-profile",
+    { onRequest: [fastify.authenticate, requireCondoAccess({ paramName: "id" })] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+
+      const syndicLink = await prisma.userCondominium.findFirst({
+        where: {
+          condominiumId: id,
+          role: { in: ["SYNDIC", "PROFESSIONAL_SYNDIC"] },
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              contactPhone: true,
+              photoUrl: true,
+              officeHours: true,
+              publicNotes: true,
+            },
+          },
+        },
+      });
+
+      if (!syndicLink) {
+        return reply.code(404).send({ error: "Síndico não encontrado para este condomínio" });
+      }
+
+      return reply.send(syndicLink.user);
+    }
   );
 };

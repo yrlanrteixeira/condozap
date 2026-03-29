@@ -37,6 +37,13 @@ export const updateProfileSchema = z.object({
   name: z.string().min(3).optional(),
   consentWhatsapp: z.boolean().optional(),
   consentDataProcessing: z.boolean().optional(),
+  contactPhone: z.string().optional(),
+  photoUrl: z.string().url().optional().or(z.literal("")),
+  officeHours: z.string().max(200).optional(),
+  publicNotes: z.string().max(1000).optional(),
+  address: z.string().max(500).optional(),
+  websiteUrl: z.string().url().optional().or(z.literal("")),
+  privateNotes: z.string().max(2000).optional(),
 });
 
 export const changePasswordSchema = z
