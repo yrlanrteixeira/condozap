@@ -195,6 +195,25 @@ const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
       isRunning = false;
     }
   });
+
+  // Daily account expiration check at midnight
+  cron.schedule("0 0 * * *", async () => {
+    fastify.log.info("[AccountExpiration] Running daily expiration check");
+    try {
+      const result = await prisma.user.updateMany({
+        where: {
+          accountExpiresAt: { lte: new Date() },
+          status: "APPROVED",
+        },
+        data: { status: "SUSPENDED" },
+      });
+      if (result.count > 0) {
+        fastify.log.info(`[AccountExpiration] Suspended ${result.count} expired accounts`);
+      }
+    } catch (error) {
+      fastify.log.error(error, "[AccountExpiration] Failed to process expirations");
+    }
+  });
 };
 
 export default fp(slaCronPlugin);

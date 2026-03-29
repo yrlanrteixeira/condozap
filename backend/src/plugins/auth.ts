@@ -12,6 +12,10 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   ) {
     try {
       await request.jwtVerify();
+      if (request.user.status === "SUSPENDED") {
+        reply.code(403).send({ error: "Conta suspensa" });
+        return;
+      }
     } catch (err) {
       reply.status(401).send({
         error: 'Unauthorized',

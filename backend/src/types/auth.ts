@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: Role;
+  status: string;
   permissionScope?: PermissionScope | Scope;
   residentId?: string;
   condominiums?: Array<{

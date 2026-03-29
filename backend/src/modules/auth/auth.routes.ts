@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../shared/db/prisma";
+import { BadRequestError } from "../../shared/errors";
 import {
   loginSchema,
   registerSchema,
@@ -113,6 +114,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (!validPassword) {
       return reply.status(401).send({ error: "Invalid credentials" });
+    }
+
+    if (user.status === "SUSPENDED") {
+      throw new BadRequestError("Conta suspensa. Entre em contato com o administrador do condomínio.");
     }
 
     const tokenPayload = {

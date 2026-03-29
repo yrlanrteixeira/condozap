@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin, requireAdmin, requireSyndicStrict } from "../../shared/middlewares";
+import { requireSuperAdmin, requireAdmin, requireSyndicStrict, requireRole } from "../../shared/middlewares";
 import { requireCondoAccess } from "../../auth/authorize";
 import {
   createAdminHandler,
@@ -12,6 +12,7 @@ import {
   inviteUserHandler,
   listSyndicsHandler,
 } from "./user-management.controller";
+import { updateAccountExpirationHandler } from "./expiration.controller";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -93,6 +94,18 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     "/users/syndics",
     { onRequest: [fastify.authenticate, requireSuperAdmin()] },
     listSyndicsHandler
+  );
+
+  fastify.patch(
+    "/users/:userId/expiration",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireCondoAccess({ source: "body" }),
+      ],
+    },
+    updateAccountExpirationHandler
   );
 };
 
