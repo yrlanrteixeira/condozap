@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Users } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { Users, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeaderSkeleton, TableRowSkeleton } from "@/shared/components/ui/skeleton";
@@ -34,6 +34,17 @@ export function ResidentsPage() {
     isLoading,
     isError,
   } = useResidents(condoIdToFetch);
+
+  const expiringCount = useMemo(() => {
+    if (!residents) return 0;
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    return residents.filter((r) => {
+      if (!r.accountExpiresAt) return false;
+      const exp = new Date(r.accountExpiresAt);
+      return exp <= thirtyDaysFromNow && exp > new Date();
+    }).length;
+  }, [residents]);
 
   const handleAddResident = () => {
     setSelectedResident(undefined);
@@ -84,6 +95,15 @@ export function ResidentsPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <ResidentPageHeader onAddResident={handleAddResident} />
+
+      {expiringCount > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-500">
+            {expiringCount} conta{expiringCount !== 1 ? "s" : ""} vence{expiringCount !== 1 ? "m" : ""} nos próximos 30 dias
+          </p>
+        </div>
+      )}
 
       {residents && residents.length > 0 && (
         <>

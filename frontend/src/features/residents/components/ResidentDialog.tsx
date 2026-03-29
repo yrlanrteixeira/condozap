@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +16,7 @@ import { ResidentForm, type ResidentFormData } from "./ResidentForm";
 import { useCreateResident, useUpdateResident } from "../hooks/useResidentsApi";
 import { useAppSelector } from "@/shared/hooks";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
+import { api } from "@/lib/api";
 
 interface ResidentDialogProps {
   open: boolean;
@@ -52,6 +55,13 @@ function formatPhoneForApi(phone: string): string {
   return digits;
 }
 
+// Converts an ISO date string to the YYYY-MM-DD value expected by <input type="date">
+function isoToDateInputValue(iso?: string | null): string {
+  if (!iso) return "";
+  // The date portion of an ISO string is the first 10 characters
+  return iso.slice(0, 10);
+}
+
 export const ResidentDialog = ({
   open,
   onOpenChange,
@@ -61,6 +71,8 @@ export const ResidentDialog = ({
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const [formData, setFormData] = useState<ResidentFormData>(initialFormData);
   const [originalData, setOriginalData] = useState<ResidentFormData | null>(null);
+  const [accountExpiresAt, setAccountExpiresAt] = useState<string | null>(null);
+  const [originalExpiresAt, setOriginalExpiresAt] = useState<string | null>(null);
   const { toast } = useToast();
 
   const createResident = useCreateResident();
@@ -87,12 +99,19 @@ export const ResidentDialog = ({
         unit: resident.unit,
         condominiumId: resident.condominiumId,
       });
+      const expiresVal = resident.accountExpiresAt
+        ? isoToDateInputValue(resident.accountExpiresAt)
+        : null;
+      setAccountExpiresAt(expiresVal);
+      setOriginalExpiresAt(expiresVal);
     } else if (open && !resident) {
       setFormData({
         ...initialFormData,
         condominiumId: currentCondominiumId || "",
       });
       setOriginalData(null);
+      setAccountExpiresAt(null);
+      setOriginalExpiresAt(null);
     }
   }, [open, resident, currentCondominiumId]);
 
@@ -104,15 +123,21 @@ export const ResidentDialog = ({
     formData.floor &&
     formData.unit;
 
+  const expirationChanged = accountExpiresAt !== originalExpiresAt;
+
   const hasChanges = !resident
     ? true
-    : !originalData || JSON.stringify(formData) !== JSON.stringify(originalData);
+    : !originalData ||
+      JSON.stringify(formData) !== JSON.stringify(originalData) ||
+      expirationChanged;
 
   const handleSave = async () => {
     const condoId = formData.condominiumId || currentCondominiumId;
     if (!condoId || !isFormValid) return;
 
     try {
+      let savedUserId: string | null | undefined = resident?.userId;
+
       if (resident) {
         // Update existing resident
         await updateResident.mutateAsync({
@@ -121,29 +146,36 @@ export const ResidentDialog = ({
           phone: formatPhoneForApi(formData.phone),
           condominiumId: condoId,
         });
-
-        toast({
-          title: "Morador atualizado!",
-          description: `${formData.name} foi atualizado com sucesso.`,
-          variant: "success",
-          duration: 3000,
-        });
       } else {
-        // Create new resident
-        await createResident.mutateAsync({
+        // Create new resident and capture the returned userId
+        const created = await createResident.mutateAsync({
           ...formData,
           phone: formatPhoneForApi(formData.phone),
           condominiumId: condoId,
           type: "OWNER", // Default to OWNER
         });
+        savedUserId = (created as any)?.userId ?? null;
+      }
 
-        toast({
-          title: "Morador cadastrado!",
-          description: `${formData.name} foi adicionado com sucesso.`,
-          variant: "success",
-          duration: 3000,
+      // Fire the expiration PATCH when the field changed and there is a userId
+      if (expirationChanged && savedUserId) {
+        const isoValue = accountExpiresAt
+          ? new Date(accountExpiresAt).toISOString()
+          : null;
+        await api.patch(`/users/${savedUserId}/expiration`, {
+          accountExpiresAt: isoValue,
+          condominiumId: condoId,
         });
       }
+
+      toast({
+        title: resident ? "Morador atualizado!" : "Morador cadastrado!",
+        description: resident
+          ? `${formData.name} foi atualizado com sucesso.`
+          : `${formData.name} foi adicionado com sucesso.`,
+        variant: "success",
+        duration: 3000,
+      });
 
       handleClose();
     } catch {
@@ -160,6 +192,8 @@ export const ResidentDialog = ({
 
   const handleClose = () => {
     setFormData(initialFormData);
+    setAccountExpiresAt(null);
+    setOriginalExpiresAt(null);
     onOpenChange(false);
     onClose?.();
   };
@@ -181,6 +215,21 @@ export const ResidentDialog = ({
         </DialogHeader>
 
         <ResidentForm formData={formData} onChange={setFormData} />
+
+        <div className="space-y-2">
+          <Label htmlFor="accountExpiresAt">Validade da conta (opcional)</Label>
+          <Input
+            id="accountExpiresAt"
+            type="date"
+            value={accountExpiresAt ?? ""}
+            onChange={(e) =>
+              setAccountExpiresAt(e.target.value || null)
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Deixe vazio para conta sem expiração
+          </p>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>

@@ -1,11 +1,38 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
 import { TableCell, TableRow } from "@/shared/components/ui/table";
 import { ConfirmDialog } from "@/shared/components/ui/confirm-dialog";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { useDeleteResident } from "../hooks/useResidentsApi";
 import type { Resident } from "../types";
+
+function ExpirationBadge({ expiresAt }: { expiresAt?: string | null }) {
+  if (!expiresAt) return null;
+
+  const expDate = new Date(expiresAt);
+  const now = new Date();
+  const daysLeft = Math.ceil(
+    (expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysLeft < 0) {
+    return (
+      <Badge variant="destructive" className="text-xs ml-2">
+        Expirada
+      </Badge>
+    );
+  }
+  if (daysLeft <= 30) {
+    return (
+      <Badge className="text-xs ml-2 bg-amber-500/10 text-amber-500 border-amber-500/20">
+        Vence em {daysLeft}d
+      </Badge>
+    );
+  }
+  return null;
+}
 
 interface ResidentTableRowProps {
   resident: Resident;
@@ -48,7 +75,10 @@ export const ResidentTableRow = ({
     <>
       <TableRow className="hover:bg-muted/30 border-b border-border/50">
         <TableCell className="font-medium text-foreground">
-          {resident.name || '-'}
+          <span className="inline-flex items-center">
+            {resident.name || '-'}
+            <ExpirationBadge expiresAt={resident.accountExpiresAt} />
+          </span>
         </TableCell>
         {showCondominium && (
           <TableCell className="text-sm text-muted-foreground">

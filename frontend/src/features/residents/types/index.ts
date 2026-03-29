@@ -18,6 +18,7 @@ export interface Resident {
   consentWhatsapp: boolean
   consentDataProcessing: boolean
   createdAt: string
+  accountExpiresAt?: string | null
   condominium?: { id: string; name: string } // Populated via join/include
 }
 
