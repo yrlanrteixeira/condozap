@@ -22,7 +22,7 @@ export async function nudgeComplaintHandler(
   });
 
   if (!complaint) {
-    throw new NotFoundError("Ocorrência não encontrada");
+    throw new NotFoundError("Ocorrência");
   }
 
   if (!complaint.sectorId || !complaint.sector) {
