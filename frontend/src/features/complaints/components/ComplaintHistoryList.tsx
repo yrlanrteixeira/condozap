@@ -1,4 +1,4 @@
-import { History, Clock, FileText, MessageSquare, ChevronRight } from 'lucide-react';
+import { History, Clock, FileText, MessageSquare, ChevronRight, Star } from 'lucide-react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import type { Complaint, ComplaintStatus } from '@/features/complaints/types';
@@ -15,6 +15,23 @@ function getLastAdminComment(complaint: Complaint): string | null {
 function getCommentCount(complaint: Complaint): number {
   const history = complaint.statusHistory ?? [];
   return history.filter((e) => e.action === ACTION_COMMENT).length;
+}
+
+const WORKFLOW_STEPS = ["TRIAGE", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"];
+
+function ComplaintProgressBar({ status }: { status: string }) {
+  const currentIndex = WORKFLOW_STEPS.indexOf(status);
+  const progress = currentIndex >= 0
+    ? Math.round(((currentIndex + 1) / WORKFLOW_STEPS.length) * 100)
+    : 10;
+  return (
+    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+      <div
+        className="h-full bg-primary rounded-full transition-all"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
 }
 
 interface ComplaintHistoryListProps {
@@ -102,6 +119,16 @@ export const ComplaintHistoryList = ({ complaints, onComplaintClick }: Complaint
                       {commentCount > 0 && ` (${commentCount} ${commentCount === 1 ? 'comentario' : 'comentarios'})`}
                     </p>
                   )}
+
+                  <div className="mt-2 space-y-1">
+                    <ComplaintProgressBar status={complaint.status} />
+                    {complaint.status === "RESOLVED" && !complaint.csatScore && (
+                      <span className="inline-flex items-center gap-1 text-amber-500 text-xs font-medium">
+                        <Star className="h-3 w-3 fill-amber-500" />
+                        Avaliar
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0">

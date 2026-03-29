@@ -11,43 +11,26 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Badge } from "@/shared/components/ui/badge";
 import {
-  ArrowRight,
   Calendar,
   Download,
   FileText,
   Loader2,
-  MessageSquare,
   Paperclip,
   Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/shared/components/ui/use-toast";
-import { useAuth } from "@/shared/hooks/useAuth";
+
 import { useComplaint, useAddComplaintComment } from "../hooks/useComplaintsApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
+import { ComplaintTimeline } from "./ComplaintTimeline";
 import { formatDateTime } from "@/shared/utils/helpers";
 import type {
   ComplaintDetail,
   ComplaintStatus,
-  ComplaintStatusHistory,
   ComplaintAttachment,
 } from "../types";
 
-const ACTION_COMMENT = "COMMENT";
-
-/**
- * Maps ComplaintStatus to a user-friendly Portuguese label.
- */
-const STATUS_LABELS: Record<ComplaintStatus, string> = {
-  NEW: "Novo",
-  TRIAGE: "Triagem",
-  IN_PROGRESS: "Em atendimento",
-  WAITING_USER: "Aguardando usuario",
-  WAITING_THIRD_PARTY: "Aguardando terceiro",
-  RESOLVED: "Resolvido",
-  CLOSED: "Encerrado",
-  CANCELLED: "Cancelado",
-};
 
 // ---------------------------------------------------------------------------
 // Props
@@ -70,7 +53,7 @@ export function ResidentComplaintDetailSheet({
 }: ResidentComplaintDetailSheetProps) {
   const [commentText, setCommentText] = useState("");
   const { toast } = useToast();
-  const { user } = useAuth();
+
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
 
@@ -142,8 +125,6 @@ export function ResidentComplaintDetailSheet({
               <div className="px-4">
                 <ResidentComplaintBody
                   complaint={complaint as ComplaintDetail}
-                  currentUserId={user?.id}
-                  currentResidentId={user?.residentId}
                 />
               </div>
             </ScrollArea>
@@ -185,22 +166,8 @@ export function ResidentComplaintDetailSheet({
 // Body content (description, attachments, timeline)
 // ---------------------------------------------------------------------------
 
-function ResidentComplaintBody({
-  complaint,
-  currentUserId,
-  currentResidentId,
-}: {
-  complaint: ComplaintDetail;
-  currentUserId?: string;
-  currentResidentId?: string;
-}) {
-  const history = complaint.statusHistory ?? [];
+function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
   const attachments = complaint.attachments ?? [];
-
-  // Sort history newest first
-  const sortedHistory = [...history].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
 
   return (
     <div className="space-y-5 py-4">
@@ -256,119 +223,19 @@ function ResidentComplaintBody({
         </section>
       )}
 
-      {/* Full Timeline */}
-      <section>
-        <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-          <MessageSquare className="h-4 w-4" />
-          Historico
-        </p>
-
-        {sortedHistory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 bg-muted/30 rounded-lg border border-dashed border-border">
-            <FileText className="h-6 w-6 text-muted-foreground/50 mb-2" />
-            <p className="text-xs text-muted-foreground">
-              Nenhuma atualizacao ainda
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {sortedHistory.map((entry) => (
-              <TimelineEntry
-                key={entry.id}
-                entry={entry}
-                currentUserId={currentUserId}
-                currentResidentId={currentResidentId}
-                complaintResidentId={complaint.residentId}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Timeline Entry
-// ---------------------------------------------------------------------------
-
-function TimelineEntry({
-  entry,
-  currentUserId,
-  currentResidentId,
-  complaintResidentId,
-}: {
-  entry: ComplaintStatusHistory;
-  currentUserId?: string;
-  currentResidentId?: string;
-  complaintResidentId: string;
-}) {
-  const isComment = entry.action === ACTION_COMMENT;
-
-  // Determine if the entry was made by the current resident.
-  // changedBy may contain the user id or the resident id.
-  const isOwnEntry =
-    (currentUserId && entry.changedBy === currentUserId) ||
-    (currentResidentId && entry.changedBy === currentResidentId) ||
-    entry.changedBy === complaintResidentId;
-
-  if (isComment) {
-    return (
-      <li
-        className={cn(
-          "text-sm rounded-lg p-3 border",
-          isOwnEntry
-            ? "bg-muted/50 border-border"
-            : "bg-primary/5 border-primary/20"
-        )}
-      >
-        <div className="flex justify-between items-start gap-2 mb-1">
-          <span
-            className={cn(
-              "text-xs font-semibold rounded-full px-2 py-0.5",
-              isOwnEntry
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary/10 text-primary"
-            )}
-          >
-            {isOwnEntry ? "Voce" : "Administracao"}
-          </span>
-          <span className="text-xs text-muted-foreground shrink-0">
-            {formatDateTime(entry.createdAt)}
-          </span>
-        </div>
-        {entry.notes && (
-          <p className="text-muted-foreground whitespace-pre-wrap mt-1.5 leading-relaxed">
-            {entry.notes}
-          </p>
-        )}
-      </li>
-    );
-  }
-
-  // Status change entry
-  return (
-    <li className="text-sm rounded-lg p-3 border bg-muted/30 border-border">
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-          <span>
-            Status alterado para{" "}
-            <span className="font-medium text-foreground">
-              {STATUS_LABELS[entry.toStatus] ?? entry.toStatus}
-            </span>
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground shrink-0">
-          {formatDateTime(entry.createdAt)}
-        </span>
-      </div>
-      {entry.notes && (
-        <p className="text-muted-foreground whitespace-pre-wrap mt-1.5 ml-5 leading-relaxed">
-          {entry.notes}
-        </p>
+      {/* Timeline / Acompanhamento */}
+      {complaint.statusHistory && complaint.statusHistory.length > 0 && (
+        <section className="space-y-2">
+          <h4 className="text-sm font-semibold">Acompanhamento</h4>
+          <ComplaintTimeline
+            statusHistory={complaint.statusHistory}
+            createdAt={complaint.createdAt}
+            description={complaint.content}
+            sectorName={complaint.sector?.name}
+          />
+        </section>
       )}
-    </li>
+    </div>
   );
 }
 

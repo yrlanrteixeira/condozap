@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Complaint } from '@/features/complaints/types';
 import { ComplaintForm, ComplaintHistoryList, ResidentComplaintDetailSheet } from '../components';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -18,6 +18,17 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
 
   // Filter complaints to show only user's own complaints
   const myComplaints = complaints.filter((c) => c.residentId === residentId);
+
+  // Sort: open complaints first, then by newest createdAt
+  const sortedComplaints = useMemo(() => {
+    const closedStatuses = ["RESOLVED", "CLOSED", "CANCELLED"];
+    return [...myComplaints].sort((a, b) => {
+      const aIsOpen = !closedStatuses.includes(a.status);
+      const bIsOpen = !closedStatuses.includes(b.status);
+      if (aIsOpen !== bIsOpen) return aIsOpen ? -1 : 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [myComplaints]);
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
@@ -42,7 +53,7 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
       </div>
 
       <ComplaintHistoryList
-        complaints={myComplaints}
+        complaints={sortedComplaints}
         onComplaintClick={(complaint) => setSelectedComplaintId(complaint.id)}
       />
 
