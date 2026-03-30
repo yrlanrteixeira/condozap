@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { requireRole, requireSyndicStrict, requireGlobalScope, requireComplaintOwner } from "../../shared/middlewares";
 import {
   requireAttachmentUpload,
+  requireComplaintOwnerAction,
   requireCondoAccess,
   requirePauseOrResume,
   requireTicketAssign,
@@ -10,6 +11,8 @@ import {
 } from "../../auth/authorize";
 import { nudgeComplaintHandler } from "./complaints-nudge.controller";
 import { returnComplaintHandler } from "./complaints-return.controller";
+import { complementComplaintHandler } from "./complaints-complement.controller";
+import { reopenComplaintHandler } from "./complaints-reopen.controller";
 import {
   addComplaintCommentHandler,
   addComplaintAttachmentHandler,
@@ -173,6 +176,22 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     returnComplaintHandler
+  );
+
+  fastify.post(
+    "/:id/complement",
+    {
+      onRequest: [fastify.authenticate, requireComplaintOwnerAction("Apenas o autor pode complementar a ocorrência")],
+    },
+    complementComplaintHandler
+  );
+
+  fastify.post(
+    "/:id/reopen",
+    {
+      onRequest: [fastify.authenticate, requireComplaintOwnerAction("Apenas o autor pode reabrir a ocorrência")],
+    },
+    reopenComplaintHandler
   );
 
   fastify.delete(
