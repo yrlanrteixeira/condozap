@@ -20,11 +20,8 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/create-admin",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireSyndicStrict(),
-        requireCondoAccess({ source: "body" }),
-      ],
+      onRequest: [fastify.authenticate, requireSyndicStrict()],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     createAdminHandler
   );
@@ -67,11 +64,8 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/users/update-council-position",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireAdmin(),
-        requireCondoAccess({ source: "body" }),
-      ],
+      onRequest: [fastify.authenticate, requireAdmin()],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     updateCouncilPositionHandler
   );
@@ -104,8 +98,8 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [
         fastify.authenticate,
         requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
-        requireCondoAccess({ source: "body" }),
       ],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     updateAccountExpirationHandler
   );
@@ -114,8 +108,8 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [
       fastify.authenticate,
       requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
-      requireCondoAccess({ source: "body" }),
     ],
+    preHandler: [requireCondoAccess({ source: "body" })],
   }, updateAssignedTowerHandler);
 
   fastify.post("/users/create-sector-member", {

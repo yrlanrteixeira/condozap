@@ -35,10 +35,8 @@ export const messagesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/send",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireCondoAccess({ source: "body" }),
-      ],
+      onRequest: [fastify.authenticate],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     sendMessageHandler
   );

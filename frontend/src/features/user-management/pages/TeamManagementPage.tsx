@@ -262,7 +262,7 @@ export function TeamManagementPage() {
           {managers.length > 0 ? (
             <div className="space-y-3">
               {managers.map((user) => {
-                const RoleIcon = roleIcons[user.role] || User;
+                const RoleIcon = roleIcons[user.role] ?? User;
                 const isCurrentUser = user.id === currentUser?.id;
 
                 return (

@@ -69,10 +69,8 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireCondoAccess({ source: "body" }),
-      ],
+      onRequest: [fastify.authenticate],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     createComplaintHandler
   );

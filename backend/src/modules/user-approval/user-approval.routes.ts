@@ -41,11 +41,8 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/approve",
     {
-      onRequest: [
-        fastify.authenticate,
-        requireAdmin(),
-        requireCondoAccess({ source: "body" }),
-      ],
+      onRequest: [fastify.authenticate, requireAdmin()],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     approveUserHandler
   );

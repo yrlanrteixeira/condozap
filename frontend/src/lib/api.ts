@@ -218,6 +218,7 @@ api.interceptors.response.use(
       const message =
         data?.message ||
         data?.error?.message ||
+        (typeof data?.error === "string" ? data.error : null) ||
         "Ocorreu um erro inesperado";
       error.message = message;
     } else if (error.request) {
