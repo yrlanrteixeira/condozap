@@ -3,6 +3,7 @@ import {
   Clock,
   CheckCircle,
   PauseCircle,
+  RotateCcw,
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,18 @@ const STATUS_CONFIG: Record<
     label: "Cancelado",
     icon: XCircle,
     className: "bg-muted text-muted-foreground border-border",
+  },
+  RETURNED: {
+    label: "Devolvido",
+    icon: RotateCcw,
+    className:
+      "bg-orange-500/10 text-orange-500 border-orange-500/20 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-900",
+  },
+  REOPENED: {
+    label: "Reaberto",
+    icon: RotateCcw,
+    className:
+      "bg-blue-500/10 text-blue-500 border-blue-500/20 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
   },
 };
 

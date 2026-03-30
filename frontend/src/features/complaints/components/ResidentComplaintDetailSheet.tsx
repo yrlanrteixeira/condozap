@@ -6,6 +6,13 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/shared/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
@@ -16,21 +23,30 @@ import {
   FileText,
   Loader2,
   Paperclip,
+  RotateCcw,
   Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/shared/components/ui/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 import { useComplaint, useAddComplaintComment } from "../hooks/useComplaintsApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintTimeline } from "./ComplaintTimeline";
 import { formatDateTime } from "@/shared/utils/helpers";
+import { queryKeys } from "../utils/queryKeys";
 import type {
   ComplaintDetail,
   ComplaintStatus,
   ComplaintAttachment,
 } from "../types";
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const REOPEN_DEADLINE_DAYS = 7;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -52,30 +68,114 @@ export function ResidentComplaintDetailSheet({
   onOpenChange,
 }: ResidentComplaintDetailSheetProps) {
   const [commentText, setCommentText] = useState("");
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
 
-  const handleAddComment = async () => {
-    if (!complaintId || !commentText.trim()) return;
-    try {
-      await addComment.mutateAsync({
-        id: complaintId,
-        notes: commentText.trim(),
+  // Complement mutation — called when status is RETURNED
+  const complementMutation = useMutation({
+    mutationFn: async ({
+      complaintId: id,
+      message,
+    }: {
+      complaintId: number;
+      message: string;
+    }) => {
+      const { data } = await api.post(`/api/complaints/${id}/complement`, {
+        message,
       });
-      setCommentText("");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast({
-        title: "Comentario enviado",
-        description: "A administracao sera notificada.",
+        title: "Complemento enviado",
         variant: "success",
+        duration: 3000,
       });
-    } catch {
+    },
+    onError: () => {
       toast({
         title: "Erro",
-        description: "Nao foi possivel enviar o comentario. Tente novamente.",
+        description: "Nao foi possivel enviar o complemento. Tente novamente.",
         variant: "error",
       });
+    },
+  });
+
+  // Reopen mutation
+  const reopenMutation = useMutation({
+    mutationFn: async ({
+      complaintId: id,
+      reason,
+    }: {
+      complaintId: number;
+      reason: string;
+    }) => {
+      const { data } = await api.post(`/api/complaints/${id}/reopen`, {
+        reason,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
+      setReopenDialogOpen(false);
+      setReopenReason("");
+      toast({
+        title: "Ocorrencia reaberta",
+        variant: "success",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Nao foi possivel reabrir a ocorrencia. Tente novamente.",
+        variant: "error",
+      });
+    },
+  });
+
+  // Whether the resident can reopen: CLOSED + within deadline
+  const canReopen =
+    complaint?.status === "CLOSED" &&
+    complaint.closedAt != null &&
+    Date.now() - new Date(complaint.closedAt).getTime() <
+      REOPEN_DEADLINE_DAYS * 24 * 60 * 60 * 1000;
+
+  const handleAddComment = async () => {
+    if (!complaintId || !commentText.trim()) return;
+
+    try {
+      if (complaint?.status === "RETURNED") {
+        await complementMutation.mutateAsync({
+          complaintId,
+          message: commentText.trim(),
+        });
+      } else {
+        await addComment.mutateAsync({
+          id: complaintId,
+          notes: commentText.trim(),
+        });
+        toast({
+          title: "Comentario enviado",
+          description: "A administracao sera notificada.",
+          variant: "success",
+        });
+      }
+      setCommentText("");
+    } catch {
+      if (complaint?.status !== "RETURNED") {
+        toast({
+          title: "Erro",
+          description: "Nao foi possivel enviar o comentario. Tente novamente.",
+          variant: "error",
+        });
+      }
     }
   };
 
@@ -86,79 +186,150 @@ export function ResidentComplaintDetailSheet({
     }
   };
 
+  const isSending = addComment.isPending || complementMutation.isPending;
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-lg flex flex-col p-0"
-      >
-        {/* Header */}
-        <SheetHeader className="p-4 border-b shrink-0">
-          <div className="flex items-center justify-between gap-3 pr-6">
-            <SheetTitle className="text-left">
-              {complaintId ? `Ocorrencia #${complaintId}` : "Detalhe"}
-            </SheetTitle>
-            {complaint && (
-              <ComplaintStatusBadge
-                status={complaint.status as ComplaintStatus}
-                size="sm"
-              />
-            )}
-          </div>
-          <SheetDescription className="sr-only">
-            Detalhes da ocorrencia e historico de atualizacoes
-          </SheetDescription>
-        </SheetHeader>
-
-        {/* Content */}
-        {!complaintId ? (
-          <div className="p-4 text-muted-foreground text-sm">
-            Selecione uma ocorrencia para ver os detalhes.
-          </div>
-        ) : isLoading || !complaint ? (
-          <div className="flex items-center justify-center flex-1 p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            <ScrollArea className="flex-1">
-              <div className="px-4">
-                <ResidentComplaintBody
-                  complaint={complaint as ComplaintDetail}
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg flex flex-col p-0"
+        >
+          {/* Header */}
+          <SheetHeader className="p-4 border-b shrink-0">
+            <div className="flex items-center justify-between gap-3 pr-6">
+              <SheetTitle className="text-left">
+                {complaintId ? `Ocorrencia #${complaintId}` : "Detalhe"}
+              </SheetTitle>
+              {complaint && (
+                <ComplaintStatusBadge
+                  status={complaint.status as ComplaintStatus}
+                  size="sm"
                 />
-              </div>
-            </ScrollArea>
-
-            {/* Sticky comment form at bottom */}
-            <div className="p-4 border-t bg-muted/30 shrink-0">
-              <label className="text-sm font-medium text-foreground block mb-2">
-                Enviar mensagem
-              </label>
-              <Textarea
-                placeholder="Escreva sua mensagem..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="min-h-[72px] mb-2 resize-none"
-                disabled={addComment.isPending}
-              />
-              <Button
-                onClick={handleAddComment}
-                disabled={!commentText.trim() || addComment.isPending}
-                className="w-full"
-              >
-                {addComment.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Enviar comentario
-              </Button>
+              )}
             </div>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+            <SheetDescription className="sr-only">
+              Detalhes da ocorrencia e historico de atualizacoes
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Content */}
+          {!complaintId ? (
+            <div className="p-4 text-muted-foreground text-sm">
+              Selecione uma ocorrencia para ver os detalhes.
+            </div>
+          ) : isLoading || !complaint ? (
+            <div className="flex items-center justify-center flex-1 p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              <ScrollArea className="flex-1">
+                <div className="px-4">
+                  {/* Reopen button — shown when within deadline */}
+                  {canReopen && (
+                    <div className="pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setReopenDialogOpen(true)}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Reabrir Ocorrencia
+                      </Button>
+                    </div>
+                  )}
+
+                  <ResidentComplaintBody
+                    complaint={complaint as ComplaintDetail}
+                  />
+                </div>
+              </ScrollArea>
+
+              {/* Sticky comment / complement form at bottom */}
+              <div className="p-4 border-t bg-muted/30 shrink-0">
+                {/* RETURNED alert */}
+                {complaint.status === "RETURNED" && (
+                  <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 mb-4">
+                    <p className="text-sm text-orange-500 font-medium">
+                      Esta ocorrencia foi devolvida e aguarda seu complemento
+                    </p>
+                  </div>
+                )}
+
+                <label className="text-sm font-medium text-foreground block mb-2">
+                  {complaint.status === "RETURNED"
+                    ? "Enviar complemento"
+                    : "Enviar mensagem"}
+                </label>
+                <Textarea
+                  placeholder={
+                    complaint.status === "RETURNED"
+                      ? "Descreva o complemento solicitado..."
+                      : "Escreva sua mensagem..."
+                  }
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="min-h-[72px] mb-2 resize-none"
+                  disabled={isSending}
+                />
+                <Button
+                  onClick={handleAddComment}
+                  disabled={!commentText.trim() || isSending}
+                  className="w-full"
+                >
+                  {isSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  {complaint.status === "RETURNED"
+                    ? "Enviar complemento"
+                    : "Enviar comentario"}
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Reopen Confirmation Dialog */}
+      <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reabrir Ocorrencia</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Motivo da reabertura (minimo 10 caracteres)..."
+            value={reopenReason}
+            onChange={(e) => setReopenReason(e.target.value)}
+            className="min-h-[100px]"
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReopenDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (complaintId) {
+                  reopenMutation.mutate({
+                    complaintId,
+                    reason: reopenReason,
+                  });
+                }
+              }}
+              disabled={reopenReason.length < 10 || reopenMutation.isPending}
+            >
+              {reopenMutation.isPending ? "Reabrindo..." : "Reabrir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
