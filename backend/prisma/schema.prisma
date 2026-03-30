@@ -367,6 +367,7 @@ model Sector {
   complaints           Complaint[]
   complaintAssignments ComplaintAssignment[]
   cannedResponses      CannedResponse[]
+  permissions          SectorPermission[]
 
   @@unique([condominiumId, name])
   @@index([condominiumId])
@@ -382,12 +383,40 @@ model SectorMember {
   workload  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
 
-  sector Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sector            Sector                           @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  user              User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionOverrides SectorMemberPermissionOverride[]
 
   @@unique([sectorId, userId])
   @@index([sectorId])
   @@map("sector_members")
+}
+
+model SectorPermission {
+  id        String   @id @default(cuid())
+  sectorId  String   @map("sector_id")
+  action    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sector    Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, action])
+  @@index([sectorId])
+  @@map("sector_permissions")
+}
+
+model SectorMemberPermissionOverride {
+  id              String       @id @default(cuid())
+  sectorMemberId  String       @map("sector_member_id")
+  action          String
+  granted         Boolean
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  sectorMember    SectorMember @relation(fields: [sectorMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorMemberId, action])
+  @@index([sectorMemberId])
+  @@map("sector_member_permission_overrides")
 }
 
 model ComplaintAssignment {
