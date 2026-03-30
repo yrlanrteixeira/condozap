@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
@@ -7,6 +8,7 @@ import {
 } from "@/shared/components/ui/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { Input } from "@/shared/components/ui/input";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Badge } from "@/shared/components/ui/badge";
 import {
@@ -17,6 +19,11 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/components/ui/popover";
+import {
   MessageSquare,
   User,
   Loader2,
@@ -24,6 +31,7 @@ import {
   Clock,
   CheckCircle,
   Bell,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/shared/components/ui/use-toast";
 import {
@@ -37,6 +45,7 @@ import { ComplaintAttachmentUpload } from "./ComplaintAttachmentUpload";
 import { ComplaintChat } from "./ComplaintChat";
 import { CsatDisplay } from "./CsatDisplay";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { api } from "@/lib/api";
 import type { ComplaintDetail, ComplaintStatus } from "../types";
 import { formatDateTime } from "@/shared/utils/helpers";
 
@@ -64,12 +73,31 @@ export function ComplaintDetailSheet({
   onOpenChange,
 }: ComplaintDetailSheetProps) {
   const [commentText, setCommentText] = useState("");
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
   const updateStatus = useUpdateComplaintStatus();
   const nudgeMutation = useNudgeComplaint();
+
+  const { data: cannedResponses = [] } = useQuery({
+    queryKey: ["canned-responses", complaint?.condominiumId, complaint?.sectorId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (complaint?.condominiumId) params.set("condominiumId", complaint.condominiumId);
+      if (complaint?.sectorId) params.set("sectorId", complaint.sectorId);
+      const { data } = await api.get(`/api/canned-responses?${params}`);
+      return data;
+    },
+    enabled: !!complaint,
+  });
+
+  const filteredTemplates = cannedResponses.filter((t: any) =>
+    t.title.toLowerCase().includes(templateSearch.toLowerCase()) ||
+    t.content.toLowerCase().includes(templateSearch.toLowerCase())
+  );
 
   const handleNudge = async () => {
     if (!complaintId) return;
@@ -155,9 +183,44 @@ export function ComplaintDetailSheet({
 
             {/* Form: Adicionar comentário */}
             <div className="p-4 border-t bg-muted/30 shrink-0">
-              <label className="text-sm font-medium text-foreground block mb-2">
-                Registrar andamento
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-foreground">Registrar andamento</label>
+                <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileText className="h-4 w-4 mr-1" />
+                      Templates
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-2" align="end">
+                    <Input
+                      placeholder="Buscar template..."
+                      value={templateSearch}
+                      onChange={(e) => setTemplateSearch(e.target.value)}
+                      className="mb-2"
+                    />
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {filteredTemplates.map((t: any) => (
+                        <button
+                          key={t.id}
+                          className="w-full text-left p-2 rounded hover:bg-muted text-sm"
+                          onClick={() => {
+                            setCommentText(t.content);
+                            setTemplateOpen(false);
+                            setTemplateSearch("");
+                          }}
+                        >
+                          <p className="font-medium">{t.title}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{t.content}</p>
+                        </button>
+                      ))}
+                      {filteredTemplates.length === 0 && (
+                        <p className="text-sm text-muted-foreground p-2 text-center">Nenhum template encontrado</p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
               <Textarea
                 placeholder="Descreva o que está sendo feito..."
                 value={commentText}
