@@ -7,20 +7,36 @@ export async function listCannedResponses(
   condominiumId?: string,
   sectorId?: string
 ) {
+  // Return all accessible templates:
+  // 1. Global (condominiumId: null)
+  // 2. Condominium-level (condominiumId: X, sectorId: null)
+  // 3. All sector templates of this condominium (so syndic can use any template)
+  //    Sector-matching templates are prioritized in ordering
   const where: any = {
     OR: [
       { condominiumId: null },
       ...(condominiumId ? [
         { condominiumId, sectorId: null },
-        ...(sectorId ? [{ condominiumId, sectorId }] : []),
+        { condominiumId, sectorId: { not: null } },
       ] : []),
     ],
   };
-  return prisma.cannedResponse.findMany({
+  const results = await prisma.cannedResponse.findMany({
     where,
     orderBy: [{ condominiumId: "asc" }, { sectorId: "asc" }, { title: "asc" }],
-    include: { sector: { select: { name: true } } },
+    include: { sector: { select: { id: true, name: true } } },
   });
+
+  // Sort: matching sector first, then other sectors, then condo-level, then global
+  if (sectorId) {
+    results.sort((a, b) => {
+      const aMatch = a.sectorId === sectorId ? 0 : a.sectorId ? 1 : 2;
+      const bMatch = b.sectorId === sectorId ? 0 : b.sectorId ? 1 : 2;
+      return aMatch - bMatch || a.title.localeCompare(b.title);
+    });
+  }
+
+  return results;
 }
 
 export async function createCannedResponse(

@@ -277,7 +277,12 @@ export function ComplaintDetailSheet({
                               setTemplateSearch("");
                             }}
                           >
-                            <p className="font-medium">{t.title}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{t.title}</p>
+                              {t.sector?.name && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t.sector.name}</span>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground line-clamp-2">{t.content}</p>
                           </button>
                         ))}
