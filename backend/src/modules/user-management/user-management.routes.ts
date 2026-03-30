@@ -14,6 +14,7 @@ import {
 } from "./user-management.controller";
 import { updateAccountExpirationHandler } from "./expiration.controller";
 import { updateAssignedTowerHandler } from "./assigned-tower.controller";
+import { createSectorMemberHandler } from "./sector-member.controller";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -116,6 +117,10 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
       requireCondoAccess({ source: "body" }),
     ],
   }, updateAssignedTowerHandler);
+
+  fastify.post("/users/create-sector-member", {
+    onRequest: [fastify.authenticate, requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"])],
+  }, createSectorMemberHandler);
 };
 
 
