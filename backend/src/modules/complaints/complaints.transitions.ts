@@ -43,18 +43,21 @@ export const VALID_TRANSITIONS: Record<ComplaintStatus, ComplaintStatus[]> = {
     ComplaintStatus.IN_PROGRESS,
     ComplaintStatus.CANCELLED,
   ],
-  TRIAGE: [ComplaintStatus.IN_PROGRESS, ComplaintStatus.CANCELLED],
+  TRIAGE: [ComplaintStatus.IN_PROGRESS, ComplaintStatus.CANCELLED, ComplaintStatus.RETURNED],
   IN_PROGRESS: [
     ComplaintStatus.WAITING_USER,
     ComplaintStatus.WAITING_THIRD_PARTY,
     ComplaintStatus.RESOLVED,
     ComplaintStatus.CANCELLED,
+    ComplaintStatus.RETURNED,
   ],
   WAITING_USER: [ComplaintStatus.IN_PROGRESS],
   WAITING_THIRD_PARTY: [ComplaintStatus.IN_PROGRESS],
   RESOLVED: [ComplaintStatus.CLOSED],
-  CLOSED: [],
+  CLOSED: [ComplaintStatus.REOPENED],
   CANCELLED: [],
+  RETURNED: [ComplaintStatus.IN_PROGRESS],
+  REOPENED: [ComplaintStatus.IN_PROGRESS, ComplaintStatus.CANCELLED],
 };
 
 export const assertValidTransition = (

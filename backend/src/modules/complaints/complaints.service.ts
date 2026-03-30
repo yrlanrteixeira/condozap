@@ -204,11 +204,13 @@ export async function updateComplaintStatus(
         resolvedAt: now,
         resolvedBy: userId,
       }),
-      ...(nextStatus === ComplaintStatus.CLOSED &&
-        !complaint.resolvedAt && {
+      ...(nextStatus === ComplaintStatus.CLOSED && {
+        closedAt: now,
+        ...(!complaint.resolvedAt && {
           resolvedAt: now,
           resolvedBy: userId,
         }),
+      }),
       ...(nextStatus === ComplaintStatus.IN_PROGRESS && {
         responseAt: complaint.responseAt ?? now,
         pausedUntil: null,
