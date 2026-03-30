@@ -33,6 +33,9 @@ export interface Condominium {
   name: string;
   cnpj?: string;
   address?: string;
+  role?: string;
+  councilPosition?: string | null;
+  assignedTower?: string | null;
 }
 
 /**

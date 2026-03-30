@@ -22,6 +22,8 @@ interface MessageRecipientSelectorProps {
   onFloorChange: (floor: string) => void;
   selectedUnit: string;
   onUnitChange: (unit: string) => void;
+  disabledScopes?: Scope[];
+  towerDisabled?: boolean;
 }
 
 const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
@@ -40,6 +42,8 @@ export const MessageRecipientSelector = ({
   onFloorChange,
   selectedUnit,
   onUnitChange,
+  disabledScopes = [],
+  towerDisabled = false,
 }: MessageRecipientSelectorProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { data: towers = [] } = useTowers(currentCondominiumId || "");
@@ -52,7 +56,7 @@ export const MessageRecipientSelector = ({
         1. Destinatário
       </label>
       <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
-        {SCOPE_OPTIONS.map((option) => (
+        {SCOPE_OPTIONS.filter((option) => !disabledScopes.includes(option.value)).map((option) => (
           <Button
             key={option.value}
             variant={scope === option.value ? "default" : "outline"}
@@ -67,7 +71,7 @@ export const MessageRecipientSelector = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {(scope === "unit" || scope === "floor" || scope === "tower") && (
-          <Select value={selectedTower} onValueChange={onTowerChange}>
+          <Select value={selectedTower} onValueChange={onTowerChange} disabled={towerDisabled}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione Torre" />
             </SelectTrigger>

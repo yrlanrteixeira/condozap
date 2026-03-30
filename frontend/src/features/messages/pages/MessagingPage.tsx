@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { FormSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
@@ -52,6 +52,19 @@ export function MessagingPage() {
   const [templateId, setTemplateId] = useState(TEMPLATES[0]?.name || "");
   const [mediaUrl, setMediaUrl] = useState("");
   const isSending = sendMessage.isPending;
+
+  // Determine if current user has an assigned tower restriction
+  const currentUserAssignedTower = user?.condominiums
+    ?.find((c: any) => c.id === currentCondominiumId)?.assignedTower;
+
+  // When the user has an assignedTower, pre-select it and prevent "all" scope
+  useEffect(() => {
+    if (currentUserAssignedTower) {
+      setSelectedTower(currentUserAssignedTower);
+      if (scope === "all") setScope("tower");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserAssignedTower]);
 
   const recipientCount = useMemo(() => {
     if (!residents || residents.length === 0) return 0;
@@ -208,6 +221,8 @@ export function MessagingPage() {
               onFloorChange={setSelectedFloor}
               selectedUnit={selectedUnit}
               onUnitChange={setSelectedUnit}
+              disabledScopes={currentUserAssignedTower ? ["all"] : []}
+              towerDisabled={!!currentUserAssignedTower}
             />
 
             <MessageTypeSelector msgType={msgType} onTypeChange={setMsgType} />

@@ -5,7 +5,7 @@
  * - Síndico pode cadastrar ADMINs (conselheiros)
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -50,6 +50,9 @@ import { CreateAdminDialog } from '../components/CreateAdminDialog';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
 import type { CondominiumUser } from '../types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { useStructure } from '@/features/structure/hooks/useStructureApi';
 
 const roleLabels: Record<string, string> = {
   PROFESSIONAL_SYNDIC: 'Síndico Profissional',
@@ -100,6 +103,24 @@ export function TeamManagementPage() {
   const { data: users = [], isLoading, refetch } = useCondominiumUsers(currentCondominiumId || '');
   const removeUserMutation = useRemoveUser();
   const updateCouncilPositionMutation = useUpdateCouncilPosition();
+  const queryClient = useQueryClient();
+
+  const { data: structureData } = useStructure(currentCondominiumId || '');
+  const towers = useMemo(() => {
+    if (!structureData?.structure?.towers) return [];
+    return structureData.structure.towers.map((t) => t.name).sort();
+  }, [structureData]);
+
+  const updateAssignedTowerMutation = useMutation({
+    mutationFn: async ({ userId, assignedTower }: { userId: string; assignedTower: string | null }) => {
+      const { data } = await api.patch(`/api/users/${userId}/assigned-tower`, {
+        assignedTower,
+        condominiumId: currentCondominiumId,
+      });
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team'] }),
+  });
 
   // Filtrar conselheiros (ADMINs) e síndicos deste condomínio
   const managers = users.filter(u => ['ADMIN', 'SYNDIC'].includes(u.role));
@@ -294,6 +315,30 @@ export function TeamManagementPage() {
                           )}
                         </SelectContent>
                       </Select>
+
+                      {/* Torre atribuída - apenas para ADMIN com cargo definido */}
+                      {user.role === 'ADMIN' && user.councilPosition && (
+                        <Select
+                          value={user.assignedTower ?? '__none__'}
+                          onValueChange={(value) =>
+                            updateAssignedTowerMutation.mutate({
+                              userId: user.id,
+                              assignedTower: value === '__none__' ? null : value,
+                            })
+                          }
+                          disabled={updateAssignedTowerMutation.isPending}
+                        >
+                          <SelectTrigger className="w-full sm:w-[140px] h-9">
+                            <SelectValue placeholder="Torre" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Todas torres</SelectItem>
+                            {towers.map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
 
                       {/* Síndico só pode gerenciar ADMINs (conselheiros), não outros síndicos */}
                       {!isCurrentUser && user.role === 'ADMIN' && (

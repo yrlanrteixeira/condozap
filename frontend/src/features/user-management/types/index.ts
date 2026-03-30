@@ -8,6 +8,7 @@ export interface CondominiumUser {
   name: string;
   role: string;
   councilPosition?: string | null;
+  assignedTower?: string | null;
   globalRole: string;
   status: string;
   createdAt: string;
