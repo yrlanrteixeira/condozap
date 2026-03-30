@@ -1,8 +1,8 @@
 /**
  * Team Management Page (Corpo Diretivo)
  *
- * Página para síndicos gerenciarem o corpo diretivo e pessoas de confiança
- * - Síndico pode cadastrar ADMINs (conselheiros)
+ * Página de configuração do Corpo Diretivo
+ * - Síndico gerencia membros do corpo diretivo e permissões
  */
 
 import { useState, useMemo } from 'react';
@@ -122,7 +122,7 @@ export function TeamManagementPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team'] }),
   });
 
-  // Filtrar conselheiros (ADMINs) e síndicos deste condomínio
+  // Filtrar membros do corpo diretivo deste condomínio
   const managers = users.filter(u => ['ADMIN', 'SYNDIC'].includes(u.role));
   const residents = users.filter(u => u.role === 'RESIDENT');
 
@@ -242,7 +242,7 @@ export function TeamManagementPage() {
 
           <Button onClick={() => setShowCreateDialog(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
-            Novo Conselheiro
+            Novo Membro
           </Button>
         </div>
       </div>
@@ -252,10 +252,10 @@ export function TeamManagementPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Conselheiros e Síndicos
+            Membros do Corpo Diretivo
           </CardTitle>
           <CardDescription>
-            Pessoas com permissão para gerenciar o condomínio
+            Gerencie os membros com acesso administrativo ao condomínio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -340,7 +340,7 @@ export function TeamManagementPage() {
                         </Select>
                       )}
 
-                      {/* Síndico só pode gerenciar ADMINs (conselheiros), não outros síndicos */}
+                      {/* Síndico pode remover ADMINs, mas não outros síndicos */}
                       {!isCurrentUser && user.role === 'ADMIN' && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -366,14 +366,14 @@ export function TeamManagementPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhum conselheiro cadastrado.</p>
+              <p className="text-muted-foreground">Nenhum membro cadastrado.</p>
               <Button 
                 variant="outline" 
                 className="mt-4"
                 onClick={() => setShowCreateDialog(true)}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Adicionar Primeiro Conselheiro
+                Adicionar Primeiro Membro
               </Button>
             </div>
           )}
