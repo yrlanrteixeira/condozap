@@ -34,7 +34,7 @@ export const useResidents = createQuery({
       condominiumId === 'all' ? '/residents/all' : `/residents/${condominiumId}`;
     return fetchList(url, ResidentSchema, filters as Record<string, unknown>);
   },
-  enabled: (condominiumId: string | 'all') => !!condominiumId,
+  enabled: (condominiumId: string | 'all', _filters?: ResidentFilters) => !!condominiumId,
   staleTime: 1000 * 60 * 5,
 });
 

@@ -9,6 +9,7 @@ export const ResidentSchema = z.object({
   condominiumId: z.string(),
   userId: z.string().nullable().optional(),
   name: z.string(),
+  email: z.string(),
   phone: z.string(),
   tower: z.string(),
   floor: z.string(),
@@ -22,6 +23,7 @@ export const ResidentSchema = z.object({
 export const CreateResidentSchema = z.object({
   condominiumId: z.string(),
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().min(10, "Telefone inválido"),
   tower: z.string().min(1, "Torre é obrigatória"),
   floor: z.string().min(1, "Andar é obrigatório"),
