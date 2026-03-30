@@ -106,6 +106,19 @@ export function ComplaintDetailSheet({
     },
   });
 
+  // Permission flags for SETOR_MEMBER users
+  const isSectorMember = currentUser?.role === "SETOR_MEMBER";
+  const sectorPermissions =
+    currentUser?.sectors
+      ?.find((s) => s.sectorId === complaint?.sectorId)
+      ?.permissions ?? [];
+
+  const canComment = !isSectorMember || sectorPermissions.includes("COMMENT");
+  const canChangeStatus = !isSectorMember || sectorPermissions.includes("CHANGE_STATUS");
+  const canResolve = !isSectorMember || sectorPermissions.includes("RESOLVE");
+  const canReturn = !isSectorMember || sectorPermissions.includes("RETURN");
+  const canReassign = !isSectorMember || sectorPermissions.includes("REASSIGN");
+
   const { data: cannedResponses = [] } = useQuery({
     queryKey: ["canned-responses", complaint?.condominiumId, complaint?.sectorId],
     queryFn: async () => {
@@ -203,6 +216,10 @@ export function ComplaintDetailSheet({
                 onNudge={handleNudge}
                 isNudgePending={nudgeMutation.isPending}
                 onReturnClick={() => setReturnDialogOpen(true)}
+                canChangeStatus={canChangeStatus}
+                canResolve={canResolve}
+                canReturn={canReturn}
+                canReassign={canReassign}
               />
             </ScrollArea>
 
@@ -230,66 +247,68 @@ export function ComplaintDetailSheet({
               </DialogContent>
             </Dialog>
 
-            {/* Form: Adicionar comentário */}
-            <div className="p-4 border-t bg-muted/30 shrink-0">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-foreground">Registrar andamento</label>
-                <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-1" />
-                      Templates
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-2" align="end">
-                    <Input
-                      placeholder="Buscar template..."
-                      value={templateSearch}
-                      onChange={(e) => setTemplateSearch(e.target.value)}
-                      className="mb-2"
-                    />
-                    <div className="max-h-60 overflow-y-auto space-y-1">
-                      {filteredTemplates.map((t: any) => (
-                        <button
-                          key={t.id}
-                          className="w-full text-left p-2 rounded hover:bg-muted text-sm"
-                          onClick={() => {
-                            setCommentText(t.content);
-                            setTemplateOpen(false);
-                            setTemplateSearch("");
-                          }}
-                        >
-                          <p className="font-medium">{t.title}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{t.content}</p>
-                        </button>
-                      ))}
-                      {filteredTemplates.length === 0 && (
-                        <p className="text-sm text-muted-foreground p-2 text-center">Nenhum template encontrado</p>
-                      )}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+            {/* Form: Adicionar comentário — only for users with COMMENT permission */}
+            {canComment && (
+              <div className="p-4 border-t bg-muted/30 shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-foreground">Registrar andamento</label>
+                  <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-1" />
+                        Templates
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-2" align="end">
+                      <Input
+                        placeholder="Buscar template..."
+                        value={templateSearch}
+                        onChange={(e) => setTemplateSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="max-h-60 overflow-y-auto space-y-1">
+                        {filteredTemplates.map((t: any) => (
+                          <button
+                            key={t.id}
+                            className="w-full text-left p-2 rounded hover:bg-muted text-sm"
+                            onClick={() => {
+                              setCommentText(t.content);
+                              setTemplateOpen(false);
+                              setTemplateSearch("");
+                            }}
+                          >
+                            <p className="font-medium">{t.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{t.content}</p>
+                          </button>
+                        ))}
+                        {filteredTemplates.length === 0 && (
+                          <p className="text-sm text-muted-foreground p-2 text-center">Nenhum template encontrado</p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Textarea
+                  placeholder="Descreva o que está sendo feito..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  className="min-h-[80px] mb-2"
+                  disabled={addComment.isPending}
+                />
+                <Button
+                  onClick={handleAddComment}
+                  disabled={!commentText.trim() || addComment.isPending}
+                  className="w-full"
+                >
+                  {addComment.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                  )}
+                  Adicionar comentário
+                </Button>
               </div>
-              <Textarea
-                placeholder="Descreva o que está sendo feito..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[80px] mb-2"
-                disabled={addComment.isPending}
-              />
-              <Button
-                onClick={handleAddComment}
-                disabled={!commentText.trim() || addComment.isPending}
-                className="w-full"
-              >
-                {addComment.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                )}
-                Adicionar comentário
-              </Button>
-            </div>
+            )}
           </>
         )}
       </SheetContent>
@@ -305,6 +324,10 @@ function ComplaintDetailContent({
   onNudge,
   isNudgePending,
   onReturnClick,
+  canChangeStatus,
+  canResolve,
+  canReturn,
+  canReassign,
 }: {
   complaint: ComplaintDetail;
   onStatusChange: (status: string) => void;
@@ -313,6 +336,10 @@ function ComplaintDetailContent({
   onNudge: () => void;
   isNudgePending: boolean;
   onReturnClick: () => void;
+  canChangeStatus: boolean;
+  canResolve: boolean;
+  canReturn: boolean;
+  canReassign: boolean;
 }) {
   const history = complaint.statusHistory ?? [];
   const attachments = complaint.attachments ?? [];
@@ -325,33 +352,37 @@ function ComplaintDetailContent({
           <span className="text-sm font-medium text-foreground">Status atual</span>
           <ComplaintStatusBadge status={complaint.status as ComplaintStatus} size="md" />
         </div>
-        <div>
-          <label className="text-xs text-muted-foreground mb-1 block">
-            Alterar status
-          </label>
-          <Select
-            value={complaint.status}
-            onValueChange={onStatusChange}
-            disabled={isUpdatingStatus}
-          >
-            <SelectTrigger className="h-10 w-full">
-              <SelectValue placeholder="Selecione o novo status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                return (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex items-center gap-2">
-                      <Icon size={14} className="text-muted-foreground" />
-                      {opt.label}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+        {canChangeStatus && (
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">
+              Alterar status
+            </label>
+            <Select
+              value={complaint.status}
+              onValueChange={onStatusChange}
+              disabled={isUpdatingStatus}
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Selecione o novo status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.filter(
+                  (opt) => canResolve || opt.value !== "RESOLVED"
+                ).map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon size={14} className="text-muted-foreground" />
+                        {opt.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Nudge: cobrar posicionamento do setor */}
@@ -384,7 +415,7 @@ function ComplaintDetailContent({
       })()}
 
       {/* Return to resident button */}
-      {["IN_PROGRESS", "TRIAGE"].includes(complaint.status) && (
+      {canReturn && ["IN_PROGRESS", "TRIAGE"].includes(complaint.status) && (
         <div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={onReturnClick}>
             <Undo2 className="h-4 w-4 mr-1" />
@@ -394,7 +425,7 @@ function ComplaintDetailContent({
       )}
 
       {/* Reopen handling buttons */}
-      {complaint.status === "REOPENED" && (
+      {canChangeStatus && complaint.status === "REOPENED" && (
         <div className="flex gap-2">
           <Button size="sm" onClick={() => onStatusChange("IN_PROGRESS")}>
             Retomar Atendimento
