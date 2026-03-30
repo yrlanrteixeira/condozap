@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireCondoAccess, requireRole } from "../../auth/authorize";
 import {
   getStructureHandler,
   updateStructureHandler,
@@ -11,6 +11,11 @@ import {
   setSectorMembersHandler,
   updateSectorHandler,
 } from "./sectors.controller";
+import {
+  getSectorPermissionsHandler,
+  updateSectorPermissionsHandler,
+  updateMemberPermissionOverridesHandler,
+} from "./sector-permissions.controller";
 
 export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -67,5 +72,37 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate, requireCondoAccess()],
     },
     deleteSectorHandler
+  );
+
+  fastify.get(
+    "/:condominiumId/sectors/:sectorId/permissions",
+    {
+      onRequest: [fastify.authenticate, requireCondoAccess()],
+    },
+    getSectorPermissionsHandler
+  );
+
+  fastify.put(
+    "/:condominiumId/sectors/:sectorId/permissions",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireCondoAccess(),
+      ],
+    },
+    updateSectorPermissionsHandler
+  );
+
+  fastify.put(
+    "/:condominiumId/sectors/:sectorId/members/:memberId/permissions",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireCondoAccess(),
+      ],
+    },
+    updateMemberPermissionOverridesHandler
   );
 };
