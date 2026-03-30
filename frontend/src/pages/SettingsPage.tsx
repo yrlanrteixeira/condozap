@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { Settings, User, Building, Shield, Bell, MessageSquare } from "lucide-react";
+import { Settings, User, Building, Shield, Bell, MessageSquare, FileText } from "lucide-react";
 import { useRole } from "@/shared/hooks/useRole";
 import { UserRoles } from "@/config/permissions";
 import { WhatsAppConnectionStatus } from "@/features/whatsapp";
@@ -9,6 +9,7 @@ import {
   SettingsNotificationsCard,
   SettingsSecurityCard,
   SyndicProfileCard,
+  CannedResponsesManager,
 } from "@/features/settings";
 
 export function SettingsPage() {
@@ -90,6 +91,13 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
       ],
       component: WhatsAppConnectionStatus,
+    },
+    {
+      icon: FileText,
+      title: "Respostas Padrão",
+      description: "Modelos de resposta para agilizar o atendimento",
+      roles: [UserRoles.SYNDIC, UserRoles.PROFESSIONAL_SYNDIC],
+      component: CannedResponsesManager,
     },
     {
       icon: Settings,

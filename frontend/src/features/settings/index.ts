@@ -4,6 +4,7 @@ export {
   SettingsNotificationsCard,
   SettingsSecurityCard,
   SyndicProfileCard,
+  CannedResponsesManager,
 } from './components';
 export {
   useUpdateProfile,
