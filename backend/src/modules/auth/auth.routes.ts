@@ -207,10 +207,40 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         assignedTower: uc.assignedTower,
       }));
 
+      // Resolve sector data for SETOR_MEMBER/SETOR_MANAGER
+      let sectors: any[] = [];
+      if (user.role === "SETOR_MEMBER" || user.role === "SETOR_MANAGER") {
+        const sectorMemberships = await prisma.sectorMember.findMany({
+          where: { userId: user.id, isActive: true },
+          include: {
+            sector: { select: { id: true, name: true } },
+            permissionOverrides: { select: { action: true, granted: true } },
+          },
+        });
+
+        for (const sm of sectorMemberships) {
+          const sectorPerms = await prisma.sectorPermission.findMany({
+            where: { sectorId: sm.sectorId },
+            select: { action: true },
+          });
+          const allowed = new Set(sectorPerms.map((p) => p.action));
+          for (const override of sm.permissionOverrides) {
+            if (override.granted) allowed.add(override.action);
+            else allowed.delete(override.action);
+          }
+          sectors.push({
+            sectorId: sm.sector.id,
+            sectorName: sm.sector.name,
+            permissions: Array.from(allowed),
+          });
+        }
+      }
+
       return reply.send({
         ...userWithoutPassword,
         condominiums: userCondominiums,
         residentId: resident?.id,
+        ...(sectors.length > 0 && { sectors }),
       });
     }
   );

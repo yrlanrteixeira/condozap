@@ -26,6 +26,7 @@ import { complaintChatRoutes } from "../modules/complaints/complaints-chat.route
 import { announcementRoutes } from "../modules/announcements/announcements.routes";
 import { reportRoutes } from "../modules/reports/reports.routes";
 import { cannedResponsesRoutes } from "../modules/canned-responses/canned-responses.routes";
+import { sectorDashboardRoutes } from "../modules/sector-dashboard/sector-dashboard.routes";
 import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 
 export const createApp = async (): Promise<FastifyInstance> => {
@@ -103,6 +104,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(announcementRoutes, { prefix: "/api/announcements" });
   await fastify.register(reportRoutes, { prefix: "/api/reports" });
   await fastify.register(cannedResponsesRoutes, { prefix: "/api/canned-responses" });
+  await fastify.register(sectorDashboardRoutes, { prefix: "/api/sector-dashboard" });
 
   await fastify.register(slaCronPlugin);
 
