@@ -6,6 +6,7 @@ import { evaluateWorkflows } from "../automation/automation.engine";
 import { notify } from "../notifier/notifier.service";
 import { runSlaEscalationScan } from "../complaints/complaints.sla";
 import { ComplaintStatus } from "@prisma/client";
+import { whatsappService } from "../whatsapp/whatsapp.service";
 
 const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
   if (process.env.NODE_ENV === "test") {
@@ -43,7 +44,7 @@ const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
             case "auto_close": {
               const autoCloseResult = await prisma.complaint.updateMany({
                 where: { id: action.complaintId, status: ComplaintStatus.RESOLVED },
-                data: { status: ComplaintStatus.CLOSED },
+                data: { status: ComplaintStatus.CLOSED, closedAt: new Date() },
               });
               if (autoCloseResult.count > 0) {
                 await prisma.complaintStatusHistory.create({
@@ -56,6 +57,21 @@ const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
                     action: "AUTO_CLOSE",
                   },
                 });
+
+                const complaint = await prisma.complaint.findUnique({
+                  where: { id: action.complaintId },
+                  include: {
+                    resident: true,
+                    condominium: { select: { reopenDeadlineDays: true } },
+                  },
+                });
+                if (complaint?.resident.consentWhatsapp) {
+                  whatsappService.sendTextMessage(
+                    complaint.resident.phone,
+                    `Sua ocorrência #${action.complaintId} foi encerrada automaticamente. Caso necessário, você pode reabri-la em até ${complaint.condominium.reopenDeadlineDays} dias.`
+                  ).catch(() => {});
+                }
+
                 fastify.log.info(
                   { complaintId: action.complaintId },
                   "sla-cron: complaint auto-closed"
