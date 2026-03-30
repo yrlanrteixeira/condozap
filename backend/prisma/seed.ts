@@ -18,6 +18,7 @@ async function main() {
   await prisma.complaintStatusHistory.deleteMany();
   await prisma.complaintAttachment.deleteMany();
   await prisma.complaint.deleteMany();
+  await prisma.cannedResponse.deleteMany();
   await prisma.sector.deleteMany();
   await prisma.residentDocument.deleteMany();
   await prisma.resident.deleteMany();
@@ -784,6 +785,32 @@ async function main() {
   console.log("✅ Messages created");
 
   // =====================================================
+  // Create global canned responses (condominiumId: null)
+  // =====================================================
+
+  const globalTemplates = [
+    { title: "Manutenção agendada", content: "Informamos que a manutenção foi agendada. Entraremos em contato com a data e horário." },
+    { title: "Aguardando orçamento", content: "Estamos aguardando o orçamento do fornecedor. Assim que recebermos, daremos retorno." },
+    { title: "Problema resolvido", content: "O problema relatado foi resolvido. Caso persista, por favor abra uma nova ocorrência." },
+    { title: "Encaminhado ao setor", content: "Sua ocorrência foi encaminhada ao setor responsável para análise e providências." },
+    { title: "Informações insuficientes", content: "Precisamos de mais detalhes para dar andamento. Por favor, complemente sua ocorrência com fotos ou descrição mais detalhada." },
+    { title: "Visita técnica agendada", content: "Uma visita técnica foi agendada para avaliar a situação. Entraremos em contato para confirmar data e horário." },
+    { title: "Em análise pelo fornecedor", content: "Sua ocorrência está em análise pelo fornecedor responsável. Retornaremos assim que tivermos um posicionamento." },
+  ];
+
+  await prisma.cannedResponse.createMany({
+    data: globalTemplates.map((t) => ({
+      title: t.title,
+      content: t.content,
+      condominiumId: null,
+      sectorId: null,
+      createdBy: superAdmin.id,
+    })),
+  });
+
+  console.log("✅ Global canned responses created");
+
+  // =====================================================
   // Summary
   // =====================================================
 
@@ -822,6 +849,7 @@ async function main() {
   console.log("💬 Mensagens: 5");
   console.log("💬 Mensagens de ocorrência: 3 (chat em #2)");
   console.log("🔔 Notificações: 4");
+  console.log("📝 Respostas pré-cadastradas globais: 7");
 
   console.log("\n" + "=".repeat(60));
   console.log("🔑 CREDENCIAIS PARA LOGIN:");
