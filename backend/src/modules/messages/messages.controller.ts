@@ -71,9 +71,15 @@ export async function sendMessageHandler(
   reply: FastifyReply
 ) {
   const body = sendMessageSchema.parse(request.body) as SendMessageBody;
-  const user = request.user as { id: string };
+  const user = request.user as AuthUser;
 
-  const result = await sendMessage(prisma, user.id, body);
+  const context = await resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role,
+    permissionScope: user.permissionScope as any,
+  });
+
+  const result = await sendMessage(prisma, user.id, body, context);
 
   if (result.status !== 200) {
     return reply.status(result.status).send(result.payload);

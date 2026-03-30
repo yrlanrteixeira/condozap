@@ -102,6 +102,9 @@ const buildAccessFilteredWhere = async (
   if (isSyndic(user.role)) {
     where.OR = undefined;
   }
+  if (context.assignedTower) {
+    where.resident = { ...where.resident as object, tower: context.assignedTower };
+  }
   return where;
 };
 

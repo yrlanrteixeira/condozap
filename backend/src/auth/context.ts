@@ -6,6 +6,7 @@ export interface AccessContext {
   scope: Scope;
   allowedCondominiumIds: string[];
   allowedSectorIds: string[];
+  assignedTower?: string | null;
 }
 
 export interface AccessUser {
@@ -30,11 +31,13 @@ export const resolveAccessContext = async (
   }
   const memberships = await prisma.userCondominium.findMany({
     where: { userId: user.id },
-    select: { condominiumId: true },
+    select: { condominiumId: true, assignedTower: true, councilPosition: true },
   });
   const allowedCondominiumIds = Array.from(
     new Set(memberships.map((membership) => membership.condominiumId))
   );
+  const councilMembership = memberships.find(m => m.councilPosition && m.assignedTower);
+  const assignedTower = councilMembership?.assignedTower ?? null;
   const sectorMemberships = await prisma.sectorMember.findMany({
     where: { userId: user.id, isActive: true },
     select: { sectorId: true, sector: { select: { condominiumId: true } } },
@@ -49,6 +52,7 @@ export const resolveAccessContext = async (
     scope,
     allowedCondominiumIds,
     allowedSectorIds,
+    assignedTower,
   };
 };
 

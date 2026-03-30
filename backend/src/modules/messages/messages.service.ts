@@ -11,6 +11,8 @@ import {
   groupByType,
   aggregateRecipients,
 } from "./messages.repository";
+import type { AccessContext } from "../../auth/context";
+import { BadRequestError } from "../../shared/errors";
 
 export async function listMessages(
   prisma: PrismaClient,
@@ -61,8 +63,18 @@ export async function getMessageStats(
 export async function sendMessage(
   prisma: PrismaClient,
   userId: string,
-  body: SendMessageBody
+  body: SendMessageBody,
+  context?: AccessContext
 ) {
+  if (context?.assignedTower) {
+    if (body.target.scope === "ALL") {
+      throw new BadRequestError("Você só pode enviar mensagens para sua torre");
+    }
+    if (body.target.scope === "TOWER" && body.target.tower !== context.assignedTower) {
+      throw new BadRequestError("Você só pode enviar mensagens para sua torre atribuída");
+    }
+  }
+
   const residents = await findTargetResidents(prisma, {
     condominiumId: body.condominiumId,
     scope: body.target.scope,

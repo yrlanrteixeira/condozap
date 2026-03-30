@@ -44,7 +44,7 @@ export const findResidentsForUser = async (
   return prisma.resident.findMany({
     where: {
       ...(appliedCondoFilter && { condominiumId: appliedCondoFilter }),
-      ...(filters.tower && { tower: filters.tower }),
+      ...((context.assignedTower ?? filters.tower) && { tower: context.assignedTower ?? filters.tower }),
       ...(filters.floor && { floor: filters.floor }),
       ...(filters.type && { type: filters.type as any }),
       ...(filters.search && {
