@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock } from "lucide-react";
+import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer } from "lucide-react";
 import type { ComplaintStatusHistory } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ const STATUS_LABELS: Record<string, string> = {
   RESOLVED: "Resolvida",
   CLOSED: "Encerrada",
   CANCELLED: "Cancelada",
+  RETURNED: "Devolvida",
+  REOPENED: "Reaberta",
 };
 
 interface ComplaintTimelineProps {
@@ -23,7 +25,7 @@ interface ComplaintTimelineProps {
 
 interface TimelineItem {
   id: string;
-  type: "created" | "status" | "comment" | "nudge";
+  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose";
   label: string;
   description?: string;
   date: string;
@@ -72,6 +74,27 @@ function buildTimelineItems(
         date: entry.createdAt,
         completed: true,
       });
+    } else if (entry.action === "RETURN") {
+      items.push({
+        id: entry.id, type: "return",
+        label: "Devolvida ao morador",
+        description: entry.notes || "",
+        date: entry.createdAt, completed: true,
+      });
+    } else if (entry.action === "REOPEN") {
+      items.push({
+        id: entry.id, type: "reopen",
+        label: "Reaberta pelo morador",
+        description: entry.notes || "",
+        date: entry.createdAt, completed: true,
+      });
+    } else if (entry.action === "AUTO_CLOSE") {
+      items.push({
+        id: entry.id, type: "autoclose",
+        label: "Encerrada automaticamente",
+        description: entry.notes || "",
+        date: entry.createdAt, completed: true,
+      });
     } else {
       // Status change
       const toLabel = STATUS_LABELS[entry.toStatus] || entry.toStatus;
@@ -102,6 +125,12 @@ function TimelineIcon({ type, completed }: { type: TimelineItem["type"]; complet
       return <MessageSquare className={cn(size, "text-purple-500")} />;
     case "nudge":
       return <Bell className={cn(size, "text-amber-500")} />;
+    case "return":
+      return <Undo2 className={cn(size, "text-orange-500")} />;
+    case "reopen":
+      return <RotateCcw className={cn(size, "text-blue-500")} />;
+    case "autoclose":
+      return <Timer className={cn(size, "text-gray-500")} />;
     default:
       return <Clock className={cn(size, "text-muted-foreground")} />;
   }

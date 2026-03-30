@@ -10,7 +10,9 @@ export type ComplaintStatus =
   | "WAITING_THIRD_PARTY"
   | "RESOLVED"
   | "CLOSED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "RETURNED"
+  | "REOPENED";
 export type ComplaintPriority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 
 export interface Complaint {
@@ -35,6 +37,7 @@ export interface Complaint {
   resolvedAt?: string | null;
   resolvedBy?: string | null;
   lastNudgedAt?: string | null;
+  closedAt?: string | null;
   timestamp?: string; // Alias para createdAt (compatibilidade)
   resident?: {
     name: string;

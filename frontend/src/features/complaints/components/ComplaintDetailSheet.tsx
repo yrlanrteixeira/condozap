@@ -1,11 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Input } from "@/shared/components/ui/input";
@@ -32,6 +39,7 @@ import {
   CheckCircle,
   Bell,
   FileText,
+  Undo2,
 } from "lucide-react";
 import { useToast } from "@/shared/components/ui/use-toast";
 import {
@@ -75,12 +83,28 @@ export function ComplaintDetailSheet({
   const [commentText, setCommentText] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const addComment = useAddComplaintComment();
   const updateStatus = useUpdateComplaintStatus();
   const nudgeMutation = useNudgeComplaint();
+
+  const returnMutation = useMutation({
+    mutationFn: async ({ complaintId, reason }: { complaintId: number; reason: string }) => {
+      const { data } = await api.post(`/api/complaints/${complaintId}/return`, { reason });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["complaints"] });
+      setReturnDialogOpen(false);
+      setReturnReason("");
+      toast({ title: "Ocorrência devolvida", description: "O morador foi notificado.", variant: "success", duration: 3000 });
+    },
+  });
 
   const { data: cannedResponses = [] } = useQuery({
     queryKey: ["canned-responses", complaint?.condominiumId, complaint?.sectorId],
@@ -178,8 +202,33 @@ export function ComplaintDetailSheet({
                 currentUserId={currentUser?.id ?? ""}
                 onNudge={handleNudge}
                 isNudgePending={nudgeMutation.isPending}
+                onReturnClick={() => setReturnDialogOpen(true)}
               />
             </ScrollArea>
+
+            {/* Return dialog */}
+            <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Devolver Ocorrência</DialogTitle>
+                </DialogHeader>
+                <Textarea
+                  placeholder="Motivo da devolução (mínimo 10 caracteres)..."
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setReturnDialogOpen(false)}>Cancelar</Button>
+                  <Button
+                    onClick={() => complaintId && returnMutation.mutate({ complaintId, reason: returnReason })}
+                    disabled={returnReason.length < 10 || returnMutation.isPending}
+                  >
+                    {returnMutation.isPending ? "Devolvendo..." : "Devolver"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Form: Adicionar comentário */}
             <div className="p-4 border-t bg-muted/30 shrink-0">
@@ -255,6 +304,7 @@ function ComplaintDetailContent({
   currentUserId,
   onNudge,
   isNudgePending,
+  onReturnClick,
 }: {
   complaint: ComplaintDetail;
   onStatusChange: (status: string) => void;
@@ -262,6 +312,7 @@ function ComplaintDetailContent({
   currentUserId: string;
   onNudge: () => void;
   isNudgePending: boolean;
+  onReturnClick: () => void;
 }) {
   const history = complaint.statusHistory ?? [];
   const attachments = complaint.attachments ?? [];
@@ -331,6 +382,28 @@ function ComplaintDetailContent({
           </div>
         ) : null;
       })()}
+
+      {/* Return to resident button */}
+      {["IN_PROGRESS", "TRIAGE"].includes(complaint.status) && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={onReturnClick}>
+            <Undo2 className="h-4 w-4 mr-1" />
+            Devolver ao Morador
+          </Button>
+        </div>
+      )}
+
+      {/* Reopen handling buttons */}
+      {complaint.status === "REOPENED" && (
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => onStatusChange("IN_PROGRESS")}>
+            Retomar Atendimento
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => onStatusChange("CANCELLED")}>
+            Rejeitar Reabertura
+          </Button>
+        </div>
+      )}
 
       {/* Categoria */}
       <div className="flex items-center gap-2">
