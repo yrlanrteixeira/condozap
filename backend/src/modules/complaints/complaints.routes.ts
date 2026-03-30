@@ -9,6 +9,7 @@ import {
   requireTicketModify,
   requireTicketView,
 } from "../../auth/authorize";
+import { requireSectorAction } from "../../auth/sector-permissions";
 import { nudgeComplaintHandler } from "./complaints-nudge.controller";
 import { returnComplaintHandler } from "./complaints-return.controller";
 import { complementComplaintHandler } from "./complaints-complement.controller";
@@ -87,7 +88,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:id/status",
     {
-      onRequest: [fastify.authenticate, requireTicketModify()],
+      onRequest: [fastify.authenticate, requireTicketModify(), requireSectorAction("CHANGE_STATUS")],
     },
     updateComplaintStatusHandler
   );
@@ -103,7 +104,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:id/comment",
     {
-      onRequest: [fastify.authenticate, requireTicketModify()],
+      onRequest: [fastify.authenticate, requireTicketModify(), requireSectorAction("COMMENT")],
     },
     addComplaintCommentHandler
   );
@@ -173,6 +174,7 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.authenticate,
         requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN"]),
         requireTicketModify(),
+        requireSectorAction("RETURN"),
       ],
     },
     returnComplaintHandler
