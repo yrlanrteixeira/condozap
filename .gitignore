@@ -38,3 +38,5 @@ Thumbs.db
 *.pid.lock
 
 docs/
+docs
+.superpowers
