@@ -8,6 +8,8 @@ export const STATUS_LABELS: Record<ComplaintStatus, string> = {
   IN_PROGRESS: "Em Andamento",
   WAITING_USER: "Aguardando Morador",
   WAITING_THIRD_PARTY: "Aguardando Terceiros",
+  RETURNED: "Devolvida",
+  REOPENED: "Reaberta",
   RESOLVED: "Resolvida",
   CLOSED: "Fechada",
   CANCELLED: "Cancelada",
