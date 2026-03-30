@@ -39,6 +39,8 @@ enum ComplaintStatus {
   RESOLVED
   CLOSED
   CANCELLED
+  RETURNED
+  REOPENED
 }
 
 enum ComplaintPriority {
@@ -121,15 +123,17 @@ model Condominium {
   autoAssignEnabled      Boolean @default(true)  @map("auto_assign_enabled")
   autoCloseAfterDays     Int     @default(7)     @map("auto_close_after_days")
   waitingAutoResolveDays Int     @default(14)    @map("waiting_auto_resolve_days")
+  reopenDeadlineDays     Int     @default(7)     @map("reopen_deadline_days")
 
   // Relations
-  users         UserCondominium[]
-  residents     Resident[]
-  complaints    Complaint[]
-  messages      Message[]
-  sectors       Sector[]
-  slaConfigs    SlaConfig[]
-  announcements Announcement[]
+  users          UserCondominium[]
+  residents      Resident[]
+  complaints     Complaint[]
+  messages       Message[]
+  sectors        Sector[]
+  slaConfigs     SlaConfig[]
+  announcements  Announcement[]
+  cannedResponses CannedResponse[]
 
   @@index([cnpj])
   @@map("condominiums")
@@ -230,6 +234,7 @@ model UserCondominium {
   condominiumId   String   @map("condominium_id")
   role            UserRole
   councilPosition String?  @map("council_position") // Cargo/função no conselho (ex: Obras, Financeiro)
+  assignedTower   String?  @map("assigned_tower")
   createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -297,6 +302,7 @@ model Complaint {
   csatComment        String?           @map("csat_comment") @db.Text
   csatRespondedAt    DateTime?         @map("csat_responded_at")
   lastNudgedAt       DateTime?         @map("last_nudged_at")
+  closedAt           DateTime?         @map("closed_at")
 
   // Relations
   condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
@@ -360,6 +366,7 @@ model Sector {
   members              SectorMember[]
   complaints           Complaint[]
   complaintAssignments ComplaintAssignment[]
+  cannedResponses      CannedResponse[]
 
   @@unique([condominiumId, name])
   @@index([condominiumId])
@@ -506,4 +513,22 @@ model ComplaintMessage {
 
   @@index([complaintId, createdAt])
   @@map("complaint_messages")
+}
+
+model CannedResponse {
+  id            String       @id @default(cuid())
+  condominiumId String?      @map("condominium_id")
+  sectorId      String?      @map("sector_id")
+  title         String
+  content       String       @db.Text
+  createdBy     String       @map("created_by")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  condominium   Condominium? @relation(fields: [condominiumId], references: [id])
+  sector        Sector?      @relation(fields: [sectorId], references: [id])
+
+  @@index([condominiumId])
+  @@index([sectorId])
+  @@map("canned_responses")
 }
