@@ -202,6 +202,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const userCondominiums = condominiums.map((uc) => ({
         id: uc.condominium.id,
         name: uc.condominium.name,
+        role: uc.role,
+        councilPosition: uc.councilPosition,
+        assignedTower: uc.assignedTower,
       }));
 
       return reply.send({

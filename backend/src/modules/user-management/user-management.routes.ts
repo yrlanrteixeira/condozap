@@ -13,6 +13,7 @@ import {
   listSyndicsHandler,
 } from "./user-management.controller";
 import { updateAccountExpirationHandler } from "./expiration.controller";
+import { updateAssignedTowerHandler } from "./assigned-tower.controller";
 
 export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -107,6 +108,14 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     updateAccountExpirationHandler
   );
+
+  fastify.patch("/:userId/assigned-tower", {
+    onRequest: [
+      fastify.authenticate,
+      requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+      requireCondoAccess({ source: "body" }),
+    ],
+  }, updateAssignedTowerHandler);
 };
 
 
