@@ -21,6 +21,8 @@ export const InitialRedirect = () => {
 
   if (userRole === UserRoles.SUPER_ADMIN) {
     redirectTo = "/platform";
+  } else if (userRole === UserRoles.SETOR_MEMBER || userRole === UserRoles.SETOR_MANAGER) {
+    redirectTo = "/sector-dashboard";
   } else if (userRole === UserRoles.RESIDENT) {
     redirectTo = "/complaints";
   }

@@ -63,6 +63,12 @@ export const Sidebar = ({
       permission: Permissions.VIEW_DASHBOARD,
     },
     {
+      title: "Dashboard do Setor",
+      href: "/sector-dashboard",
+      icon: LayoutDashboard,
+      permission: Permissions.VIEW_SECTOR_DASHBOARD,
+    },
+    {
       title: "Enviar Mensagens",
       href: "/messages",
       icon: Send,

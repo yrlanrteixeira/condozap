@@ -125,6 +125,10 @@ export const Permissions = {
 
   // Avaliação
   SUBMIT_CSAT: "submit:csat",
+
+  // Setor
+  VIEW_SECTOR_DASHBOARD: "view_sector_dashboard",
+  VIEW_SECTOR_COMPLAINTS: "view_sector_complaints",
 } as const;
 
 /**
@@ -392,14 +396,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
   ],
   // Membro de setor
   [UserRoles.SETOR_MEMBER]: [
-    Permissions.VIEW_DASHBOARD,
-    Permissions.VIEW_METRICS,
-    Permissions.VIEW_CONDOMINIUMS,
-    Permissions.VIEW_STRUCTURE,
+    Permissions.VIEW_SECTOR_DASHBOARD,
+    Permissions.VIEW_SECTOR_COMPLAINTS,
     Permissions.VIEW_COMPLAINTS,
-    Permissions.CREATE_COMPLAINT,
-    Permissions.VIEW_MESSAGES,
-    Permissions.VIEW_HISTORY,
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
