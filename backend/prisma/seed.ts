@@ -110,6 +110,14 @@ async function main() {
     },
   });
 
+  const sectorEspacos = await prisma.sector.create({
+    data: {
+      condominiumId: condo1.id,
+      name: "Espaços",
+      categories: ["Salão de Festa", "Churrasqueira", "Espaço Game", "Espaço Camarote"],
+    },
+  });
+
   console.log("✅ Sectors (service queues) created");
 
   // Novidades da semana (announcements) para o morador
@@ -810,6 +818,26 @@ async function main() {
 
   console.log("✅ Global canned responses created");
 
+  // Canned responses for "Espaços" sector
+  const espacosTemplates = [
+    { title: "Espaço liberado", content: "O espaço foi liberado e está disponível para uso. Pode utilizar normalmente." },
+    { title: "Reserva mantida", content: "O morador que fez a reserva confirmou presença. O espaço permanece reservado." },
+    { title: "Verificando disponibilidade", content: "Estamos verificando a situação da reserva. Retornaremos em breve." },
+    { title: "Reserva cancelada", content: "A reserva anterior foi cancelada por não comparecimento. O espaço está liberado." },
+  ];
+
+  await prisma.cannedResponse.createMany({
+    data: espacosTemplates.map((t) => ({
+      title: t.title,
+      content: t.content,
+      condominiumId: condo1.id,
+      sectorId: sectorEspacos.id,
+      createdBy: superAdmin.id,
+    })),
+  });
+
+  console.log("✅ Espaços sector canned responses created");
+
   // =====================================================
   // Summary
   // =====================================================
@@ -845,7 +873,7 @@ async function main() {
 
   console.log("\n🏠 Moradores: 10 (8 no Vista Verde, 2 no Bela Vista)");
   console.log("📋 Ocorrências: 6 (3 resolvidas com CSAT)");
-  console.log("🏷️  Setores: 6 (Manutenção, Limpeza, Segurança, Síndico, Administrativo, Conselho)");
+  console.log("🏷️  Setores: 7 (Manutenção, Limpeza, Segurança, Síndico, Administrativo, Conselho, Espaços)");
   console.log("💬 Mensagens: 5");
   console.log("💬 Mensagens de ocorrência: 3 (chat em #2)");
   console.log("🔔 Notificações: 4");
