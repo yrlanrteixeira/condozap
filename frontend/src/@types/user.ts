@@ -46,6 +46,15 @@ export interface Condominium {
  */
 export type UserStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
 
+/**
+ * Sector membership returned by /me for SETOR_MEMBER / SETOR_MANAGER users
+ */
+export interface UserSectorMembership {
+  sectorId: string;
+  sectorName: string;
+  permissions: string[];
+}
+
 export interface User {
   id: string;
   name: string;
@@ -56,6 +65,7 @@ export interface User {
   condominiums?: Condominium[]; // Lista de condomínios que o usuário tem acesso
   currentCondominiumId?: string; // ID do condomínio ativo no momento
   residentId?: string; // ID do cadastro de morador (para role RESIDENT)
+  sectors?: UserSectorMembership[]; // Setores associados (SETOR_MEMBER / SETOR_MANAGER)
   consentWhatsapp?: boolean;
   consentDataProcessing?: boolean;
   // Extended syndic profile fields
