@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
 import { SetMembersBody, CreateSectorBody, UpdateSectorBody } from "./sectors.schema";
+import { DEFAULT_SECTOR_PERMISSIONS } from "../../auth/sector-permissions";
 import {
   findSectors,
   findByNameInCondominium,
@@ -29,11 +30,18 @@ export const createSector = async (
   if (exists) {
     throw new BadRequestError("Setor já existe neste condomínio");
   }
-  return repoCreateSector(prisma, {
+  const sector = await repoCreateSector(prisma, {
     condominiumId,
     name: body.name,
     categories: body.categories ?? [],
   });
+  await prisma.sectorPermission.createMany({
+    data: DEFAULT_SECTOR_PERMISSIONS.map((action) => ({
+      sectorId: sector.id,
+      action,
+    })),
+  });
+  return sector;
 };
 
 export const updateSector = async (
