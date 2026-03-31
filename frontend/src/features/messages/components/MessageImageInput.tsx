@@ -1,10 +1,18 @@
 import { useState, useRef } from 'react';
 import { Input } from '@/shared/components/ui/input';
 import { Button } from '@/shared/components/ui/button';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Link2 } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
+import { config } from '@/lib/config';
+
+function guessMimeFromUrl(url: string): string {
+  const u = url.split('?')[0]?.toLowerCase() ?? '';
+  if (/\.(png|jpe?g|webp|gif)$/i.test(u)) return 'image/jpeg';
+  if (/\.(mp4|webm)$/i.test(u)) return 'video/mp4';
+  return 'image/jpeg';
+}
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'video/mp4'];
 const MAX_SIZE_MB = 10;
@@ -25,6 +33,7 @@ export const MessageImageInput = ({
 }: MessageImageInputProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaMimeType, setMediaMimeType] = useState('');
+  const [urlDraft, setUrlDraft] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const condominiumId = useAppSelector(selectCurrentCondominiumId);
@@ -58,7 +67,7 @@ export const MessageImageInput = ({
         formData.append('condominiumId', condominiumId);
       }
 
-      const response = await fetch('/api/uploads', {
+      const response = await fetch(`${config.apiUrl}/uploads/media`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
@@ -93,10 +102,33 @@ export const MessageImageInput = ({
   const handleRemove = () => {
     onMediaUrlChange('');
     setMediaMimeType('');
+    setUrlDraft('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const isImage = mediaUrl && mediaMimeType.startsWith('image/');
+  const applyUrl = () => {
+    const raw = urlDraft.trim();
+    if (!/^https?:\/\//i.test(raw)) {
+      toast({
+        title: 'URL inválida',
+        description: 'Informe um endereço http ou https completo.',
+        variant: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+    const mime = guessMimeFromUrl(raw);
+    setMediaMimeType(mime);
+    onMediaUrlChange(raw, mime);
+  };
+
+  const effectiveMime =
+    mediaUrl && mediaMimeType
+      ? mediaMimeType
+      : mediaUrl
+        ? guessMimeFromUrl(mediaUrl)
+        : '';
+  const isImage = Boolean(mediaUrl && effectiveMime.startsWith('image/'));
 
   return (
     <div className="space-y-3">
@@ -109,26 +141,51 @@ export const MessageImageInput = ({
       />
 
       {!mediaUrl ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-24 border-dashed flex flex-col gap-1"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Enviando...</span>
-            </>
-          ) : (
-            <>
-              <Upload className="h-5 w-5" />
-              <span className="text-sm">Clique para anexar imagem ou vídeo</span>
-              <span className="text-xs text-muted-foreground">PNG, JPEG, WebP, MP4 — máx. {MAX_SIZE_MB}MB</span>
-            </>
-          )}
-        </Button>
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-24 border-dashed flex flex-col gap-1"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Enviando...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-5 w-5" />
+                <span className="text-sm">Clique para anexar imagem ou vídeo</span>
+                <span className="text-xs text-muted-foreground">PNG, JPEG, WebP, MP4 — máx. {MAX_SIZE_MB}MB</span>
+              </>
+            )}
+          </Button>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Link2 className="h-3.5 w-3.5" />
+              Ou cole a URL pública da mídia
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                type="url"
+                placeholder="https://..."
+                value={urlDraft}
+                onChange={(e) => setUrlDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyUrl();
+                  }
+                }}
+              />
+              <Button type="button" variant="secondary" onClick={applyUrl}>
+                Usar URL
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="relative border rounded-md p-2 bg-muted/30">
           {isImage ? (

@@ -35,7 +35,8 @@ export function useStructure(condominiumId: string) {
       return data;
     },
     enabled: !!condominiumId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
@@ -60,13 +61,14 @@ export function useUpdateStructure() {
       );
       return data;
     },
-    onSuccess: (data) => {
-      // Invalidate structure query
-      queryClient.invalidateQueries({
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
         queryKey: ["structure", data.condominiumId],
       });
-      // Invalidate residents query (structure affects resident form)
-      queryClient.invalidateQueries({
+      await queryClient.refetchQueries({
+        queryKey: ["structure", data.condominiumId],
+      });
+      await queryClient.invalidateQueries({
         queryKey: ["residents"],
       });
     },

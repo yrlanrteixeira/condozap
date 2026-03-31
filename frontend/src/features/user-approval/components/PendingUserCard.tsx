@@ -4,7 +4,7 @@
  * Displays a pending user with approve/reject actions
  */
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -40,6 +40,13 @@ import {
 } from "lucide-react";
 import { formatDateLong } from "@/shared/utils/date";
 import type { PendingUser, Condominium } from "../types";
+import { useStructure } from "@/features/structure/hooks/useStructureApi";
+import { useAppSelector } from "@/shared/hooks";
+import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
+import {
+  formatTowerHeading,
+  resolveTowerValueForSelect,
+} from "@/features/structure/utils/towerDisplay";
 
 interface PendingUserCardProps {
   user: PendingUser;
@@ -78,6 +85,54 @@ export function PendingUserCard({
   // Rejection form state
   const [rejectionReason, setRejectionReason] = useState("");
 
+  const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
+  const structureCondoId = showCondominiumInfo
+    ? condominiumId.trim() || user.requestedCondominiumId || ""
+    : currentCondominiumId || user.requestedCondominiumId || "";
+
+  const { data: structureData } = useStructure(structureCondoId);
+
+  const towerNames = useMemo(() => {
+    return (
+      structureData?.structure?.towers?.map((t) => t.name).sort((a, b) =>
+        a.localeCompare(b, "pt-BR", { numeric: true })
+      ) ?? []
+    );
+  }, [structureData]);
+
+  const floorsForTower = useMemo(() => {
+    const t = structureData?.structure?.towers?.find((x) => x.name === tower);
+    return t?.floors?.length
+      ? [...t.floors].sort((a, b) =>
+          a.localeCompare(b, "pt-BR", { numeric: true })
+        )
+      : [];
+  }, [structureData, tower]);
+
+  useEffect(() => {
+    if (!showApproveDialog) return;
+    setTower(user.requestedTower || "");
+    setFloor(user.requestedFloor || "");
+    setUnit(user.requestedUnit || "");
+    if (showCondominiumInfo && user.requestedCondominiumId) {
+      setCondominiumId(user.requestedCondominiumId);
+    }
+  }, [
+    showApproveDialog,
+    user.requestedTower,
+    user.requestedFloor,
+    user.requestedUnit,
+    user.requestedCondominiumId,
+    showCondominiumInfo,
+  ]);
+
+  useEffect(() => {
+    if (!showApproveDialog || towerNames.length === 0) return;
+    setTower((prev) => resolveTowerValueForSelect(prev, towerNames));
+  }, [showApproveDialog, towerNames]);
+
+  const towerForSelect = resolveTowerValueForSelect(tower, towerNames);
+
   const handleApprove = () => {
     if (!tower.trim() || !floor.trim() || !unit.trim()) {
       return;
@@ -85,11 +140,15 @@ export function PendingUserCard({
     if (showCondominiumInfo && !condominiumId.trim()) {
       return;
     }
+    const towerOut =
+      towerNames.length > 0
+        ? resolveTowerValueForSelect(tower, towerNames)
+        : tower.trim();
     onApprove(
       user.id,
-      tower,
-      floor,
-      unit,
+      towerOut,
+      floor.trim(),
+      unit.trim(),
       type,
       showCondominiumInfo ? condominiumId : undefined
     );
@@ -235,7 +294,10 @@ export function PendingUserCard({
             {showCondominiumInfo && (
               <div className="space-y-2">
                 <Label htmlFor="condominiumId">Condomínio</Label>
-                <Select value={condominiumId} onValueChange={setCondominiumId}>
+                <Select
+                  value={condominiumId || undefined}
+                  onValueChange={setCondominiumId}
+                >
                   <SelectTrigger id="condominiumId">
                     <SelectValue placeholder="Selecione o condomínio" />
                   </SelectTrigger>
@@ -258,23 +320,66 @@ export function PendingUserCard({
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="tower">Torre</Label>
-                <Input
-                  id="tower"
-                  value={tower}
-                  onChange={(e) => setTower(e.target.value)}
-                  placeholder="Ex: A"
-                  required
-                />
+                {towerNames.length > 0 ? (
+                  <Select
+                    value={
+                      towerNames.includes(towerForSelect)
+                        ? towerForSelect
+                        : undefined
+                    }
+                    onValueChange={(v) => {
+                      setTower(v);
+                      setFloor("");
+                    }}
+                  >
+                    <SelectTrigger id="tower">
+                      <SelectValue placeholder="Selecione a torre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {towerNames.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {formatTowerHeading(name)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="tower"
+                    value={tower}
+                    onChange={(e) => setTower(e.target.value)}
+                    placeholder="Ex: A"
+                    required
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="floor">Andar</Label>
-                <Input
-                  id="floor"
-                  value={floor}
-                  onChange={(e) => setFloor(e.target.value)}
-                  placeholder="Ex: 5"
-                  required
-                />
+                {floorsForTower.length > 0 ? (
+                  <Select
+                    value={floorsForTower.includes(floor) ? floor : undefined}
+                    onValueChange={setFloor}
+                  >
+                    <SelectTrigger id="floor">
+                      <SelectValue placeholder="Selecione o andar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {floorsForTower.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="floor"
+                    value={floor}
+                    onChange={(e) => setFloor(e.target.value)}
+                    placeholder="Ex: 5"
+                    required
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unit">Apto</Label>
@@ -287,6 +392,11 @@ export function PendingUserCard({
                 />
               </div>
             </div>
+            {structureCondoId && towerNames.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Cadastre a estrutura do condomínio em Estrutura para usar listas de torre e andar.
+              </p>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="type">Tipo</Label>

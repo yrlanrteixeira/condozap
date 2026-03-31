@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { AuthUser } from "../../types/auth";
 import {
   AccessContext,
@@ -8,14 +8,32 @@ import {
 import { isGlobalScope } from "../../auth/roles";
 import { ResidentFilters } from "./residents.schema";
 
-const includeResident = {
+export const includeResident = {
   condominium: {
     select: {
       id: true,
       name: true,
     },
   },
+  user: {
+    select: {
+      accountExpiresAt: true,
+    },
+  },
 } as const;
+
+export type ResidentWithInclude = Prisma.ResidentGetPayload<{
+  include: typeof includeResident;
+}>;
+
+/** Achata `user.accountExpiresAt` para o JSON da API (compatível com o frontend). */
+export function mapResidentForApi(row: ResidentWithInclude) {
+  const { user, ...rest } = row;
+  return {
+    ...rest,
+    accountExpiresAt: user?.accountExpiresAt ?? null,
+  };
+}
 
 export const getAccessContext = async (
   prisma: PrismaClient,
@@ -41,7 +59,7 @@ export const findResidentsForUser = async (
     : isGlobalScope(context.scope)
     ? undefined
     : { in: allowedIds.length ? allowedIds : ["__deny__"] };
-  return prisma.resident.findMany({
+  const rows = await prisma.resident.findMany({
     where: {
       ...(appliedCondoFilter && { condominiumId: appliedCondoFilter }),
       ...((context.assignedTower ?? filters.tower) && { tower: context.assignedTower ?? filters.tower }),
@@ -63,6 +81,7 @@ export const findResidentsForUser = async (
       { unit: "asc" },
     ],
   });
+  return rows.map(mapResidentForApi);
 };
 
 export const findResidentByIdForUser = async (
@@ -71,7 +90,7 @@ export const findResidentByIdForUser = async (
   id: string
 ) => {
   const context = await getAccessContext(prisma, user);
-  return prisma.resident.findFirst({
+  const row = await prisma.resident.findFirst({
     where: {
       id,
       ...(isGlobalScope(context.scope)
@@ -80,4 +99,5 @@ export const findResidentByIdForUser = async (
     },
     include: includeResident,
   });
+  return row ? mapResidentForApi(row) : null;
 };

@@ -8,6 +8,7 @@ import type {
   UpdateResidentRequest,
   ResidentType,
 } from "./residents.schema";
+import { includeResident, mapResidentForApi } from "./residents.repository";
 
 function normalizeEmailForComparison(email: string): string {
   return email.trim().toLowerCase();
@@ -245,7 +246,7 @@ export async function getResidentsByCondominium(
   condominiumId: string,
   filters: Omit<ResidentFilters, "condominiumId">
 ) {
-  return prisma.resident.findMany({
+  const rows = await prisma.resident.findMany({
     where: {
       condominiumId,
       ...(filters.tower && { tower: filters.tower }),
@@ -260,5 +261,7 @@ export async function getResidentsByCondominium(
       }),
     },
     orderBy: [{ tower: "asc" }, { floor: "asc" }, { unit: "asc" }],
+    include: includeResident,
   });
+  return rows.map(mapResidentForApi);
 }

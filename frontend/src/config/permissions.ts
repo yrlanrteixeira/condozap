@@ -132,96 +132,101 @@ export const Permissions = {
 } as const;
 
 /**
+ * Núcleo operacional de condomínio (síndico profissional). Reutilizado pelo Super Admin quando um condomínio está selecionado.
+ */
+const professionalSyndicPermissions: string[] = [
+  // Dashboard
+  Permissions.VIEW_DASHBOARD,
+  Permissions.VIEW_UNIFIED_DASHBOARD,
+  Permissions.VIEW_METRICS,
+  Permissions.VIEW_ALL_METRICS,
+
+  // Condomínios
+  Permissions.VIEW_CONDOMINIUMS,
+  Permissions.SWITCH_CONDOMINIUM,
+
+  // Estrutura
+  Permissions.VIEW_STRUCTURE,
+  Permissions.EDIT_STRUCTURE,
+  Permissions.MANAGE_STRUCTURE,
+
+  // Moradores
+  Permissions.VIEW_RESIDENTS,
+  Permissions.VIEW_ALL_RESIDENTS,
+  Permissions.CREATE_RESIDENT,
+  Permissions.EDIT_RESIDENT,
+  Permissions.DELETE_RESIDENT,
+  Permissions.MANAGE_CONSENT,
+  Permissions.MANAGE_RESIDENTS,
+
+  // Denúncias
+  Permissions.VIEW_COMPLAINTS,
+  Permissions.VIEW_ALL_COMPLAINTS,
+  Permissions.CREATE_COMPLAINT,
+  Permissions.EDIT_COMPLAINT,
+  Permissions.UPDATE_COMPLAINT_STATUS,
+  Permissions.UPDATE_COMPLAINT_PRIORITY,
+  Permissions.DELETE_COMPLAINT,
+  Permissions.VIEW_ANONYMOUS_COMPLAINTS,
+
+  // Mensagens
+  Permissions.VIEW_MESSAGES,
+  Permissions.VIEW_MESSAGE_HISTORY,
+  Permissions.SEND_MESSAGE,
+  Permissions.SEND_BULK_MESSAGE,
+  Permissions.SEND_TO_ALL,
+  Permissions.SEND_TO_TOWER,
+  Permissions.SEND_TO_FLOOR,
+  Permissions.SEND_TO_UNIT,
+
+  // WhatsApp
+  Permissions.VIEW_WHATSAPP_STATUS,
+  Permissions.MANAGE_WHATSAPP,
+
+  // Histórico
+  Permissions.VIEW_HISTORY,
+  Permissions.VIEW_ALL_HISTORY,
+
+  // Usuários
+  Permissions.VIEW_USERS,
+  Permissions.CREATE_USER,
+  Permissions.EDIT_USER,
+
+  // Relatórios
+  Permissions.VIEW_REPORTS,
+  Permissions.EXPORT_REPORTS,
+  Permissions.EXPORT_RESIDENTS,
+
+  // Configurações
+  Permissions.VIEW_SETTINGS,
+  Permissions.EDIT_SETTINGS,
+
+  // Equipe
+  Permissions.MANAGE_TEAM,
+
+  // Comunicados
+  Permissions.VIEW_ANNOUNCEMENTS,
+  Permissions.CREATE_ANNOUNCEMENT,
+];
+
+/**
  * Mapeamento de permissões por perfil de usuário
  */
 export const RolePermissions: Record<UserRole, string[]> = {
-  // SUPER_ADMIN: operador da plataforma — escopo em docs/super-admin-scope.md
+  // SUPER_ADMIN: plataforma + mesmo núcleo operacional com condomínio selecionado (ocorrências, estrutura, etc.)
   [UserRoles.SUPER_ADMIN]: [
-    Permissions.VIEW_CONDOMINIUMS,
-    Permissions.CREATE_CONDOMINIUM,
-    Permissions.EDIT_CONDOMINIUM,
-    Permissions.DELETE_CONDOMINIUM,
-    Permissions.VIEW_PLATFORM_DASHBOARD,
-    Permissions.MANAGE_SYNDICS,
-    Permissions.MANAGE_RESIDENTS, // aprovação global de cadastros pendentes
-    Permissions.VIEW_SETTINGS,
+    ...new Set([
+      ...professionalSyndicPermissions,
+      Permissions.CREATE_CONDOMINIUM,
+      Permissions.EDIT_CONDOMINIUM,
+      Permissions.DELETE_CONDOMINIUM,
+      Permissions.VIEW_PLATFORM_DASHBOARD,
+      Permissions.MANAGE_SYNDICS,
+    ]),
   ],
 
   // PROFESSIONAL_SYNDIC: Gerencia múltiplos condomínios (quase todas as permissões, exceto sistema)
-  [UserRoles.PROFESSIONAL_SYNDIC]: [
-    // Dashboard
-    Permissions.VIEW_DASHBOARD,
-    Permissions.VIEW_UNIFIED_DASHBOARD,
-    Permissions.VIEW_METRICS,
-    Permissions.VIEW_ALL_METRICS,
-
-    // Condomínios
-    Permissions.VIEW_CONDOMINIUMS,
-    Permissions.SWITCH_CONDOMINIUM,
-
-    // Estrutura
-    Permissions.VIEW_STRUCTURE,
-    Permissions.EDIT_STRUCTURE,
-    Permissions.MANAGE_STRUCTURE,
-
-    // Moradores
-    Permissions.VIEW_RESIDENTS,
-    Permissions.VIEW_ALL_RESIDENTS,
-    Permissions.CREATE_RESIDENT,
-    Permissions.EDIT_RESIDENT,
-    Permissions.DELETE_RESIDENT,
-    Permissions.MANAGE_CONSENT,
-    Permissions.MANAGE_RESIDENTS,
-
-    // Denúncias
-    Permissions.VIEW_COMPLAINTS,
-    Permissions.VIEW_ALL_COMPLAINTS,
-    Permissions.CREATE_COMPLAINT,
-    Permissions.EDIT_COMPLAINT,
-    Permissions.UPDATE_COMPLAINT_STATUS,
-    Permissions.UPDATE_COMPLAINT_PRIORITY,
-    Permissions.DELETE_COMPLAINT,
-    Permissions.VIEW_ANONYMOUS_COMPLAINTS,
-
-    // Mensagens
-    Permissions.VIEW_MESSAGES,
-    Permissions.VIEW_MESSAGE_HISTORY,
-    Permissions.SEND_MESSAGE,
-    Permissions.SEND_BULK_MESSAGE,
-    Permissions.SEND_TO_ALL,
-    Permissions.SEND_TO_TOWER,
-    Permissions.SEND_TO_FLOOR,
-    Permissions.SEND_TO_UNIT,
-
-    // WhatsApp
-    Permissions.VIEW_WHATSAPP_STATUS,
-    Permissions.MANAGE_WHATSAPP,
-
-    // Histórico
-    Permissions.VIEW_HISTORY,
-    Permissions.VIEW_ALL_HISTORY,
-
-    // Usuários
-    Permissions.VIEW_USERS,
-    Permissions.CREATE_USER,
-    Permissions.EDIT_USER,
-
-    // Relatórios
-    Permissions.VIEW_REPORTS,
-    Permissions.EXPORT_REPORTS,
-    Permissions.EXPORT_RESIDENTS,
-
-    // Configurações
-    Permissions.VIEW_SETTINGS,
-    Permissions.EDIT_SETTINGS,
-
-    // Equipe
-    Permissions.MANAGE_TEAM,
-
-    // Comunicados
-    Permissions.VIEW_ANNOUNCEMENTS,
-    Permissions.CREATE_ANNOUNCEMENT,
-  ],
+  [UserRoles.PROFESSIONAL_SYNDIC]: professionalSyndicPermissions,
 
   // ADMIN: Administrador de condomínio(s) específico(s)
   [UserRoles.ADMIN]: [

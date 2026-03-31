@@ -126,9 +126,11 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
 
   const dynamicCategories = useMemo(() => {
     if (sectors?.length) {
-      return [...new Set(sectors.flatMap((s) => s.categories))].sort();
+      const merged = [...new Set(sectors.flatMap((s) => s.categories))].sort();
+      return merged.includes("Outras") ? merged : [...merged, "Outras"];
     }
-    return [...COMPLAINT_CATEGORIES];
+    const base = [...COMPLAINT_CATEGORIES];
+    return base.includes("Outras") ? base : [...base, "Outras"];
   }, [sectors]);
 
   const {
@@ -383,7 +385,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                 Categoria
               </label>
               <Select
-                value={category}
+                value={category || undefined}
                 onValueChange={(value) => setValue("category", value)}
               >
                 <SelectTrigger

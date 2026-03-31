@@ -15,6 +15,7 @@ export function normalizeComplaintCategory(
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{M}/gu, "");
+  if (t === "outras") return "Outros";
   for (const c of COMPLAINT_CATEGORIES) {
     const n = c
       .toLowerCase()

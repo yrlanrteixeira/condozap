@@ -18,6 +18,7 @@ export const ResidentSchema = z.object({
   consentWhatsapp: z.boolean(),
   consentDataProcessing: z.boolean(),
   createdAt: z.string(),
+  accountExpiresAt: z.string().nullable().optional(),
 });
 
 export const CreateResidentSchema = z.object({

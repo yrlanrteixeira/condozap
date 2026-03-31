@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { User, Phone, Building2, MapPin, Mail } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -15,6 +16,10 @@ import {
 } from "@/shared/store/slices/condominiumSlice";
 import { useTowers } from "../hooks/useResidentsApi";
 import { useStructure } from "@/features/structure/hooks/useStructureApi";
+import {
+  formatTowerHeading,
+  resolveTowerValueForSelect,
+} from "@/features/structure/utils/towerDisplay";
 import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 
 export interface ResidentFormData {
@@ -50,8 +55,21 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
   
   // Se houver estrutura configurada, usar as torres dela, senão buscar do backend
   const { data: towersFromResidents = [] } = useTowers(selectedCondoId);
-  
-  const towers = structureData?.structure?.towers?.map(t => t.name) || towersFromResidents;
+
+  const towers = useMemo(() => {
+    const base =
+      structureData?.structure?.towers?.map((t) => t.name) || towersFromResidents;
+    const set = new Set(base);
+    const resolved = resolveTowerValueForSelect(formData.tower, base);
+    if (formData.tower && !set.has(resolved)) {
+      set.add(formData.tower);
+    }
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { numeric: true })
+    );
+  }, [structureData, towersFromResidents, formData.tower]);
+
+  const towerSelectValue = resolveTowerValueForSelect(formData.tower, towers);
 
   return (
     <div className="space-y-4 py-4">
@@ -144,7 +162,7 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
             Torre
           </label>
           <Select
-            value={formData.tower}
+            value={towerSelectValue}
             onValueChange={(value) => onChange({ ...formData, tower: value })}
           >
             <SelectTrigger id="tower">
@@ -154,7 +172,7 @@ export const ResidentForm = ({ formData, onChange }: ResidentFormProps) => {
               {towers.length > 0 ? (
                 towers.map((tower) => (
                   <SelectItem key={tower} value={tower}>
-                    Torre {tower}
+                    {formatTowerHeading(tower)}
                   </SelectItem>
                 ))
               ) : (

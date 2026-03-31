@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { usePermissions } from "@/shared/hooks/usePermissions";
-import { Permissions, UserRoles } from "@/config/permissions";
+import { Permissions } from "@/config/permissions";
 import { useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard,
@@ -187,7 +187,6 @@ export const Sidebar = ({
 
   const filteredNavItems = navItems.filter((item) => {
     if (item.href === "/complaints") {
-      if (user?.role === UserRoles.SUPER_ADMIN) return false;
       return (
         can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS)
       );
