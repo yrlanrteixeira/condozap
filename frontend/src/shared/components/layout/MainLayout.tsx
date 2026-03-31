@@ -25,8 +25,9 @@ export function MainLayout() {
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
-  // SUPER_ADMIN vê ocorrências globais, RESIDENT vê apenas suas, outros veem do condomínio selecionado
-  const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
+  // SUPER_ADMIN não acessa ocorrências; RESIDENT vê apenas as suas; demais usam o condomínio selecionado
+  const condoIdToFetch =
+    user?.role === "SUPER_ADMIN" ? "" : currentCondominiumId || "";
 
   const { data: complaints = [] } = useComplaints(condoIdToFetch);
 
