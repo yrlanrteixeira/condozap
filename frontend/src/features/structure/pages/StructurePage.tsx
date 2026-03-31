@@ -241,6 +241,7 @@ export function StructurePage() {
         onOpenChange={setIsStructureDialogOpen}
         condominiumId={currentCondominiumId!}
         currentStructure={structureData?.structure}
+        knownTowerNames={allTowers}
       />
 
       <SectorManagementDialog

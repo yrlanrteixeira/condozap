@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Building2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -16,11 +16,55 @@ import { useToast } from "@/shared/components/ui/use-toast";
 import { useUpdateStructure, type TowerStructure, type CondominiumStructure } from "../hooks/useStructureApi";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 
+const DEFAULT_TOWER: TowerStructure = {
+  name: "A",
+  floors: ["1", "2", "3", "4", "5"],
+  unitsPerFloor: 4,
+};
+
+/**
+ * Alinha o editor com a listagem da página: inclui torres vindas só de moradores,
+ * para que todas apareçam no diálogo e o botão de excluir possa ser exibido (>1 torre).
+ */
+function mergeTowersForEditor(
+  apiTowers: TowerStructure[] | undefined,
+  knownNames: string[]
+): TowerStructure[] {
+  const api = apiTowers && apiTowers.length > 0 ? apiTowers : [];
+  if (knownNames.length === 0) {
+    return api.length > 0 ? api : [DEFAULT_TOWER];
+  }
+  const apiByName = new Map(api.map((t) => [t.name, t]));
+  const result: TowerStructure[] = [];
+  const seen = new Set<string>();
+  for (const name of knownNames) {
+    const existing = apiByName.get(name);
+    if (existing) {
+      result.push(existing);
+    } else {
+      result.push({
+        name,
+        floors: [...DEFAULT_TOWER.floors],
+        unitsPerFloor: DEFAULT_TOWER.unitsPerFloor,
+      });
+    }
+    seen.add(name);
+  }
+  for (const t of api) {
+    if (!seen.has(t.name)) {
+      result.push(t);
+    }
+  }
+  return result.length > 0 ? result : [DEFAULT_TOWER];
+}
+
 interface StructureConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   condominiumId: string;
   currentStructure?: CondominiumStructure;
+  /** Torres mostradas na página (estrutura salva ∪ torres dos moradores) */
+  knownTowerNames?: string[];
 }
 
 export const StructureConfigDialog = ({
@@ -28,23 +72,23 @@ export const StructureConfigDialog = ({
   onOpenChange,
   condominiumId,
   currentStructure,
+  knownTowerNames = [],
 }: StructureConfigDialogProps) => {
   const { toast } = useToast();
   const updateStructure = useUpdateStructure();
 
-  const [towers, setTowers] = useState<TowerStructure[]>([
-    { name: "A", floors: ["1", "2", "3", "4", "5"], unitsPerFloor: 4 },
-  ]);
+  const [towers, setTowers] = useState<TowerStructure[]>([DEFAULT_TOWER]);
+  const wasOpenRef = useRef(false);
 
-  // Load current structure when dialog opens
+  // Ao abrir o diálogo, mescla estrutura salva com torres da listagem (moradores)
   useEffect(() => {
-    if (open && currentStructure && currentStructure.towers.length > 0) {
-      setTowers(currentStructure.towers);
-    } else if (open) {
-      // Default structure
-      setTowers([{ name: "A", floors: ["1", "2", "3", "4", "5"], unitsPerFloor: 4 }]);
+    if (open && !wasOpenRef.current) {
+      setTowers(
+        mergeTowersForEditor(currentStructure?.towers, knownTowerNames)
+      );
     }
-  }, [open, currentStructure]);
+    wasOpenRef.current = open;
+  }, [open, currentStructure, knownTowerNames]);
 
   const handleAddTower = () => {
     const lastTower = towers[towers.length - 1];
