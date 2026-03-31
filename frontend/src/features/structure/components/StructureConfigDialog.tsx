@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { useUpdateStructure, type TowerStructure, type CondominiumStructure } from "../hooks/useStructureApi";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
+import { formatTowerHeading } from "../utils/towerDisplay";
 
 const DEFAULT_TOWER: TowerStructure = {
   name: "A",
@@ -78,21 +79,34 @@ export const StructureConfigDialog = ({
   const updateStructure = useUpdateStructure();
 
   const [towers, setTowers] = useState<TowerStructure[]>([DEFAULT_TOWER]);
-  const wasOpenRef = useRef(false);
+  const knownTowerNamesRef = useRef(knownTowerNames);
+  const currentStructureRef = useRef(currentStructure);
+  knownTowerNamesRef.current = knownTowerNames;
+  currentStructureRef.current = currentStructure;
+  const prevOpenRef = useRef(false);
 
-  // Ao abrir o diálogo, mescla estrutura salva com torres da listagem (moradores)
+  // Ao abrir o diálogo, mescla após o paint com os refs mais recentes (lista de torres pode carregar async)
   useEffect(() => {
-    if (open && !wasOpenRef.current) {
-      setTowers(
-        mergeTowersForEditor(currentStructure?.towers, knownTowerNames)
-      );
+    if (open && !prevOpenRef.current) {
+      const t = window.setTimeout(() => {
+        setTowers(
+          mergeTowersForEditor(
+            currentStructureRef.current?.towers,
+            knownTowerNamesRef.current ?? []
+          )
+        );
+      }, 0);
+      prevOpenRef.current = true;
+      return () => clearTimeout(t);
     }
-    wasOpenRef.current = open;
-  }, [open, currentStructure, knownTowerNames]);
+    if (!open) {
+      prevOpenRef.current = false;
+    }
+  }, [open]);
 
   const handleAddTower = () => {
     const lastTower = towers[towers.length - 1];
-    const nextLetter = String.fromCharCode(lastTower.name.charCodeAt(0) + 1);
+    const nextLetter = String.fromCharCode((lastTower?.name.charCodeAt(0) || 'A'.charCodeAt(0)) + 1);
     
     setTowers([
       ...towers,
@@ -118,7 +132,7 @@ export const StructureConfigDialog = ({
       const floorsStr = value as string;
       if (floorsStr.includes("-")) {
         const [start, end] = floorsStr.split("-").map(Number);
-        tower.floors = Array.from({ length: end - start + 1 }, (_, i) => String(start + i));
+        tower.floors = Array.from({ length: (end ?? 0) - (start ?? 0) + 1 }, (_, i) => String((start ?? 0) + i));
       } else {
         tower.floors = floorsStr.split(",").map(f => f.trim());
       }
@@ -196,16 +210,21 @@ export const StructureConfigDialog = ({
           {towers.map((tower, index) => (
             <Card key={index} className="border-border">
               <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Torre {tower.name}
+                <div className="flex items-center justify-between gap-3 min-h-[2.5rem]">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2 min-w-0 flex-1">
+                    <Building2 className="h-4 w-4 shrink-0" />
+                    <span className="truncate" title={formatTowerHeading(tower.name)}>
+                      {formatTowerHeading(tower.name)}
+                    </span>
                   </h4>
                   {towers.length > 1 && (
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
+                      className="shrink-0"
                       onClick={() => handleRemoveTower(index)}
+                      aria-label={`Remover ${tower.name}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -219,8 +238,8 @@ export const StructureConfigDialog = ({
                       id={`tower-name-${index}`}
                       value={tower.name}
                       onChange={(e) => handleUpdateTower(index, "name", e.target.value)}
-                      placeholder="A"
-                      maxLength={2}
+                      placeholder="A ou Torre A"
+                      maxLength={40}
                     />
                   </div>
 

@@ -5,6 +5,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { FloorSection } from './FloorSection';
 import type { Resident } from '@/features/residents/types';
+import { formatTowerHeading } from '../utils/towerDisplay';
 
 interface TowerCardProps {
   towerName: string;
@@ -35,14 +36,14 @@ export function TowerCard({ towerName, residents }: TowerCardProps) {
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="p-2 rounded-lg bg-primary/10">
               <Building2 className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <CardTitle className="text-xl text-foreground">
-                Torre {towerName}
+            <div className="min-w-0">
+              <CardTitle className="text-xl text-foreground truncate">
+                {formatTowerHeading(towerName)}
               </CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary" className="text-xs">
