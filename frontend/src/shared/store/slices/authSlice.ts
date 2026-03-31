@@ -15,6 +15,7 @@ import type {
   User,
 } from "@/types/user";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 import { UserRoles, isValidUserRole } from "@/config/permissions";
 import { jwtDecode } from "jwt-decode";
 
@@ -125,10 +126,8 @@ export const register = createAsyncThunk(
     try {
       const response = await api.post("/auth/register", data);
       return response.data;
-    } catch (error: any) {
-      const message =
-        error.response?.data?.error || error.message || "Erro ao registrar";
-      return rejectWithValue(message);
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error) || "Erro ao registrar");
     }
   }
 );
@@ -157,10 +156,10 @@ export const updateProfile = createAsyncThunk(
     try {
       const response = await api.patch("/auth/me", data);
       return response.data;
-    } catch (error: any) {
-      const message =
-        error.response?.data?.error || error.message || "Erro ao atualizar perfil";
-      return rejectWithValue(message);
+    } catch (error: unknown) {
+      return rejectWithValue(
+        getApiErrorMessage(error) || "Erro ao atualizar perfil"
+      );
     }
   }
 );

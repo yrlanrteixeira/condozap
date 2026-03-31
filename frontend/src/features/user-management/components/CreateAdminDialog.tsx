@@ -23,6 +23,7 @@ import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
 import { useSectors } from '@/features/structure/hooks/useSectorsApi';
 import { MEMBER_FUNCTION_GROUPS } from '../constants/memberFunctions';
+import { getApiErrorMessage } from '@/shared/utils/errorMessages';
 
 type MemberKind = 'gestao' | 'setor';
 
@@ -141,14 +142,9 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string; error?: string } }; message?: string };
       toast({
         title: 'Erro ao criar membro',
-        description:
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          'Erro desconhecido.',
+        description: getApiErrorMessage(error),
         variant: 'destructive',
       });
     }

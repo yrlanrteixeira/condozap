@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../shared/db/prisma";
 import { ConflictError, NotFoundError } from "../../shared/errors";
+import { EMAIL_CONFLICT_MESSAGE } from "./messages";
 import bcrypt from "bcryptjs";
 import { UserRole as PrismaUserRole } from "@prisma/client";
 
@@ -20,7 +21,9 @@ export async function createSectorMemberHandler(
   const body = createSectorMemberSchema.parse(request.body);
 
   const existing = await prisma.user.findUnique({ where: { email: body.email } });
-  if (existing) throw new ConflictError("Email já está cadastrado no sistema");
+  if (existing) {
+    throw new ConflictError(EMAIL_CONFLICT_MESSAGE);
+  }
 
   const sector = await prisma.sector.findUnique({ where: { id: body.sectorId } });
   if (!sector || sector.condominiumId !== body.condominiumId) {

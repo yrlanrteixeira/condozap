@@ -14,6 +14,7 @@ import type {
   UserRole,
 } from "./user-management.schema";
 import * as usersRepository from "./users.repository";
+import { EMAIL_CONFLICT_MESSAGE } from "./messages";
 
 export async function createAdmin(
   prisma: PrismaClient,
@@ -23,7 +24,7 @@ export async function createAdmin(
 ) {
   const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (existingUser) {
-    throw new ConflictError("Email já está cadastrado no sistema");
+    throw new ConflictError(EMAIL_CONFLICT_MESSAGE);
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -66,7 +67,7 @@ export async function createSyndic(
 ) {
   const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (existingUser) {
-    throw new ConflictError("Email já está cadastrado no sistema");
+    throw new ConflictError(EMAIL_CONFLICT_MESSAGE);
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -108,7 +109,7 @@ export async function createProfessionalSyndic(
 ) {
   const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (existingUser) {
-    throw new ConflictError("Email já está cadastrado no sistema");
+    throw new ConflictError(EMAIL_CONFLICT_MESSAGE);
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -172,7 +173,7 @@ export async function updateSyndic(
   if (data.email !== user.email) {
     const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
     if (existingUser && existingUser.id !== userId) {
-      throw new ConflictError("Email já está cadastrado no sistema");
+      throw new ConflictError(EMAIL_CONFLICT_MESSAGE);
     }
   }
 

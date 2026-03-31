@@ -14,6 +14,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { useUpdateStructure, type TowerStructure, type CondominiumStructure } from "../hooks/useStructureApi";
+import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 
 interface StructureConfigDialogProps {
   open: boolean;
@@ -124,14 +125,9 @@ export const StructureConfigDialog = ({
 
       onOpenChange(false);
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { error?: string } } };
-      const message =
-        axiosError?.response?.data?.error ||
-        (error instanceof Error ? error.message : "Não foi possível atualizar a estrutura. Tente novamente.");
-
       toast({
         title: "Erro ao salvar",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 5000,
       });

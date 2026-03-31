@@ -4,6 +4,59 @@
  * Traduz erros técnicos em mensagens amigáveis para o usuário
  */
 
+/**
+ * Extrai texto de erro da API (Fastify: `{ error: { message } }`) ou do Axios
+ * (interceptor já define `error.message` em muitos casos).
+ * Evita passar `response.data.error` como objeto para toasts — isso quebrava a UI.
+ */
+export function getApiErrorMessage(error: unknown): string {
+  if (error === null || error === undefined) {
+    return "Ocorreu um erro inesperado.";
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error === "object" && "message" in error) {
+    const err = error as {
+      message?: string;
+      response?: { data?: ApiErrorBody };
+    };
+
+    const data = err.response?.data;
+    if (data && typeof data === "object") {
+      if (typeof data.message === "string" && data.message.trim()) {
+        return data.message;
+      }
+      if (typeof data.error === "string" && data.error.trim()) {
+        return data.error;
+      }
+      if (
+        data.error &&
+        typeof data.error === "object" &&
+        data.error !== null &&
+        "message" in data.error &&
+        typeof (data.error as { message: unknown }).message === "string"
+      ) {
+        const nested = (data.error as { message: string }).message;
+        if (nested.trim()) return nested;
+      }
+    }
+
+    if (typeof err.message === "string" && err.message.trim()) {
+      return err.message;
+    }
+  }
+
+  return "Ocorreu um erro inesperado.";
+}
+
+type ApiErrorBody = {
+  message?: string;
+  error?: string | { message?: string };
+};
+
 interface ErrorResponse {
   response?: {
     data?: {
@@ -48,7 +101,7 @@ export function getFriendlyErrorMessage(error: any): FriendlyError {
 
   // Status HTTP
   const status = err.response?.status;
-  const serverMessage = err.response?.data?.message || err.response?.data?.error;
+  const serverMessage = getApiErrorMessage(error);
 
   switch (status) {
     case 400:

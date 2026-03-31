@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/shared/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 import {
   useSectors,
   useCreateSector,
@@ -251,8 +252,7 @@ function SectorPermissionsSection({
       setLocalActions(localActions);
       toast({
         title: "Erro ao atualizar permissão",
-        description:
-          error?.response?.data?.error || "Não foi possível salvar a permissão.",
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 4000,
       });
@@ -364,8 +364,7 @@ function MemberOverridePanel({
       setLocalOverrides(prev);
       toast({
         title: "Erro ao atualizar",
-        description:
-          error?.response?.data?.error || "Não foi possível salvar a permissão.",
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 4000,
       });
@@ -529,8 +528,7 @@ function CreateMemberForm({
     } catch (error: any) {
       toast({
         title: "Erro ao criar membro",
-        description:
-          error?.response?.data?.error || "Não foi possível criar o membro.",
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 5000,
       });
@@ -703,9 +701,7 @@ export const SectorManagementDialog = ({
     } catch (error: any) {
       toast({
         title: "Erro ao remover",
-        description:
-          error?.response?.data?.error ||
-          "Não foi possível remover o setor. Verifique se não há chamados vinculados.",
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 5000,
       });
@@ -754,9 +750,7 @@ export const SectorManagementDialog = ({
     } catch (error: any) {
       toast({
         title: "Erro ao salvar",
-        description:
-          error?.response?.data?.error ||
-          "Não foi possível salvar o setor. Tente novamente.",
+        description: getApiErrorMessage(error),
         variant: "error",
         duration: 5000,
       });
