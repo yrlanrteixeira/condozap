@@ -190,11 +190,33 @@ export async function updateSyndic(
       },
     });
 
-    await tx.userCondominium.deleteMany({ where: { userId } });
+    const existing = await tx.userCondominium.findMany({ where: { userId } });
+    const existingByCondo = new Map(
+      existing.map((row) => [row.condominiumId, row])
+    );
+    const newIdSet = new Set(condominiumIds);
+
+    const toRemove = existing.filter((row) => !newIdSet.has(row.condominiumId));
+    if (toRemove.length > 0) {
+      await tx.userCondominium.deleteMany({
+        where: {
+          userId,
+          condominiumId: { in: toRemove.map((r) => r.condominiumId) },
+        },
+      });
+    }
 
     if (condominiumIds.length > 0) {
+      await tx.userCondominium.updateMany({
+        where: { userId, condominiumId: { in: condominiumIds } },
+        data: { role: linkRole },
+      });
+    }
+
+    const toAdd = condominiumIds.filter((id) => !existingByCondo.has(id));
+    if (toAdd.length > 0) {
       await tx.userCondominium.createMany({
-        data: condominiumIds.map((condominiumId) => ({
+        data: toAdd.map((condominiumId) => ({
           userId,
           condominiumId,
           role: linkRole,
