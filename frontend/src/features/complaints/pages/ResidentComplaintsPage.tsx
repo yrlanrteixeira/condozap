@@ -41,10 +41,10 @@ export function ResidentComplaintsPage({ complaints, onSubmit, condominiumId }: 
 
       <div className="mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-          Central de Denuncias (Anonimo)
+          Central de denúncias (anônimo)
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground">
-          Relate problemas com seguranca total. Sua identidade e preservada.
+          Relate problemas com segurança total. Sua identidade é preservada.
         </p>
       </div>
 

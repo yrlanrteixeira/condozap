@@ -410,6 +410,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     // Perfil próprio
     Permissions.VIEW_OWN_PROFILE,
 
+    // Configurações: rota /settings; a página restringe a Perfil + Segurança
+    Permissions.VIEW_SETTINGS,
+
     // Denúncias (apenas as próprias)
     Permissions.VIEW_OWN_COMPLAINTS,
     Permissions.CREATE_COMPLAINT,

@@ -20,6 +20,8 @@ export function SettingsPage() {
     title: string;
     description: string;
     roles: string[];
+    /** Se true, morador vê esta seção em /settings (demais seções ficam ocultas). */
+    residentVisible?: boolean;
     component?: React.ComponentType;
   }> = [
     {
@@ -33,6 +35,7 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
         UserRoles.RESIDENT,
       ],
+      residentVisible: true,
       component: SettingsProfileCard,
     },
     {
@@ -71,6 +74,7 @@ export function SettingsPage() {
         UserRoles.SYNDIC,
         UserRoles.RESIDENT,
       ],
+      residentVisible: true,
       component: SettingsSecurityCard,
     },
     {
@@ -107,9 +111,13 @@ export function SettingsPage() {
     },
   ];
 
-  const visibleSections = sections.filter((section) =>
-    section.roles.includes(userRole!)
-  );
+  const visibleSections = sections.filter((section) => {
+    if (!userRole) return false;
+    if (userRole === UserRoles.RESIDENT) {
+      return section.residentVisible === true;
+    }
+    return section.roles.includes(userRole);
+  });
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
