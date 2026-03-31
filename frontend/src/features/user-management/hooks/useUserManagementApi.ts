@@ -141,7 +141,7 @@ export function useUpdateUserRole() {
 }
 
 /**
- * Hook para atualizar cargo/função do conselheiro no condomínio
+ * Atualiza a função do membro no condomínio (`councilPosition`).
  */
 export function useUpdateCouncilPosition() {
   const queryClient = useQueryClient();

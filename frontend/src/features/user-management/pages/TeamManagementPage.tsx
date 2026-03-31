@@ -1,8 +1,5 @@
 /**
- * Team Management Page (Corpo Diretivo)
- *
- * Página de configuração do Corpo Diretivo
- * - Síndico gerencia membros do corpo diretivo e permissões
+ * Membros ativos — gestão de síndicos e administradores do condomínio e da função de cada um.
  */
 
 import { useState, useMemo } from 'react';
@@ -18,7 +15,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
@@ -82,15 +81,39 @@ const statusLabels: Record<string, string> = {
   SUSPENDED: 'Suspenso',
 };
 
-const COUNCIL_POSITION_OPTIONS = [
-  { value: '__none__', label: 'Sem cargo definido' },
-  { value: 'Obras', label: 'Obras' },
-  { value: 'Financeiro', label: 'Financeiro' },
-  { value: 'Segurança', label: 'Segurança' },
-  { value: 'Jurídico', label: 'Jurídico' },
-  { value: 'Social', label: 'Social' },
-  { value: 'Comunicação', label: 'Comunicação' },
+/** Função no condomínio (persistida em `councilPosition` no backend). */
+const MEMBER_FUNCTION_GROUPS: { label: string; options: { value: string; label: string }[] }[] = [
+  {
+    label: 'Gestão',
+    options: [
+      { value: 'Conselheiro', label: 'Conselheiro' },
+      { value: 'Subsíndico', label: 'Subsíndico' },
+      { value: 'Auxiliar administrativo', label: 'Auxiliar administrativo' },
+    ],
+  },
+  {
+    label: 'Operação e apoio',
+    options: [
+      { value: 'Porteiro', label: 'Porteiro' },
+      { value: 'Limpeza', label: 'Limpeza' },
+      { value: 'Segurança', label: 'Segurança' },
+    ],
+  },
+  {
+    label: 'Áreas do conselho',
+    options: [
+      { value: 'Obras', label: 'Obras' },
+      { value: 'Financeiro', label: 'Financeiro' },
+      { value: 'Jurídico', label: 'Jurídico' },
+      { value: 'Social', label: 'Social' },
+      { value: 'Comunicação', label: 'Comunicação' },
+    ],
+  },
 ];
+
+const KNOWN_MEMBER_FUNCTION_VALUES = new Set(
+  MEMBER_FUNCTION_GROUPS.flatMap((g) => g.options.map((o) => o.value))
+);
 
 export function TeamManagementPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
@@ -122,7 +145,7 @@ export function TeamManagementPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team'] }),
   });
 
-  // Filtrar membros do corpo diretivo deste condomínio
+  // Membros com papel de gestão neste condomínio (síndico e administradores)
   const managers = users.filter(u => ['ADMIN', 'SYNDIC'].includes(u.role));
   const residents = users.filter(u => u.role === 'RESIDENT');
 
@@ -161,13 +184,13 @@ export function TeamManagementPage() {
         councilPosition: value,
       });
       toast({
-        title: 'Cargo atualizado',
-        description: value ? `Cargo definido: ${value}` : 'Cargo removido.',
+        title: 'Função atualizada',
+        description: value ? `Função definida: ${value}` : 'Função removida.',
       });
       refetch();
     } catch (error: any) {
       toast({
-        title: 'Erro ao atualizar cargo',
+        title: 'Erro ao atualizar função',
         description: error.message,
         variant: 'destructive',
       });
@@ -230,10 +253,10 @@ export function TeamManagementPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              Corpo Diretivo
+              Membros ativos
             </h1>
             <p className="text-sm text-muted-foreground">
-              Cadastre pessoas de confiança para ajudar a gerenciar o condomínio
+              Quem tem acesso de gestão no condomínio e a função de cada pessoa
             </p>
           </div>
         </div>
@@ -247,15 +270,15 @@ export function TeamManagementPage() {
         </div>
       </div>
 
-      {/* Managers Section */}
+      {/* Membros com acesso de gestão */}
       <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Membros do Corpo Diretivo
+            Membros ativos
           </CardTitle>
           <CardDescription>
-            Gerencie os membros com acesso administrativo ao condomínio
+            Síndico e demais perfis administrativos; ajuste a função de cada um no condomínio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -293,30 +316,37 @@ export function TeamManagementPage() {
                         {roleLabels[user.role]}
                       </Badge>
 
-                      {/* Cargo/função no conselho - apenas para ADMIN e SYNDIC */}
+                      {/* Função no condomínio (rótulo; permissões vêm do papel no sistema) */}
                       <Select
                         value={user.councilPosition ?? '__none__'}
                         onValueChange={(value) => handleCouncilPositionChange(user.id, value === '__none__' ? null : value)}
                         disabled={updateCouncilPositionMutation.isPending}
                       >
-                        <SelectTrigger className="w-full sm:w-[160px] h-9">
-                          <SelectValue placeholder="Cargo" />
+                        <SelectTrigger className="w-full sm:min-w-[200px] sm:w-[220px] h-9">
+                          <SelectValue placeholder="Função no condomínio" />
                         </SelectTrigger>
                         <SelectContent>
-                          {COUNCIL_POSITION_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
+                          <SelectItem value="__none__">Sem função definida</SelectItem>
+                          {MEMBER_FUNCTION_GROUPS.map((group) => (
+                            <SelectGroup key={group.label}>
+                              <SelectLabel>{group.label}</SelectLabel>
+                              {group.options.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
-                          {user.councilPosition && !COUNCIL_POSITION_OPTIONS.some((o) => o.value === user.councilPosition) && (
-                            <SelectItem value={user.councilPosition}>
-                              {user.councilPosition}
-                            </SelectItem>
-                          )}
+                          {user.councilPosition &&
+                            !KNOWN_MEMBER_FUNCTION_VALUES.has(user.councilPosition) && (
+                              <SelectItem value={user.councilPosition}>
+                                {user.councilPosition}
+                              </SelectItem>
+                            )}
                         </SelectContent>
                       </Select>
 
-                      {/* Torre atribuída - apenas para ADMIN com cargo definido */}
+                      {/* Torre atribuída — administradores com função definida */}
                       {user.role === 'ADMIN' && user.councilPosition && (
                         <Select
                           value={user.assignedTower ?? '__none__'}

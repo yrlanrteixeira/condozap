@@ -1,7 +1,5 @@
 /**
- * Create Admin Dialog (Corpo Diretivo)
- *
- * Dialog para síndicos criarem novos membros do corpo diretivo
+ * Create Admin Dialog — novos membros ativos (acesso administrativo ao condomínio)
  */
 
 import { useState } from 'react';
@@ -73,7 +71,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
 
       toast({
         title: 'Sucesso!',
-        description: `${formData.name} adicionado ao corpo diretivo com sucesso.`,
+        description: `${formData.name} foi adicionado como membro ativo.`,
         variant: 'success',
       });
 
@@ -103,7 +101,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Novo Membro do Corpo Diretivo
+            Novo membro ativo
           </DialogTitle>
           <DialogDescription>
             Adicione uma pessoa de confiança para ajudar a gerenciar o condomínio.

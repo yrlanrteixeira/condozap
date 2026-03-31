@@ -236,7 +236,7 @@ model UserCondominium {
   userId          String   @map("user_id")
   condominiumId   String   @map("condominium_id")
   role            UserRole
-  councilPosition String?  @map("council_position") // Cargo/função no conselho (ex: Obras, Financeiro)
+  councilPosition String?  @map("council_position") // Função no condomínio (ex: Conselheiro, Porteiro, Obras)
   assignedTower   String?  @map("assigned_tower")
   createdAt       DateTime @default(now()) @map("created_at")
 
