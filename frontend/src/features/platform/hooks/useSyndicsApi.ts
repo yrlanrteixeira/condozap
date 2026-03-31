@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
-interface SyndicCondominium {
+export interface SyndicCondominium {
   id: string;
   condominiumId: string;
   condominium: { id: string; name: string };
 }
 
-interface Syndic {
+export interface Syndic {
   id: string;
   name: string;
   email: string;

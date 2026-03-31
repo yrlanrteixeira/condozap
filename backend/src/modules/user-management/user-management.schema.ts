@@ -23,6 +23,34 @@ export const createProfessionalSyndicSchema = z.object({
 
 export type CreateProfessionalSyndicRequest = z.infer<typeof createProfessionalSyndicSchema>;
 
+export const updateSyndicSchema = z
+  .object({
+    name: z.string().min(3),
+    email: z.string().email(),
+    password: z.string().optional(),
+    role: z.enum(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+    condominiumIds: z.array(z.string().min(1)),
+  })
+  .superRefine((val, ctx) => {
+    if (val.role === "SYNDIC" && val.condominiumIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Síndico deve estar vinculado a pelo menos um condomínio",
+        path: ["condominiumIds"],
+      });
+    }
+    const pwd = val.password;
+    if (pwd !== undefined && pwd !== "" && pwd.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Senha deve ter pelo menos 8 caracteres",
+        path: ["password"],
+      });
+    }
+  });
+
+export type UpdateSyndicRequest = z.infer<typeof updateSyndicSchema>;
+
 export const updateUserRoleSchema = z.object({
   userId: z.string().min(1),
   newRole: z.enum(["ADMIN", "SYNDIC", "RESIDENT"]),

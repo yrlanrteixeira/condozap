@@ -196,6 +196,9 @@ model User {
   mfaEnabled Boolean @default(false) @map("mfa_enabled")
   mfaSecret  String? @map("mfa_secret")
 
+  // Password Reset
+  forcePasswordReset Boolean @default(false) @map("force_password_reset")
+
   // Syndic Profile (public)
   contactPhone    String?
   photoUrl        String?

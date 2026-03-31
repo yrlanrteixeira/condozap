@@ -131,8 +131,7 @@ export function CreateSyndicDialog({ open, onOpenChange, onSuccess }: CreateSynd
             Criar Novo Síndico
           </DialogTitle>
           <DialogDescription>
-            Crie um síndico profissional e atribua-o a um ou mais condomínios.
-            O síndico terá acesso a todos os condomínios selecionados.
+            Crie um síndico e vincule-o a um ou mais condomínios. Ele terá acesso a todos os selecionados.
           </DialogDescription>
         </DialogHeader>
 

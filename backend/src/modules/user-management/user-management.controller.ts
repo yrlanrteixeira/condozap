@@ -3,6 +3,7 @@ import {
   createAdminSchema,
   createSyndicSchema,
   createProfessionalSyndicSchema,
+  updateSyndicSchema,
   updateUserRoleSchema,
   updateCouncilPositionSchema,
   removeUserSchema,
@@ -10,6 +11,7 @@ import {
   type CreateAdminRequest,
   type CreateSyndicRequest,
   type CreateProfessionalSyndicRequest,
+  type UpdateSyndicRequest,
   type UpdateUserRoleRequest,
   type UpdateCouncilPositionRequest,
   type RemoveUserRequest,
@@ -196,5 +198,26 @@ export async function listSyndicsHandler(
     orderBy: { name: "asc" },
   });
   return reply.send(syndics);
+}
+
+export async function updateSyndicHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const currentUser = request.user as AuthUser;
+  const { userId } = request.params as { userId: string };
+  const body = updateSyndicSchema.parse(request.body) as UpdateSyndicRequest;
+
+  await userService.updateSyndic(
+    prisma,
+    request.log,
+    userId,
+    body,
+    currentUser.id
+  );
+
+  return reply.send({
+    message: "Síndico atualizado com sucesso",
+  });
 }
 

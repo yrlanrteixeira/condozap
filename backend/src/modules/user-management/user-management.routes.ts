@@ -11,6 +11,7 @@ import {
   removeUserHandler,
   inviteUserHandler,
   listSyndicsHandler,
+  updateSyndicHandler,
 } from "./user-management.controller";
 import { updateAccountExpirationHandler } from "./expiration.controller";
 import { updateAssignedTowerHandler } from "./assigned-tower.controller";
@@ -90,6 +91,12 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
     "/users/syndics",
     { onRequest: [fastify.authenticate, requireSuperAdmin()] },
     listSyndicsHandler
+  );
+
+  fastify.patch(
+    "/users/syndics/:userId",
+    { onRequest: [fastify.authenticate, requireSuperAdmin()] },
+    updateSyndicHandler
   );
 
   fastify.patch(
