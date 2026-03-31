@@ -11,6 +11,8 @@ export {
   requireAdmin,
   requireSyndicStrict,
   requireGlobalScope,
+  requireSuperAdminOrGlobalProfessionalSyndic,
   requireCondoAccess,
+  requireCondoAccessUnlessSuperAdmin,
   requireComplaintOwner,
 } from "../../auth/authorize";

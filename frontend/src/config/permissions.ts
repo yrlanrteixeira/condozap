@@ -135,7 +135,7 @@ export const Permissions = {
  * Mapeamento de permissões por perfil de usuário
  */
 export const RolePermissions: Record<UserRole, string[]> = {
-  // SUPER_ADMIN: Acesso restrito à plataforma (gerencia condomínios e síndicos)
+  // SUPER_ADMIN: operador da plataforma — escopo em docs/super-admin-scope.md
   [UserRoles.SUPER_ADMIN]: [
     Permissions.VIEW_CONDOMINIUMS,
     Permissions.CREATE_CONDOMINIUM,
@@ -143,6 +143,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.DELETE_CONDOMINIUM,
     Permissions.VIEW_PLATFORM_DASHBOARD,
     Permissions.MANAGE_SYNDICS,
+    Permissions.MANAGE_RESIDENTS, // aprovação global de cadastros pendentes
     Permissions.VIEW_SETTINGS,
   ],
 

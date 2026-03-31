@@ -26,18 +26,22 @@ export async function getPendingUsersByCondominium(
   currentUser: AuthUser
 ) {
   if (
-    !["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(currentUser.role)
+    !["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "SUPER_ADMIN"].includes(
+      currentUser.role
+    )
   ) {
     throw new ForbiddenError();
   }
 
-  const access = await repo.findUserCondominiumAccess(
-    prisma,
-    currentUser.id,
-    condominiumId
-  );
-  if (!access) {
-    throw new ForbiddenError("Você não tem acesso a este condomínio.");
+  if (currentUser.role !== "SUPER_ADMIN") {
+    const access = await repo.findUserCondominiumAccess(
+      prisma,
+      currentUser.id,
+      condominiumId
+    );
+    if (!access) {
+      throw new ForbiddenError("Você não tem acesso a este condomínio.");
+    }
   }
 
   return repo.findPendingUsersByCondominium(prisma, condominiumId);
@@ -137,12 +141,17 @@ export async function rejectUser(
   }
 
   if (
-    !["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(currentUser.role)
+    !["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "SUPER_ADMIN"].includes(
+      currentUser.role
+    )
   ) {
     throw new ForbiddenError();
   }
 
-  if (pendingUser.requestedCondominiumId) {
+  if (
+    currentUser.role !== "SUPER_ADMIN" &&
+    pendingUser.requestedCondominiumId
+  ) {
     const access = await repo.findUserCondominiumAccess(
       prisma,
       currentUser.id,

@@ -209,6 +209,36 @@ export const requireGlobalScope = () => {
   };
 };
 
+/** Lista global de pendentes / condomínios para aprovação: SUPER_ADMIN ou síndico profissional com escopo GLOBAL */
+export const requireSuperAdminOrGlobalProfessionalSyndic = () => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return reply.status(401).send({ error: "Usuário não autenticado" });
+    }
+    if (user.role === "SUPER_ADMIN") return;
+    if (
+      user.role === "PROFESSIONAL_SYNDIC" &&
+      user.permissionScope === "GLOBAL"
+    ) {
+      return;
+    }
+    return reply.status(403).send({ error: "Acesso negado" });
+  };
+};
+
+/** Exige acesso ao condomínio exceto para SUPER_ADMIN (aprovação em qualquer condomínio da plataforma) */
+export const requireCondoAccessUnlessSuperAdmin = (
+  config: CondoAccessConfig = {}
+) => {
+  const guard = requireCondoAccess(config);
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (user?.role === "SUPER_ADMIN") return;
+    return guard(request, reply);
+  };
+};
+
 export const requireComplaintOwner = () => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as AuthUser | undefined;

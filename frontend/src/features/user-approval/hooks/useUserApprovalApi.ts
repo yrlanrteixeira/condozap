@@ -14,7 +14,7 @@ const queryKeys = {
 };
 
 /**
- * Hook to fetch all condominiums (SUPER_ADMIN only)
+ * Hook to fetch all condominiums (SUPER_ADMIN ou síndico profissional global — lista para aprovação)
  */
 export function useCondominiums(options?: { enabled?: boolean }) {
   return useQuery({
@@ -71,11 +71,12 @@ export function useApproveUser() {
       return data;
     },
     onSuccess: (_, variables) => {
-      // Invalidate pending users list
       queryClient.invalidateQueries({
         queryKey: queryKeys.pending(variables.condominiumId),
       });
-      // Also invalidate residents list as new resident was created
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pendingAll(),
+      });
       queryClient.invalidateQueries({
         queryKey: ['residents', variables.condominiumId],
       });

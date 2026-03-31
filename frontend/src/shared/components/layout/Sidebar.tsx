@@ -19,6 +19,7 @@ import {
   UsersRound,
   Megaphone,
   FileBarChart,
+  BarChart3,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -56,6 +57,12 @@ export const Sidebar = ({
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   const navItems: NavItem[] = [
+    {
+      title: "Painel da plataforma",
+      href: "/platform",
+      icon: BarChart3,
+      permission: Permissions.VIEW_PLATFORM_DASHBOARD,
+    },
     {
       title: "Dashboard",
       href: "/dashboard",
