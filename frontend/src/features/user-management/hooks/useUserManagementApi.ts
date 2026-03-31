@@ -8,6 +8,7 @@ import type {
   CondominiumUser,
   CreateAdminInput,
   CreateSyndicInput,
+  UpdateSyndicInput,
   UpdateUserRoleInput,
   UpdateCouncilPositionInput,
   RemoveUserInput,
@@ -74,6 +75,47 @@ export function useCreateSyndic() {
       // Invalidar todas as queries de user management
       queryClient.invalidateQueries({
         queryKey: queryKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['platform', 'syndics'],
+      });
+    },
+  });
+}
+
+export type UpdateSyndicVariables = { userId: string } & UpdateSyndicInput;
+
+/**
+ * Atualizar síndico (SUPER_ADMIN only)
+ */
+export function useUpdateSyndic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, ...input }: UpdateSyndicVariables) => {
+      const payload = {
+        name: input.name,
+        email: input.email,
+        role: input.role,
+        condominiumIds: input.condominiumIds,
+        ...(input.password && input.password.length > 0
+          ? { password: input.password }
+          : {}),
+      };
+      const { data } = await api.patch(`/users/syndics/${userId}`, payload);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      variables.condominiumIds.forEach((condoId) => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.list(condoId),
+        });
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['platform', 'syndics'],
       });
     },
   });

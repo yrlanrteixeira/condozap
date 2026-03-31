@@ -51,3 +51,11 @@ export interface CreateSyndicInput {
   condominiumIds: string[];
 }
 
+export interface UpdateSyndicInput {
+  name: string;
+  email: string;
+  password?: string;
+  role: 'SYNDIC' | 'PROFESSIONAL_SYNDIC';
+  condominiumIds: string[];
+}
+

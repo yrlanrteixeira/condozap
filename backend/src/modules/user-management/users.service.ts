@@ -6,6 +6,7 @@ import type {
   CreateAdminRequest,
   CreateSyndicRequest,
   CreateProfessionalSyndicRequest,
+  UpdateSyndicRequest,
   UpdateUserRoleRequest,
   UpdateCouncilPositionRequest,
   RemoveUserRequest,
@@ -135,6 +136,96 @@ export async function createProfessionalSyndic(
     user: newUser,
     condominiumsCount: data.condominiumIds?.length ?? 0,
   };
+}
+
+export async function updateSyndic(
+  prisma: PrismaClient,
+  logger: FastifyBaseLogger,
+  userId: string,
+  data: UpdateSyndicRequest,
+  updatedBy: string
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new NotFoundError("Usuário");
+  }
+  if (user.role !== "SYNDIC" && user.role !== "PROFESSIONAL_SYNDIC") {
+    throw new BadRequestError("Este usuário não é um síndico");
+  }
+
+  const condominiumIds = data.condominiumIds;
+  if (condominiumIds.length > 0) {
+    const found = await prisma.condominium.count({
+      where: { id: { in: condominiumIds } },
+    });
+    if (found !== condominiumIds.length) {
+      throw new BadRequestError("Um ou mais condomínios não foram encontrados");
+    }
+  }
+
+  if (data.email !== user.email) {
+    const existingUser = await usersRepository.findUserByEmail(prisma, data.email);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ConflictError("Email já está cadastrado no sistema");
+    }
+  }
+
+  const permissionScope = data.role === "PROFESSIONAL_SYNDIC" ? "GLOBAL" : "LOCAL";
+  const linkRole = data.role as PrismaUserRole;
+
+  const passwordPatch: { password?: string } = {};
+  if (data.password && data.password.length >= 8) {
+    passwordPatch.password = await bcrypt.hash(data.password, 10);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        email: data.email,
+        role: linkRole,
+        permissionScope,
+        ...passwordPatch,
+      },
+    });
+
+    const existing = await tx.userCondominium.findMany({ where: { userId } });
+    const existingByCondo = new Map(
+      existing.map((row) => [row.condominiumId, row])
+    );
+    const newIdSet = new Set(condominiumIds);
+
+    const toRemove = existing.filter((row) => !newIdSet.has(row.condominiumId));
+    if (toRemove.length > 0) {
+      await tx.userCondominium.deleteMany({
+        where: {
+          userId,
+          condominiumId: { in: toRemove.map((r) => r.condominiumId) },
+        },
+      });
+    }
+
+    if (condominiumIds.length > 0) {
+      await tx.userCondominium.updateMany({
+        where: { userId, condominiumId: { in: condominiumIds } },
+        data: { role: linkRole },
+      });
+    }
+
+    const toAdd = condominiumIds.filter((id) => !existingByCondo.has(id));
+    if (toAdd.length > 0) {
+      await tx.userCondominium.createMany({
+        data: toAdd.map((condominiumId) => ({
+          userId,
+          condominiumId,
+          role: linkRole,
+        })),
+      });
+    }
+  });
+
+  logger.info(`Syndic ${userId} updated by ${updatedBy}`);
 }
 
 export async function getUsersByCondominium(

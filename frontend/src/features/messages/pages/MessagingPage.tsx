@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { FormSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { TargetData, MessageType, MessageScope } from "@/features/messages/types";
 import { TEMPLATES } from "@/config/constants";
@@ -10,6 +11,7 @@ import { useSendMessage } from "../hooks/useMessagesApi";
 import { useAppSelector } from "@/shared/hooks";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
+import { CannedResponsesManager } from "@/features/settings";
 import {
   MessageHeader,
   MessageRecipientSelector,
@@ -43,6 +45,7 @@ export function MessagingPage() {
   // Send message mutation
   const sendMessage = useSendMessage();
 
+  const [activeTab, setActiveTab] = useState("send");
   const [scope, setScope] = useState<Scope>("unit");
   const [msgType, setMsgType] = useState<MsgType>("text");
   const [selectedTower, setSelectedTower] = useState("A");
@@ -205,63 +208,84 @@ export function MessagingPage() {
     );
   }
 
+  const canManageResponses = ["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN", "SUPER_ADMIN"].includes(user?.role || "");
+
+  const messageForm = (
+    <Card className="shadow-lg">
+      <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
+        <MessageRecipientSelector
+          scope={scope}
+          onScopeChange={setScope}
+          selectedTower={selectedTower}
+          onTowerChange={setSelectedTower}
+          selectedFloor={selectedFloor}
+          onFloorChange={setSelectedFloor}
+          selectedUnit={selectedUnit}
+          onUnitChange={setSelectedUnit}
+          disabledScopes={currentUserAssignedTower ? ["all"] : []}
+          towerDisabled={!!currentUserAssignedTower}
+        />
+
+        <MessageTypeSelector msgType={msgType} onTypeChange={setMsgType} />
+
+        {msgType === "text" && (
+          <MessageTextInput value={textContent} onChange={setTextContent} />
+        )}
+
+        {msgType === "template" && (
+          <MessageTemplateSelector
+            templateId={templateId}
+            onTemplateChange={setTemplateId}
+          />
+        )}
+
+        {msgType === "image" && (
+          <MessageImageInput
+            mediaUrl={mediaUrl}
+            onMediaUrlChange={setMediaUrl}
+            caption={textContent}
+            onCaptionChange={setTextContent}
+          />
+        )}
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-border">
+          <MessageRecipientCount count={recipientCount} />
+          <MessageSendButton
+            onClick={handleSend}
+            disabled={
+              isSending ||
+              recipientCount === 0 ||
+              (msgType === "text" && !textContent.trim()) ||
+              (msgType === "image" && !mediaUrl)
+            }
+            isSending={isSending}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="flex-1 flex items-start justify-center p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="w-full max-w-3xl">
         <MessageHeader />
 
-        <Card className="shadow-lg">
-          <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
-            <MessageRecipientSelector
-              scope={scope}
-              onScopeChange={setScope}
-              selectedTower={selectedTower}
-              onTowerChange={setSelectedTower}
-              selectedFloor={selectedFloor}
-              onFloorChange={setSelectedFloor}
-              selectedUnit={selectedUnit}
-              onUnitChange={setSelectedUnit}
-              disabledScopes={currentUserAssignedTower ? ["all"] : []}
-              towerDisabled={!!currentUserAssignedTower}
-            />
-
-            <MessageTypeSelector msgType={msgType} onTypeChange={setMsgType} />
-
-            {msgType === "text" && (
-              <MessageTextInput value={textContent} onChange={setTextContent} />
-            )}
-
-            {msgType === "template" && (
-              <MessageTemplateSelector
-                templateId={templateId}
-                onTemplateChange={setTemplateId}
-              />
-            )}
-
-            {msgType === "image" && (
-              <MessageImageInput
-                mediaUrl={mediaUrl}
-                onMediaUrlChange={setMediaUrl}
-                caption={textContent}
-                onCaptionChange={setTextContent}
-              />
-            )}
-
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-border">
-              <MessageRecipientCount count={recipientCount} />
-              <MessageSendButton
-                onClick={handleSend}
-                disabled={
-                  isSending ||
-                  recipientCount === 0 ||
-                  (msgType === "text" && !textContent.trim()) ||
-                  (msgType === "image" && !mediaUrl)
-                }
-                isSending={isSending}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {canManageResponses ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4 w-full flex flex-col sm:grid sm:grid-cols-2 h-auto gap-1 sm:gap-0">
+              <TabsTrigger value="send" className="w-full">Nova Mensagem</TabsTrigger>
+              <TabsTrigger value="templates" className="w-full">Respostas Padrão</TabsTrigger>
+            </TabsList>
+            <TabsContent value="send" className="mt-0">
+              {messageForm}
+            </TabsContent>
+            <TabsContent value="templates" className="mt-0">
+              <CannedResponsesManager />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          messageForm
+        )}
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export const MessageTypeSelector = ({ msgType, onTypeChange }: MessageTypeSelect
       <label htmlFor="message-type" className="block text-sm font-medium text-foreground mb-2">
         2. Tipo de Mensagem
       </label>
-      <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
         {MESSAGE_TYPES.map((type) => (
           <Button
             key={type.value}

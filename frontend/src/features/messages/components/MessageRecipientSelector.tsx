@@ -55,7 +55,7 @@ export const MessageRecipientSelector = ({
       >
         1. Destinatário
       </label>
-      <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
         {SCOPE_OPTIONS.filter((option) => !disabledScopes.includes(option.value)).map((option) => (
           <Button
             key={option.value}
