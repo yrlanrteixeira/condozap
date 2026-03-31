@@ -2,7 +2,6 @@ import { FastifyPluginAsync } from "fastify";
 import {
   requireRole,
   requireSuperAdminOrGlobalProfessionalSyndic,
-  requireCondoAccess,
   requireCondoAccessUnlessSuperAdmin,
 } from "../../shared/middlewares";
 import {
