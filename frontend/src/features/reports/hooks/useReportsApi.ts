@@ -39,10 +39,13 @@ export async function downloadReportCsv(
     params: { ...params, format: "csv" },
     responseType: "blob",
   });
-  const url = URL.createObjectURL(new Blob([response.data]));
+  const blob = new Blob([response.data], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `relatorio-${params.type}-${params.startDate}.csv`;
+  a.download = `relatorio-${params.type}-${params.startDate}_a_${params.endDate}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

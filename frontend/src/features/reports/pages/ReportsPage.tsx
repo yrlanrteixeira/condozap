@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileBarChart, Download, Calendar, Search, Loader2 } from "lucide-react";
+import { FileBarChart, Download, Calendar, Search, Loader2, ChevronDown, FileSpreadsheet, FileText } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -23,6 +23,13 @@ import {
   type ReportType,
   type ReportParams,
 } from "../hooks/useReportsApi";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
+import { exportReportToPdf, exportReportToXlsx } from "../utils/exportReport";
 
 // ---------------------------------------------------------------------------
 // Type helpers for each report shape
@@ -31,10 +38,10 @@ import {
 interface ComplaintsData {
   summary?: {
     total?: number;
-    abertas?: number;
-    resolvidas?: number;
-    canceladas?: number;
-    tempoMedioHoras?: number;
+    opened?: number;
+    resolved?: number;
+    cancelled?: number;
+    avgResolutionHours?: number;
   };
   byStatus?: Record<string, number>;
   byPriority?: Record<string, number>;
@@ -43,18 +50,18 @@ interface ComplaintsData {
 
 interface SatisfactionData {
   summary?: {
-    notaMedia?: number;
-    totalRespostas?: number;
+    avgScore?: number;
+    totalResponses?: number;
+    distribution?: Record<number, number>;
   };
-  distribution?: Record<string, number>;
-  byCategory?: Record<string, number>;
+  byCategory?: Array<{ category: string; avgScore: number; count: number }>;
 }
 
 interface MessagesData {
   summary?: {
-    totalEnviadas?: number;
-    destinatarios?: number;
-    taxaEntrega?: number;
+    total?: number;
+    recipients?: number;
+    deliveryRate?: number;
   };
   byType?: Record<string, number>;
 }
@@ -62,9 +69,9 @@ interface MessagesData {
 interface ResidentsData {
   summary?: {
     total?: number;
-    proprietarios?: number;
-    inquilinos?: number;
-    comConsentimento?: number;
+    owners?: number;
+    tenants?: number;
+    withConsent?: number;
   };
   byTower?: Record<string, number>;
 }
@@ -107,12 +114,12 @@ function ComplaintsReport({ data }: { data: ComplaintsData }) {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <StatBox label="Total" value={s.total ?? 0} />
-            <StatBox label="Abertas" value={s.abertas ?? 0} />
-            <StatBox label="Resolvidas" value={s.resolvidas ?? 0} />
-            <StatBox label="Canceladas" value={s.canceladas ?? 0} />
+            <StatBox label="Abertas" value={s.opened ?? 0} />
+            <StatBox label="Resolvidas" value={s.resolved ?? 0} />
+            <StatBox label="Canceladas" value={s.cancelled ?? 0} />
             <StatBox
               label="Tempo médio (horas)"
-              value={s.tempoMedioHoras !== undefined ? String(s.tempoMedioHoras) : "—"}
+              value={s.avgResolutionHours !== undefined ? String(s.avgResolutionHours) : "—"}
             />
           </div>
         </CardContent>
@@ -156,8 +163,8 @@ function ComplaintsReport({ data }: { data: ComplaintsData }) {
 
 function SatisfactionReport({ data }: { data: SatisfactionData }) {
   const s = data.summary ?? {};
-  const dist = (data.distribution ?? {}) as Record<string, number>;
-  const byCat = (data.byCategory ?? {}) as Record<string, number>;
+  const dist = s.distribution ?? {};
+  const byCategoryList = data.byCategory ?? [];
 
   return (
     <div className="space-y-6">
@@ -167,8 +174,8 @@ function SatisfactionReport({ data }: { data: SatisfactionData }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <StatBox label="Nota média" value={s.notaMedia !== undefined ? String(s.notaMedia) : "—"} />
-            <StatBox label="Total respostas" value={s.totalRespostas ?? 0} />
+            <StatBox label="Nota média" value={s.avgScore !== undefined ? String(s.avgScore) : "—"} />
+            <StatBox label="Total respostas" value={s.totalResponses ?? 0} />
           </div>
         </CardContent>
       </Card>
@@ -185,7 +192,7 @@ function SatisfactionReport({ data }: { data: SatisfactionData }) {
               {[5, 4, 3, 2, 1].map((star) => (
                 <div key={star} className="flex items-center justify-between text-sm">
                   <span className="text-foreground">{star} estrela{star !== 1 ? "s" : ""}</span>
-                  <Badge variant="secondary">{dist[String(star)] ?? 0}</Badge>
+                  <Badge variant="secondary">{dist[star] ?? 0}</Badge>
                 </div>
               ))}
             </div>
@@ -198,7 +205,23 @@ function SatisfactionReport({ data }: { data: SatisfactionData }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RecordTable data={byCat} />
+            {byCategoryList.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sem dados</p>
+            ) : (
+              <div className="space-y-2">
+                {byCategoryList.map((row) => (
+                  <div
+                    key={row.category}
+                    className="flex items-center justify-between text-sm gap-2"
+                  >
+                    <span className="text-foreground">{row.category}</span>
+                    <span className="text-muted-foreground text-xs">
+                      média {row.avgScore} · {row.count} resposta(s)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -216,11 +239,11 @@ function MessagesReport({ data }: { data: MessagesData }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <StatBox label="Total enviadas" value={s.totalEnviadas ?? 0} />
-            <StatBox label="Destinatários" value={s.destinatarios ?? 0} />
+            <StatBox label="Total enviadas" value={s.total ?? 0} />
+            <StatBox label="Destinatários" value={s.recipients ?? 0} />
             <StatBox
               label="Taxa de entrega"
-              value={s.taxaEntrega !== undefined ? `${s.taxaEntrega}%` : "—"}
+              value={s.deliveryRate !== undefined ? `${s.deliveryRate}%` : "—"}
             />
           </div>
         </CardContent>
@@ -249,9 +272,9 @@ function ResidentsReport({ data }: { data: ResidentsData }) {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <StatBox label="Total" value={s.total ?? 0} />
-            <StatBox label="Proprietários" value={s.proprietarios ?? 0} />
-            <StatBox label="Inquilinos" value={s.inquilinos ?? 0} />
-            <StatBox label="Com consentimento" value={s.comConsentimento ?? 0} />
+            <StatBox label="Proprietários" value={s.owners ?? 0} />
+            <StatBox label="Inquilinos" value={s.tenants ?? 0} />
+            <StatBox label="Com consentimento" value={s.withConsent ?? 0} />
           </div>
         </CardContent>
       </Card>
@@ -312,6 +335,16 @@ export function ReportsPage() {
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleExportXlsx = () => {
+    if (!report || !activeParams) return;
+    exportReportToXlsx(report, activeParams);
+  };
+
+  const handleExportPdf = () => {
+    if (!report || !activeParams) return;
+    exportReportToPdf(report, activeParams);
   };
 
   const renderReportData = () => {
@@ -444,15 +477,33 @@ export function ReportsPage() {
                 <Search className="h-4 w-4" />
                 Gerar Relatório
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleExportCsv}
-                disabled={!report || isDownloading || !condominiumId}
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                {isDownloading ? "Exportando..." : "Exportar CSV"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={!report || isDownloading || !condominiumId}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {isDownloading ? "Exportando..." : "Exportar"}
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => void handleExportCsv()}>
+                    <Download className="mr-2 h-4 w-4" />
+                    CSV (UTF-8, linhas detalhadas)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportXlsx}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Excel (.xlsx) — resumo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPdf}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    PDF — resumo
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>

@@ -5,6 +5,9 @@ import { prisma } from "../../shared/db/prisma";
 // CSV helper
 // ---------------------------------------------------------------------------
 
+/** BOM para Excel e outros leitores reconhecerem UTF-8 ao abrir o CSV. */
+const UTF8_BOM = "\ufeff";
+
 function toCsv(headers: string[], rows: string[][]): string {
   return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 }
@@ -276,7 +279,15 @@ async function buildResidentsReport(
 // ---------------------------------------------------------------------------
 
 function complaintsDataToCsv(complaints: Awaited<ReturnType<typeof prisma.complaint.findMany>> & { sector?: { name: string } | null }[]): string {
-  const headers = ["ID", "Category", "Status", "Priority", "CreatedAt", "ResolvedAt", "Sector"];
+  const headers = [
+    "ID",
+    "Categoria",
+    "Status",
+    "Prioridade",
+    "Criado em",
+    "Resolvido em",
+    "Setor",
+  ];
   const rows = complaints.map((c) => [
     escapeCsvField(String(c.id)),
     escapeCsvField(c.category),
@@ -290,7 +301,7 @@ function complaintsDataToCsv(complaints: Awaited<ReturnType<typeof prisma.compla
 }
 
 function satisfactionDataToCsv(complaints: Awaited<ReturnType<typeof prisma.complaint.findMany>>): string {
-  const headers = ["ID", "Category", "Score", "Comment", "RespondedAt"];
+  const headers = ["ID", "Categoria", "Nota", "Comentário", "Respondido em"];
   const rows = complaints.map((c) => [
     escapeCsvField(String(c.id)),
     escapeCsvField(c.category),
@@ -302,7 +313,14 @@ function satisfactionDataToCsv(complaints: Awaited<ReturnType<typeof prisma.comp
 }
 
 function messagesDataToCsv(messages: Awaited<ReturnType<typeof prisma.message.findMany>>): string {
-  const headers = ["ID", "Type", "Scope", "Content", "SentAt", "RecipientCount"];
+  const headers = [
+    "ID",
+    "Tipo",
+    "Escopo",
+    "Conteúdo",
+    "Enviado em",
+    "Destinatários",
+  ];
   const rows = messages.map((m) => [
     escapeCsvField(m.id),
     escapeCsvField(m.type),
@@ -315,7 +333,7 @@ function messagesDataToCsv(messages: Awaited<ReturnType<typeof prisma.message.fi
 }
 
 function residentsDataToCsv(residents: Awaited<ReturnType<typeof prisma.resident.findMany>>): string {
-  const headers = ["Name", "Phone", "Tower", "Floor", "Unit", "Type"];
+  const headers = ["Nome", "Telefone", "Torre", "Andar", "Unidade", "Tipo"];
   const rows = residents.map((r) => [
     escapeCsvField(r.name),
     escapeCsvField(r.phone),
@@ -365,12 +383,12 @@ export async function getReportsHandler(
 
     if (format === "csv") {
       const csv = complaintsDataToCsv(_raw as any);
-      reply.header("Content-Type", "text/csv");
+      reply.header("Content-Type", "text/csv; charset=utf-8");
       reply.header(
         "Content-Disposition",
         `attachment; filename="report-${type}-${startDate}.csv"`
       );
-      return reply.send(csv);
+      return reply.send(UTF8_BOM + csv);
     }
 
     return reply.send({ period, type, data: rest });
@@ -382,12 +400,12 @@ export async function getReportsHandler(
 
     if (format === "csv") {
       const csv = satisfactionDataToCsv(_raw);
-      reply.header("Content-Type", "text/csv");
+      reply.header("Content-Type", "text/csv; charset=utf-8");
       reply.header(
         "Content-Disposition",
         `attachment; filename="report-${type}-${startDate}.csv"`
       );
-      return reply.send(csv);
+      return reply.send(UTF8_BOM + csv);
     }
 
     return reply.send({ period, type, data: rest });
@@ -399,12 +417,12 @@ export async function getReportsHandler(
 
     if (format === "csv") {
       const csv = messagesDataToCsv(_raw);
-      reply.header("Content-Type", "text/csv");
+      reply.header("Content-Type", "text/csv; charset=utf-8");
       reply.header(
         "Content-Disposition",
         `attachment; filename="report-${type}-${startDate}.csv"`
       );
-      return reply.send(csv);
+      return reply.send(UTF8_BOM + csv);
     }
 
     return reply.send({ period, type, data: rest });
@@ -416,12 +434,12 @@ export async function getReportsHandler(
 
     if (format === "csv") {
       const csv = residentsDataToCsv(_raw);
-      reply.header("Content-Type", "text/csv");
+      reply.header("Content-Type", "text/csv; charset=utf-8");
       reply.header(
         "Content-Disposition",
         `attachment; filename="report-${type}-${startDate}.csv"`
       );
-      return reply.send(csv);
+      return reply.send(UTF8_BOM + csv);
     }
 
     return reply.send({ period, type, data: rest });
