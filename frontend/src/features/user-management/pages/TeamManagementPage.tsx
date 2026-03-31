@@ -52,6 +52,10 @@ import type { CondominiumUser } from '../types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useStructure } from '@/features/structure/hooks/useStructureApi';
+import {
+  MEMBER_FUNCTION_GROUPS,
+  KNOWN_MEMBER_FUNCTION_VALUES,
+} from '../constants/memberFunctions';
 
 const roleLabels: Record<string, string> = {
   PROFESSIONAL_SYNDIC: 'Síndico Profissional',
@@ -80,40 +84,6 @@ const statusLabels: Record<string, string> = {
   REJECTED: 'Rejeitado',
   SUSPENDED: 'Suspenso',
 };
-
-/** Função no condomínio (persistida em `councilPosition` no backend). */
-const MEMBER_FUNCTION_GROUPS: { label: string; options: { value: string; label: string }[] }[] = [
-  {
-    label: 'Gestão',
-    options: [
-      { value: 'Conselheiro', label: 'Conselheiro' },
-      { value: 'Subsíndico', label: 'Subsíndico' },
-      { value: 'Auxiliar administrativo', label: 'Auxiliar administrativo' },
-    ],
-  },
-  {
-    label: 'Operação e apoio',
-    options: [
-      { value: 'Porteiro', label: 'Porteiro' },
-      { value: 'Limpeza', label: 'Limpeza' },
-      { value: 'Segurança', label: 'Segurança' },
-    ],
-  },
-  {
-    label: 'Áreas do conselho',
-    options: [
-      { value: 'Obras', label: 'Obras' },
-      { value: 'Financeiro', label: 'Financeiro' },
-      { value: 'Jurídico', label: 'Jurídico' },
-      { value: 'Social', label: 'Social' },
-      { value: 'Comunicação', label: 'Comunicação' },
-    ],
-  },
-];
-
-const KNOWN_MEMBER_FUNCTION_VALUES = new Set(
-  MEMBER_FUNCTION_GROUPS.flatMap((g) => g.options.map((o) => o.value))
-);
 
 export function TeamManagementPage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);

@@ -62,6 +62,7 @@ export const createUserCondominium = (
     userId: string;
     condominiumId: string;
     role: UserRole;
+    councilPosition?: string | null;
   }
 ) =>
   prisma.userCondominium.create({

@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireAdmin, requireSyndicStrict, requireRole } from "../../shared/middlewares";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireCondoAccess, requireCondoAccessUnlessSuperAdmin } from "../../auth/authorize";
 import {
   createAdminHandler,
   createSyndicHandler,
@@ -21,8 +21,11 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/create-admin",
     {
-      onRequest: [fastify.authenticate, requireSyndicStrict()],
-      preHandler: [requireCondoAccess({ source: "body" })],
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"]),
+      ],
+      preHandler: [requireCondoAccessUnlessSuperAdmin({ source: "body" })],
     },
     createAdminHandler
   );
@@ -120,7 +123,11 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   }, updateAssignedTowerHandler);
 
   fastify.post("/users/create-sector-member", {
-    onRequest: [fastify.authenticate, requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"])],
+    onRequest: [
+      fastify.authenticate,
+      requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"]),
+    ],
+    preHandler: [requireCondoAccessUnlessSuperAdmin({ source: "body" })],
   }, createSectorMemberHandler);
 };
 

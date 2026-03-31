@@ -5,6 +5,8 @@ export const createAdminSchema = z.object({
   name: z.string().min(3),
   password: z.string().min(8),
   condominiumId: z.string().min(1),
+  /** Função no condomínio (ex.: Conselheiro, Obras); opcional no cadastro. */
+  councilPosition: z.string().max(100).nullable().optional(),
 });
 
 export const createSyndicSchema = z.object({

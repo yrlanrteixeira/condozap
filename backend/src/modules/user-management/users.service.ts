@@ -39,10 +39,16 @@ export async function createAdmin(
     approvedBy: createdBy,
   });
 
+  const councilPosition =
+    data.councilPosition === undefined || data.councilPosition === null
+      ? null
+      : data.councilPosition.trim() || null;
+
   await usersRepository.createUserCondominium(prisma, {
     userId: newAdmin.id,
     condominiumId: data.condominiumId,
     role: "ADMIN" as PrismaUserRole,
+    councilPosition,
   });
 
   logger.info(

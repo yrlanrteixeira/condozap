@@ -26,6 +26,16 @@ export interface CreateAdminInput {
   name: string;
   password: string;
   condominiumId: string;
+  /** Função no condomínio; omitir ou null para definir depois na lista. */
+  councilPosition?: string | null;
+}
+
+export interface CreateSectorMemberInput {
+  email: string;
+  name: string;
+  password: string;
+  condominiumId: string;
+  sectorId: string;
 }
 
 export interface UpdateUserRoleInput {

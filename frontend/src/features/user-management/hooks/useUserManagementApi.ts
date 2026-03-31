@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import type {
   CondominiumUser,
   CreateAdminInput,
+  CreateSectorMemberInput,
   CreateSyndicInput,
   UpdateSyndicInput,
   UpdateUserRoleInput,
@@ -49,6 +50,28 @@ export function useCreateAdmin() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.list(variables.condominiumId),
+      });
+    },
+  });
+}
+
+/**
+ * Cria usuário SETOR_MEMBER vinculado a um setor (síndico, profissional ou SUPER_ADMIN).
+ */
+export function useCreateSectorMemberUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateSectorMemberInput) => {
+      const { data } = await api.post('/users/create-sector-member', input);
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.list(variables.condominiumId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['sectors', variables.condominiumId],
       });
     },
   });
