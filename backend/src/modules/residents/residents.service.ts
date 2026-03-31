@@ -9,6 +9,10 @@ import type {
   ResidentType,
 } from "./residents.schema";
 
+function normalizeEmailForComparison(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export async function createResident(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
@@ -64,7 +68,14 @@ export async function updateResident(
     throw new NotFoundError("Morador");
   }
 
-  if (data.email) {
+  // Só valida duplicidade se o e-mail mudou. Vários moradores podem compartilhar o
+  // placeholder padrão (pendente@talkzap.com); sem isso, qualquer PATCH recorrente
+  // encontraria "outro" morador com o mesmo e-mail e retornaria 409.
+  if (
+    data.email &&
+    normalizeEmailForComparison(data.email) !==
+      normalizeEmailForComparison(existing.email)
+  ) {
     const emailExists = await prisma.resident.findFirst({
       where: {
         email: data.email,
