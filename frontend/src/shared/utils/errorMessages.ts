@@ -78,7 +78,7 @@ interface FriendlyError {
 /**
  * Traduz erros de rede/API para mensagens amigáveis
  */
-export function getFriendlyErrorMessage(error: any): FriendlyError {
+export function getFriendlyErrorMessage(error: unknown): FriendlyError {
   const err = error as ErrorResponse;
 
   // Erro de rede (sem conexão)

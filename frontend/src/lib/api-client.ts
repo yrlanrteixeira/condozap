@@ -6,6 +6,7 @@ import axios, {
 import qs from "qs";
 import { config } from "./config";
 import { refreshAccessToken } from "../shared/store/slices/authSlice";
+import type { Store } from "@reduxjs/toolkit";
 
 const BASE_URL = config.apiUrl;
 
@@ -70,13 +71,13 @@ const apiClient = axios.create({
  * Store do Redux - será definido após a configuração inicial
  * Usado para acessar tokens e dispatch de actions
  */
-let reduxStore: any = null;
+let reduxStore: Store | null = null;
 
 /**
  * Define o store do Redux para uso nos interceptors
  * Deve ser chamado na inicialização da aplicação
  */
-export const setReduxStore = (store: any) => {
+export const setReduxStore = (store: Store) => {
   reduxStore = store;
 };
 

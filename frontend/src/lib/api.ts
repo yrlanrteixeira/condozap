@@ -13,9 +13,11 @@ import qs from "qs";
 import { config } from "./config";
 import { updateAccessToken } from "@/shared/store/slices/authSlice";
 
-let apiStore: any = null;
+import type { Store } from '@reduxjs/toolkit';
 
-export const setApiStore = (store: any) => {
+let apiStore: Store | null = null;
+
+export const setApiStore = (store: Store) => {
   apiStore = store;
 };
 
