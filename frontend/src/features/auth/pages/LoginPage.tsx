@@ -34,8 +34,8 @@ export function LoginPage() {
     try {
       await signIn(values.email, values.password);
       navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao fazer login");
     }
   };
 

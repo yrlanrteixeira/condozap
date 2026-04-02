@@ -119,3 +119,14 @@ export interface ComplaintDetail extends Complaint {
   csatComment?: string | null;
   csatRespondedAt?: string | null;
 }
+
+export interface CannedResponse {
+  id: string;
+  title: string;
+  content: string;
+  condominiumId?: string | null;
+  sectorId?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

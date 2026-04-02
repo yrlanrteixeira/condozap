@@ -81,10 +81,11 @@ export function UserApprovalPage() {
         title: "Sucesso!",
         description: "Usuário aprovado e alocado com sucesso.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || "Ocorreu um erro inesperado.";
       toast({
         title: "Erro ao aprovar usuário",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: message,
         variant: "error",
       });
     }
@@ -99,10 +100,11 @@ export function UserApprovalPage() {
         description: "O usuário foi notificado sobre a rejeição.",
         variant: "default",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || "Ocorreu um erro inesperado.";
       toast({
         title: "Erro ao rejeitar cadastro",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: message,
         variant: "error",
       });
     }
