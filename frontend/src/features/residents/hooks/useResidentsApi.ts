@@ -22,20 +22,33 @@ import type {
   ResidentFilters,
 } from '../types';
 
+const normalizeFilters = (
+  filters?: ResidentFilters
+): ResidentFilters | undefined => {
+  if (!filters || Object.keys(filters).length === 0) {
+    return undefined;
+  }
+  return filters;
+};
+
 // =====================================================
 // Query: Fetch Residents
 // =====================================================
 
 export const useResidents = createQuery({
   queryKey: (condominiumId: string | 'all', filters?: ResidentFilters) =>
-    queryKeys.list(condominiumId, filters),
+    queryKeys.list(condominiumId, normalizeFilters(filters)),
   queryFn: (condominiumId: string | 'all', filters?: ResidentFilters) => {
+    const normalizedFilters = normalizeFilters(filters);
     const url =
       condominiumId === 'all' ? '/residents/all' : `/residents/${condominiumId}`;
-    return fetchList(url, ResidentSchema, filters as Record<string, unknown>);
+    return fetchList(url, ResidentSchema, normalizedFilters as Record<string, unknown>);
   },
   enabled: (condominiumId: string | 'all', _filters?: ResidentFilters) => !!condominiumId,
   staleTime: 1000 * 60 * 5,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  refetchOnMount: false,
 });
 
 // =====================================================

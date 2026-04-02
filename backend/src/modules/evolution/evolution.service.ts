@@ -46,18 +46,55 @@ class EvolutionService {
     }
 
     const response = await fetch(url, options);
-    const data = await response.json();
+    const raw = await response.text();
+
+    let data: unknown = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = raw;
+      }
+    }
 
     if (!response.ok) {
-      const error = data as EvolutionError;
+      if (typeof data === "object" && data !== null) {
+        const error = data as EvolutionError;
+        throw new Error(
+          Array.isArray(error.message)
+            ? error.message.join(", ")
+            : error.message || "Evolution API error"
+        );
+      }
       throw new Error(
-        Array.isArray(error.message)
-          ? error.message.join(", ")
-          : error.message || "Evolution API error"
+        `Evolution API error (${response.status}): ${String(data || "empty response")}`
       );
     }
 
     return data as T;
+  }
+
+  private async ensureConnected(): Promise<void> {
+    const state = await this.getInstanceState();
+    if (state.instance.state !== "open") {
+      throw new Error(
+        `Evolution instance '${this.instanceName}' is not connected (state: ${state.instance.state})`
+      );
+    }
+  }
+
+  private validateSendResponse(response: SendMessageResponse): SendMessageResponse {
+    const messageId = response?.key?.id;
+    if (!messageId) {
+      throw new Error("Evolution API did not return a valid message id");
+    }
+
+    const status = response?.status?.toUpperCase?.() ?? "";
+    if (status === "FAILED" || status === "ERROR") {
+      throw new Error(`Evolution API returned unsuccessful status: ${response.status}`);
+    }
+
+    return response;
   }
 
   async getInstanceState(): Promise<InstanceStateResponse> {
@@ -87,9 +124,10 @@ class EvolutionService {
   }
 
   async sendText(input: SendTextInput): Promise<SendMessageResponse> {
+    await this.ensureConnected();
     const formattedNumber = this.formatPhoneNumber(input.number);
 
-    return this.request<SendMessageResponse>(
+    const response = await this.request<SendMessageResponse>(
       `/message/sendText/${this.instanceName}`,
       "POST",
       {
@@ -99,12 +137,15 @@ class EvolutionService {
         linkPreview: input.linkPreview ?? true,
       }
     );
+
+    return this.validateSendResponse(response);
   }
 
   async sendMedia(input: SendMediaInput): Promise<SendMessageResponse> {
+    await this.ensureConnected();
     const formattedNumber = this.formatPhoneNumber(input.number);
 
-    return this.request<SendMessageResponse>(
+    const response = await this.request<SendMessageResponse>(
       `/message/sendMedia/${this.instanceName}`,
       "POST",
       {
@@ -117,6 +158,8 @@ class EvolutionService {
         delay: input.delay || 1200,
       }
     );
+
+    return this.validateSendResponse(response);
   }
 
   async sendImage(
@@ -209,11 +252,12 @@ class EvolutionService {
           throw new Error("No text or media provided");
         }
 
+        const messageId = response.key.id;
         results.sent++;
         results.results.push({
           number,
           success: true,
-          messageId: response.key.id,
+          messageId,
         });
 
         if (input.numbers.indexOf(number) < input.numbers.length - 1) {

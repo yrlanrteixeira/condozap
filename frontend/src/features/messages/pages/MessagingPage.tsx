@@ -40,7 +40,7 @@ export function MessagingPage() {
     data: residents = [],
     isLoading,
     isError,
-  } = useResidents(condoIdToFetch, {});
+  } = useResidents(condoIdToFetch);
 
   // Send message mutation
   const sendMessage = useSendMessage();

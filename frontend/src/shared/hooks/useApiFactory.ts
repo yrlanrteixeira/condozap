@@ -36,6 +36,12 @@ interface CreateQueryConfig<TData, TArgs extends unknown[]> {
   staleTime?: number;
   /** Refetch interval in milliseconds */
   refetchInterval?: number;
+  /** Override window-focus refetch behavior for this query */
+  refetchOnWindowFocus?: boolean;
+  /** Override reconnection refetch behavior for this query */
+  refetchOnReconnect?: boolean;
+  /** Override mount refetch behavior for this query */
+  refetchOnMount?: boolean;
 }
 
 /**
@@ -61,6 +67,9 @@ export function createQuery<TData, TArgs extends unknown[]>(
       enabled: config.enabled ? config.enabled(...args) : undefined,
       staleTime: config.staleTime,
       refetchInterval: config.refetchInterval,
+      refetchOnWindowFocus: config.refetchOnWindowFocus,
+      refetchOnReconnect: config.refetchOnReconnect,
+      refetchOnMount: config.refetchOnMount,
     });
   };
 }
