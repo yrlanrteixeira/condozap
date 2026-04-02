@@ -106,11 +106,9 @@ export const authMiddleware: Middleware = (store) => {
       stopTokenCheck();
     }
 
-    // Verificar token antes de qualquer ação se estiver autenticado
-    if (isAuthenticated && !isRefreshing) {
-      // Verificar em background (não bloqueia a ação)
-      Promise.resolve().then(() => checkAndRefreshToken());
-    }
+    // Verificar token periodicamente (não em cada ação)
+    // A verificação em tempo real é feita pelo setInterval (startTokenCheck)
+    // Evitar verificações excessivas em cada ação dispatchada
 
     return result;
   };

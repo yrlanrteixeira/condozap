@@ -4,7 +4,7 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-const CondominiumsPage = lazy(() => import("./pages/CondominiumsPage"));
+const CondominiumsPage = lazy(() => import("./pages/CondominiumsPage").then((m) => ({ default: m.CondominiumsPage })));
 
 export const condominiumsRoutes: FeatureRoute[] = [
   {

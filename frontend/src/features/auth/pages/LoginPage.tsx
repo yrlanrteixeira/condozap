@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Building2 } from "lucide-react";
@@ -81,12 +81,6 @@ export function LoginPage() {
             />
             <span className="text-foreground/90">Manter conectado</span>
           </label>
-          <Link
-            to="/auth/reset-password"
-            className="hover:underline text-primary transition-colors"
-          >
-            Esqueceu a senha?
-          </Link>
         </div>
 
         <AuthErrorAlert message={error} />

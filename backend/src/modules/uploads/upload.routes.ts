@@ -13,7 +13,7 @@ import {
 } from "./upload.schema";
 import { addComplaintAttachment } from "../complaints/complaints.service";
 import { prisma } from "../../shared/db/prisma";
-import { NotFoundError, BadRequestError } from "../../shared/errors";
+import { NotFoundError, BadRequestError, UnauthorizedError, ForbiddenError } from "../../shared/errors";
 
 const ALLOWED_MEDIA_TYPES = [
   "image/png",
@@ -34,7 +34,7 @@ export async function uploadRoutes(app: FastifyInstance) {
     { onRequest: [app.authenticate] },
     async (request, reply) => {
       if (!request.user) {
-        throw new Error("Usuário não autenticado");
+        throw new UnauthorizedError();
       }
 
       const data = await request.file();
@@ -71,7 +71,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       const user = request.user;
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new UnauthorizedError();
       }
 
       // Check if complaint exists
@@ -134,7 +134,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       const user = request.user;
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new UnauthorizedError();
       }
 
       // Parse multipart data
@@ -172,7 +172,7 @@ export async function uploadRoutes(app: FastifyInstance) {
         user.role === "RESIDENT" &&
         resident.userId !== user.id
       ) {
-        throw new Error("Você não tem permissão para enviar documentos deste morador");
+        throw new ForbiddenError("Você não tem permissão para enviar documentos deste morador");
       }
 
       // Upload to Supabase Storage
@@ -219,7 +219,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       const user = request.user;
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new UnauthorizedError();
       }
 
       // Get attachment
@@ -236,7 +236,7 @@ export async function uploadRoutes(app: FastifyInstance) {
 
       // Check authorization (only admins can delete)
       if (!["ADMIN", "SYNDIC", "PROFESSIONAL_SYNDIC"].includes(user.role)) {
-        throw new Error("Você não tem permissão para deletar anexos");
+        throw new ForbiddenError("Você não tem permissão para deletar anexos");
       }
 
       // Extract file path from URL
@@ -271,7 +271,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       const user = request.user;
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new UnauthorizedError();
       }
 
       // Get document
@@ -291,7 +291,7 @@ export async function uploadRoutes(app: FastifyInstance) {
         user.role === "RESIDENT" &&
         document.resident.userId !== user.id
       ) {
-        throw new Error("Você não tem permissão para deletar este documento");
+        throw new ForbiddenError("Você não tem permissão para deletar este documento");
       }
 
       if (!document.fileUrl) {

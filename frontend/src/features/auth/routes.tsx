@@ -11,8 +11,4 @@ export const authRoutes: FeatureRoute[] = [
     path: "/auth/register",
     element: <RegisterPage />,
   },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
 ];

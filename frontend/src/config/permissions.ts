@@ -282,6 +282,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Usuários
     Permissions.VIEW_USERS,
+    Permissions.CREATE_USER,
+    Permissions.EDIT_USER,
+    Permissions.DELETE_USER,
 
     // Relatórios
     Permissions.VIEW_REPORTS,
@@ -290,10 +293,13 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Configurações
     Permissions.VIEW_SETTINGS,
-    Permissions.EDIT_SETTINGS,
+
+    // Equipe
+    Permissions.MANAGE_TEAM,
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
+    Permissions.CREATE_ANNOUNCEMENT,
   ],
 
   // SYNDIC: Síndico de condomínio - pode ter múltiplos condomínios atrelados pelo SUPER_ADMIN

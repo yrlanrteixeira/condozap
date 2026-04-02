@@ -4,7 +4,7 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage").then((m) => ({ default: m.HistoryPage })));
 
 export const historyRoutes: FeatureRoute[] = [
   {

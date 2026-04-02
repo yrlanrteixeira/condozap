@@ -13,6 +13,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { AppError, ValidationError } from "../errors";
+import { config } from "../../config/env";
 
 interface ErrorResponse {
   error: {
@@ -172,7 +173,7 @@ export function createErrorHandler(logger: {
 
     // In production, don't expose internal error details
     response.error.code = "INTERNAL_ERROR";
-    if (process.env.NODE_ENV === "production") {
+    if (config.isProd) {
       response.error.message = "Erro interno do servidor";
     } else {
       response.error.message = error.message || "Erro interno do servidor";

@@ -1,5 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+import { ForbiddenError } from '../shared/errors/errors';
 
 /**
  * Authentication Plugin
@@ -12,15 +13,15 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   ) {
     try {
       await request.jwtVerify();
-      if (request.user.status === "SUSPENDED") {
-        reply.code(403).send({ error: "Conta suspensa" });
-        return;
-      }
     } catch (err) {
       reply.status(401).send({
         error: 'Unauthorized',
         message: 'Invalid or missing authentication token',
       });
+      return;
+    }
+    if (request.user.status === "SUSPENDED") {
+      throw new ForbiddenError("Conta suspensa");
     }
   });
 };

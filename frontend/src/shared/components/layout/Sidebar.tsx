@@ -20,6 +20,8 @@ import {
   Megaphone,
   FileBarChart,
   BarChart3,
+  Clock,
+  Globe,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -68,6 +70,12 @@ export const Sidebar = ({
       href: "/dashboard",
       icon: LayoutDashboard,
       permission: Permissions.VIEW_DASHBOARD,
+    },
+    {
+      title: "Dashboard Unificado",
+      href: "/unified-dashboard",
+      icon: Globe,
+      permission: Permissions.VIEW_UNIFIED_DASHBOARD,
     },
     {
       title: "Dashboard do Setor",
@@ -135,6 +143,12 @@ export const Sidebar = ({
       href: "/reports",
       icon: FileBarChart,
       permission: Permissions.VIEW_REPORTS,
+    },
+    {
+      title: "Histórico",
+      href: "/history",
+      icon: Clock,
+      permission: Permissions.VIEW_HISTORY,
     },
   ];
 

@@ -4,8 +4,8 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const UnifiedDashboardPage = lazy(() => import("./pages/UnifiedDashboardPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const UnifiedDashboardPage = lazy(() => import("./pages/UnifiedDashboardPage").then((m) => ({ default: m.UnifiedDashboardPage })));
 
 export const dashboardRoutes: FeatureRoute[] = [
   {

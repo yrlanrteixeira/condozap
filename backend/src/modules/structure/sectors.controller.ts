@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import { AuthUser } from "../../types/auth";
 import { isSyndic } from "../../auth/roles";
+import { ForbiddenError } from "../../shared/errors";
 import {
   createSector,
   deleteSector,
@@ -20,7 +21,7 @@ const ensureCanManageSector = (user: AuthUser) => {
   if (isSyndic(user.role)) {
     return;
   }
-  throw new Error("FORBIDDEN");
+  throw new ForbiddenError("Acesso negado ao setor");
 };
 
 export const listSectorsHandler = async (

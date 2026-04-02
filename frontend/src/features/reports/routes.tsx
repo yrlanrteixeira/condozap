@@ -4,7 +4,7 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 
 export const reportRoutes: FeatureRoute[] = [
   {

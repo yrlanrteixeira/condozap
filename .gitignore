@@ -37,6 +37,6 @@ Thumbs.db
 *.seed
 *.pid.lock
 
-docs/
-docs
 .superpowers
+
+docs

@@ -5,6 +5,7 @@ import axios, {
 } from "axios";
 import qs from "qs";
 import { config } from "./config";
+import { refreshAccessToken } from "../shared/store/slices/authSlice";
 
 const BASE_URL = config.apiUrl;
 
@@ -159,8 +160,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Se não tem store configurado, redireciona para login
       if (!reduxStore) {
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes("/auth/login")) {
+          window.location.href = "/auth/login";
         }
         return Promise.reject(error);
       }
@@ -188,15 +189,13 @@ apiClient.interceptors.response.use(
         // Se não tem refresh token, faz logout
         if (!refreshToken) {
           reduxStore.dispatch({ type: "auth/logout" });
-          if (!window.location.pathname.includes("/login")) {
-            window.location.href = "/login";
+          if (!window.location.pathname.includes("/auth/login")) {
+            window.location.href = "/auth/login";
           }
           return Promise.reject(error);
         }
 
         // Tenta renovar o token
-        const { refreshAccessToken } =
-          await import("../shared/store/slices/authSlice");
         const result = await reduxStore.dispatch(refreshAccessToken()).unwrap();
 
         // Token renovado com sucesso
@@ -220,8 +219,8 @@ apiClient.interceptors.response.use(
 
         reduxStore.dispatch({ type: "auth/logout" });
 
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes("/auth/login")) {
+          window.location.href = "/auth/login";
         }
 
         return Promise.reject(refreshError);
