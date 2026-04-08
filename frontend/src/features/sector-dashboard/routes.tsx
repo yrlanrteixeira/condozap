@@ -4,7 +4,6 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-// TODO: Full implementation in Task 9
 const SectorDashboardPage = lazy(() => import("./pages/SectorDashboardPage"));
 
 export const sectorDashboardRoutes: FeatureRoute[] = [

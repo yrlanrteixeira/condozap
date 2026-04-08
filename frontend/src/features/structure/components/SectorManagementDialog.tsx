@@ -247,12 +247,12 @@ function SectorPermissionsSection({
         variant: "success",
         duration: 2000,
       });
-    } catch (error: any) {
+    } catch (_error: unknown) {
       // Rollback
       setLocalActions(localActions);
       toast({
         title: "Erro ao atualizar permissão",
-        description: getApiErrorMessage(error),
+        description: getApiErrorMessage(_error),
         variant: "error",
         duration: 4000,
       });
@@ -360,11 +360,11 @@ function MemberOverridePanel({
         variant: "success",
         duration: 2000,
       });
-    } catch (error: any) {
+    } catch (_error: unknown) {
       setLocalOverrides(prev);
       toast({
         title: "Erro ao atualizar",
-        description: getApiErrorMessage(error),
+        description: getApiErrorMessage(_error),
         variant: "error",
         duration: 4000,
       });
@@ -525,10 +525,10 @@ function CreateMemberForm({
         duration: 3000,
       });
       onSuccess();
-    } catch (error: any) {
+    } catch (_error: unknown) {
       toast({
         title: "Erro ao criar membro",
-        description: getApiErrorMessage(error),
+        description: getApiErrorMessage(_error),
         variant: "error",
         duration: 5000,
       });
@@ -698,10 +698,10 @@ export const SectorManagementDialog = ({
         variant: "success",
         duration: 3000,
       });
-    } catch (error: any) {
+    } catch (_error: unknown) {
       toast({
         title: "Erro ao remover",
-        description: getApiErrorMessage(error),
+        description: getApiErrorMessage(_error),
         variant: "error",
         duration: 5000,
       });

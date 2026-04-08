@@ -5,12 +5,15 @@ export const condominiumStatusEnum = z.enum(["TRIAL", "ACTIVE", "SUSPENDED"]);
 export const createCondominiumSchema = z.object({
   name: z.string().min(3),
   cnpj: z.string().min(3),
+  /** Se omitido, é gerado a partir do nome. */
+  slug: z.string().min(2).max(100).optional(),
   whatsappPhone: z.string().optional(),
   whatsappBusinessId: z.string().optional(),
 });
 
 export const updateCondominiumSchema = z.object({
   name: z.string().min(3).optional(),
+  slug: z.string().min(2).max(100).optional(),
   cnpj: z.string().min(3).optional(),
   status: condominiumStatusEnum.optional(),
   whatsappPhone: z.string().optional().nullable(),

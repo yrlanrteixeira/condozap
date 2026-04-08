@@ -101,10 +101,11 @@ export function CreateSyndicDialog({ open, onOpenChange, onSuccess }: CreateSynd
       setSelectedCondominiums([]);
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       toast({
         title: 'Erro ao criar síndico',
-        description: error.response?.data?.message || error.message || 'Erro desconhecido.',
+        description: err.response?.data?.message || err.message || 'Erro desconhecido.',
         variant: 'destructive',
       });
     }

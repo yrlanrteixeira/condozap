@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { NotificationToast } from "./NotificationToast";
+import { SubscriptionStatusBanner, HardLockOverlay } from "@/features/billing";
 import {
   Sheet,
   SheetContent,
@@ -82,6 +83,9 @@ export function MainLayout() {
           onToggleSidebar={toggleSidebar}
         />
 
+        {/* Billing status banner (trial expiring / grace / soft lock) */}
+        <SubscriptionStatusBanner />
+
         {/* Page Content with transitions */}
         <main
           id="main-content"
@@ -95,6 +99,9 @@ export function MainLayout() {
 
       {/* Notification Toast */}
       <NotificationToast />
+
+      {/* Hard-lock overlay — full-screen block for severely overdue accounts */}
+      <HardLockOverlay />
     </div>
   );
 }

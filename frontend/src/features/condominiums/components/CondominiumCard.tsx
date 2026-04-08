@@ -45,6 +45,10 @@ export function CondominiumCard({ condominium, onEdit, onDelete }: CondominiumCa
               <p className="text-sm text-muted-foreground mt-1">
                 CNPJ: {formatCNPJ(condominium.cnpj)}
               </p>
+              <p className="text-xs text-muted-foreground mt-2 font-mono break-all">
+                Cadastro moradores:{" "}
+                {`${typeof window !== "undefined" ? window.location.origin : ""}/auth/register/${condominium.slug}`}
+              </p>
             </div>
           </div>
           

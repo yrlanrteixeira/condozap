@@ -11,10 +11,13 @@ import axios, {
 } from "axios";
 import qs from "qs";
 import { config } from "./config";
+import { updateAccessToken } from "@/shared/store/slices/authSlice";
 
-let apiStore: any = null;
+import type { Store } from '@reduxjs/toolkit';
 
-export const setApiStore = (store: any) => {
+let apiStore: Store | null = null;
+
+export const setApiStore = (store: Store) => {
   apiStore = store;
 };
 
@@ -105,8 +108,14 @@ api.interceptors.request.use(
       return requestConfig;
     }
 
-    // Obtém token do localStorage
-    const token = localStorage.getItem("auth_token");
+    // Obtém token do Redux store (via localStorage como fallback)
+    let token: string | null = null;
+    if (apiStore) {
+      const state = apiStore.getState();
+      token = state.auth?.token || localStorage.getItem("auth_token");
+    } else {
+      token = localStorage.getItem("auth_token");
+    }
     if (token && requestConfig.headers) {
       requestConfig.headers.Authorization = `Bearer ${token}`;
     }
@@ -179,9 +188,6 @@ api.interceptors.response.use(
         }
 
         if (apiStore) {
-          const { updateAccessToken } = await import(
-            "@/shared/store/slices/authSlice"
-          );
           apiStore.dispatch(
             updateAccessToken({ token: newToken, refreshToken: newRefreshToken })
           );

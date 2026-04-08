@@ -97,9 +97,11 @@ export const login = createAsyncThunk(
       }
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message || error.message || "Erro ao fazer login";
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (error as { message?: string })?.message ||
+        "Erro ao fazer login";
       return rejectWithValue(message);
     }
   }
@@ -116,7 +118,7 @@ export const register = createAsyncThunk(
       password: string;
       name: string;
       role?: string;
-      requestedCondominiumId?: string;
+      requestedCondominiumSlug?: string;
       requestedPhone?: string;
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;
@@ -141,7 +143,7 @@ export const fetchCurrentUser = createAsyncThunk(
     try {
       const response = await api.get("/auth/me");
       return response.data;
-    } catch (error: any) {
+    } catch (_error: unknown) {
       return rejectWithValue("Sessão inválida");
     }
   }
@@ -180,10 +182,10 @@ export const refreshAccessToken = createAsyncThunk(
 
       const response = await api.post("/auth/refresh", { refreshToken });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message ||
-        error.message ||
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (error as { message?: string })?.message ||
         "Erro ao renovar token";
       return rejectWithValue(message);
     }

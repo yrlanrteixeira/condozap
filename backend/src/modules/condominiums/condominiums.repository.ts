@@ -23,6 +23,7 @@ const condominiumWithRelationCounts = {
 const condominiumListSelect = {
   id: true,
   name: true,
+  slug: true,
   cnpj: true,
   status: true,
   whatsappPhone: true,
@@ -43,22 +44,33 @@ export const findByCnpj = (prisma: PrismaClient, cnpj: string) =>
     where: { cnpj },
   });
 
+export const findBySlug = (prisma: PrismaClient, slug: string) =>
+  prisma.condominium.findUnique({
+    where: { slug },
+  });
+
 export const create = (
   prisma: PrismaClient,
   data: {
     name: string;
+    slug: string;
     cnpj: string;
     whatsappPhone?: string;
     whatsappBusinessId?: string;
+    primarySyndicId?: string;
   }
 ) =>
   prisma.condominium.create({
     data: {
       name: data.name,
+      slug: data.slug,
       cnpj: data.cnpj,
       status: "TRIAL",
       whatsappPhone: data.whatsappPhone,
       whatsappBusinessId: data.whatsappBusinessId,
+      ...(data.primarySyndicId && {
+        primarySyndic: { connect: { id: data.primarySyndicId } },
+      }),
     },
   });
 

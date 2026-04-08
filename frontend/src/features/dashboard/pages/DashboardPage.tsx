@@ -98,7 +98,7 @@ export function DashboardPage() {
         <Card className="p-6">
           <CardContent>
             <p className="text-muted-foreground">
-              Erro ao carregar métricas do dashboard
+              Erro ao carregar métricas do dashboard. Selecione um condomínio no menu acima e tente novamente.
             </p>
           </CardContent>
         </Card>

@@ -91,10 +91,12 @@ export const authMiddleware: Middleware = (store) => {
     const state = store.getState();
     const isAuthenticated = selectIsAuthenticated(state);
 
-    // Após ações de login bem-sucedido, iniciar verificações
-    if (typedAction.type === "auth/login/fulfilled") {
+    // Após login ou cadastro bem-sucedido, iniciar verificações de token
+    if (
+      typedAction.type === "auth/login/fulfilled" ||
+      typedAction.type === "auth/register/fulfilled"
+    ) {
       startTokenCheck();
-      // Verificar imediatamente após login
       checkAndRefreshToken();
     }
 
@@ -106,11 +108,9 @@ export const authMiddleware: Middleware = (store) => {
       stopTokenCheck();
     }
 
-    // Verificar token antes de qualquer ação se estiver autenticado
-    if (isAuthenticated && !isRefreshing) {
-      // Verificar em background (não bloqueia a ação)
-      Promise.resolve().then(() => checkAndRefreshToken());
-    }
+    // Verificar token periodicamente (não em cada ação)
+    // A verificação em tempo real é feita pelo setInterval (startTokenCheck)
+    // Evitar verificações excessivas em cada ação dispatchada
 
     return result;
   };

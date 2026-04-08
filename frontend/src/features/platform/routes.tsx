@@ -4,8 +4,8 @@ import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
-const PlatformDashboardPage = lazy(() => import("./pages/PlatformDashboardPage"));
-const SyndicsPage = lazy(() => import("./pages/SyndicsPage"));
+const PlatformDashboardPage = lazy(() => import("./pages/PlatformDashboardPage").then((m) => ({ default: m.PlatformDashboardPage })));
+const SyndicsPage = lazy(() => import("./pages/SyndicsPage").then((m) => ({ default: m.SyndicsPage })));
 
 export const platformRoutes: FeatureRoute[] = [
   {

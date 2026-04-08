@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireSyndicStrict } from "../../shared/middlewares";
-import { requireAdmin, requireCondoAccess } from "../../auth/authorize";
+import { requireAdmin, requireCondoAccess, requireRole } from "../../auth/authorize";
 import { prisma } from "../../shared/db/prisma";
+import { trialCondoLimitGuard } from "../billing/guards/trial-condo-limit.guard";
 import {
   listCondominiumsHandler,
   getCondominiumHandler,
@@ -48,7 +49,14 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/",
     {
-      onRequest: [fastify.authenticate, requireSuperAdmin()],
+      // Both SUPER_ADMIN and syndicos may create a condominium. The
+      // trialCondoLimitGuard caps trial syndicos at 3 condominiums; the
+      // service sets primarySyndicId from the caller when they are a syndic.
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "SYNDIC"]),
+      ],
+      preHandler: [trialCondoLimitGuard],
     },
     createCondominiumHandler
   );

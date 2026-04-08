@@ -60,6 +60,24 @@ export function usePendingUsers(condominiumId: string) {
 }
 
 /**
+ * Hook to fetch pending users across ALL condominiums the current user
+ * manages (SYNDIC / PROFESSIONAL_SYNDIC / ADMIN). Returns approvals from
+ * every managed condo in a single list, so the síndico does not need to
+ * switch the active condominium first.
+ */
+export function usePendingUsersForMyCondominiums(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['user-approval', 'pending', 'my-condominiums'] as const,
+    queryFn: async (): Promise<PendingUser[]> => {
+      const { data } = await api.get('/users/pending/my-condominiums');
+      return data;
+    },
+    staleTime: 1000 * 60 * 2,
+    enabled: options?.enabled !== false,
+  });
+}
+
+/**
  * Hook to approve a user
  */
 export function useApproveUser() {

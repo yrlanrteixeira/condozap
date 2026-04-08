@@ -68,7 +68,7 @@ export const useAuth = () => {
       password: string;
       name: string;
       role?: string;
-      condominiumId?: string;
+      requestedCondominiumSlug: string;
       phone?: string;
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;
@@ -79,7 +79,7 @@ export const useAuth = () => {
           password: data.password,
           name: data.name,
           role: data.role || "RESIDENT",
-          requestedCondominiumId: data.condominiumId,
+          requestedCondominiumSlug: data.requestedCondominiumSlug,
           requestedPhone: data.phone,
           consentDataProcessing: data.consentDataProcessing ?? false,
           consentWhatsapp: data.consentWhatsapp ?? false,

@@ -7,6 +7,7 @@ export type CondominiumStatus = "TRIAL" | "ACTIVE" | "SUSPENDED";
 export interface Condominium {
   id: string;
   name: string;
+  slug: string;
   cnpj: string;
   status: CondominiumStatus;
   whatsappPhone: string | null;
@@ -23,12 +24,14 @@ export interface Condominium {
 export interface CreateCondominiumInput {
   name: string;
   cnpj: string;
+  slug?: string;
   whatsappPhone?: string;
   whatsappBusinessId?: string;
 }
 
 export interface UpdateCondominiumInput {
   name?: string;
+  slug?: string;
   cnpj?: string;
   status?: CondominiumStatus;
   whatsappPhone?: string;

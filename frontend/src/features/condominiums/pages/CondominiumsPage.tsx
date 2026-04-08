@@ -78,11 +78,11 @@ export function CondominiumsPage() {
       }
       setIsFormOpen(false);
       setEditingCondominium(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Ocorreu um erro ao salvar.";
       toast({
         title: "Erro",
-        description:
-          error.response?.data?.message || "Ocorreu um erro ao salvar.",
+        description: message,
         variant: "error",
       });
     }
@@ -98,12 +98,11 @@ export function CondominiumsPage() {
         description: "O condomínio foi removido do sistema.",
       });
       setDeletingCondominium(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Não foi possível excluir o condomínio.";
       toast({
         title: "Erro ao excluir",
-        description:
-          error.response?.data?.message ||
-          "Não foi possível excluir o condomínio.",
+        description: message,
         variant: "error",
       });
     }

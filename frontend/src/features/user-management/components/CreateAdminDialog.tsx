@@ -216,7 +216,9 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
                   <SelectItem value="__none__">Definir depois na lista</SelectItem>
                   {MEMBER_FUNCTION_GROUPS.map((group) => (
                     <SelectGroup key={group.label}>
-                      <SelectLabel>{group.label}</SelectLabel>
+                      <SelectLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {group.label}
+                      </SelectLabel>
                       {group.options.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {opt.label}

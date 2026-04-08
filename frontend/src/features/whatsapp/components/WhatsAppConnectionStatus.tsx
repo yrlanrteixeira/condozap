@@ -32,10 +32,11 @@ export function WhatsAppConnectionStatus() {
         title: 'Desconectado',
         description: 'WhatsApp foi desconectado com sucesso.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || 'Falha ao desconectar.';
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao desconectar.',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -48,10 +49,11 @@ export function WhatsAppConnectionStatus() {
         title: 'Reiniciado',
         description: 'Instância reiniciada com sucesso.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || 'Falha ao reiniciar.';
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao reiniciar.',
+        description: message,
         variant: 'destructive',
       });
     }

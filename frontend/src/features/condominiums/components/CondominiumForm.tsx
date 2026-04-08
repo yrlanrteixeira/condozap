@@ -2,6 +2,7 @@
  * Condominium Form Component
  */
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -33,6 +34,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import {
   CreateCondominiumSchema,
+  UpdateCondominiumSchema,
   type CreateCondominiumInput,
 } from "../schemas";
 import type { Condominium, CondominiumStatus } from "../types";
@@ -58,11 +60,12 @@ export function CondominiumForm({
 
   const form = useForm<CreateCondominiumInput & { status?: CondominiumStatus }>(
     {
-      resolver: zodResolver(CreateCondominiumSchema),
+      resolver: zodResolver(isEditing ? UpdateCondominiumSchema : CreateCondominiumSchema),
       mode: "onBlur",
       reValidateMode: "onChange",
       defaultValues: {
         name: condominium?.name || "",
+        slug: condominium?.slug || "",
         cnpj: condominium?.cnpj || "",
         whatsappPhone: condominium?.whatsappPhone || "",
         whatsappBusinessId: condominium?.whatsappBusinessId || "",
@@ -75,26 +78,36 @@ export function CondominiumForm({
     data: CreateCondominiumInput & { status?: CondominiumStatus }
   ) => {
     await onSubmit(data);
-    form.reset();
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-    }
     onOpenChange(open);
   };
 
-  // Reset form when condominium changes
-  if (condominium && form.getValues("name") !== condominium.name) {
-    form.reset({
-      name: condominium.name,
-      cnpj: condominium.cnpj,
-      whatsappPhone: condominium.whatsappPhone || "",
-      whatsappBusinessId: condominium.whatsappBusinessId || "",
-      status: condominium.status,
-    });
-  }
+  // Reset form when condominium changes or dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      if (condominium) {
+        form.reset({
+          name: condominium.name,
+          slug: condominium.slug,
+          cnpj: condominium.cnpj,
+          whatsappPhone: condominium.whatsappPhone || "",
+          whatsappBusinessId: condominium.whatsappBusinessId || "",
+          status: condominium.status,
+        });
+      } else {
+        form.reset({
+          name: "",
+          slug: "",
+          cnpj: "",
+          whatsappPhone: "",
+          whatsappBusinessId: "",
+          status: "TRIAL",
+        });
+      }
+    }
+  }, [isOpen, condominium, form]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -127,6 +140,29 @@ export function CondominiumForm({
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug (link de cadastro)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ex.: vista-verde (opcional na criação)"
+                      autoComplete="off"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Usado na URL de cadastro de moradores: /auth/register/
+                    <span className="font-mono">{field.value || "seu-slug"}</span>
+                    . Se vazio, é gerado a partir do nome.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

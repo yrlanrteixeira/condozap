@@ -1,13 +1,16 @@
 /**
  * Sistema de Permissões do TalkZap
- * Hierarquia: SUPER_ADMIN > PROFESSIONAL_SYNDIC > ADMIN > SYNDIC > RESIDENT
  *
  * Perfis:
- * - SUPER_ADMIN: Acesso total ao sistema (gerencia todos os condomínios)
- * - PROFESSIONAL_SYNDIC: Síndico profissional (gerencia múltiplos condomínios)
- * - ADMIN: Conselheiro (admin do síndico)
- * - SYNDIC: Síndico de condomínio (gerencia um condomínio específico)
- * - RESIDENT: Morador (acesso limitado ao próprio condomínio)
+ * - SUPER_ADMIN: operador de plataforma SaaS. Gerencia CRUD de condomínios,
+ *   contas de síndicos, planos e financeiro da plataforma. NÃO tem acesso
+ *   operacional a condomínios (ocorrências, moradores, mensagens, etc).
+ * - PROFESSIONAL_SYNDIC: síndico profissional que gerencia múltiplos condomínios.
+ * - ADMIN: Conselheiro — apoio ao síndico com acesso operacional, sem poder
+ *   criar/editar outros usuários de nível gerencial.
+ * - SYNDIC: síndico de condomínio (pode gerenciar um ou múltiplos).
+ * - TRIAGE / SETOR_MANAGER / SETOR_MEMBER: perfis operacionais (ocorrências).
+ * - RESIDENT: morador — vê apenas as próprias ocorrências.
  */
 
 export const UserRoles = {
@@ -119,6 +122,10 @@ export const Permissions = {
   MANAGE_SYNDICS: "manage:syndics",
   MANAGE_TEAM: "manage:team",
 
+  // Assinatura / Financeiro (SaaS)
+  VIEW_BILLING: "view:billing",               // Ver própria assinatura (síndico)
+  MANAGE_BILLING_PLATFORM: "manage:billing_platform", // Gerenciar planos e financeiro (SUPER_ADMIN)
+
   // Comunicados
   VIEW_ANNOUNCEMENTS: "view:announcements",
   CREATE_ANNOUNCEMENT: "create:announcement",
@@ -132,7 +139,9 @@ export const Permissions = {
 } as const;
 
 /**
- * Núcleo operacional de condomínio (síndico profissional). Reutilizado pelo Super Admin quando um condomínio está selecionado.
+ * Núcleo operacional de condomínio — atribuído ao síndico profissional.
+ * NÃO é reutilizado pelo SUPER_ADMIN: SA é operador de plataforma, sem
+ * acesso operacional a condomínios.
  */
 const professionalSyndicPermissions: string[] = [
   // Dashboard
@@ -207,28 +216,34 @@ const professionalSyndicPermissions: string[] = [
   // Comunicados
   Permissions.VIEW_ANNOUNCEMENTS,
   Permissions.CREATE_ANNOUNCEMENT,
+
+  // Assinatura (síndicos veem e gerenciam sua própria)
+  Permissions.VIEW_BILLING,
 ];
 
 /**
  * Mapeamento de permissões por perfil de usuário
  */
 export const RolePermissions: Record<UserRole, string[]> = {
-  // SUPER_ADMIN: plataforma + mesmo núcleo operacional com condomínio selecionado (ocorrências, estrutura, etc.)
+  // SUPER_ADMIN: operador de plataforma (SaaS). Sem acesso operacional a
+  // condomínios. Vê apenas: CRUD de condomínios, gerência de síndicos,
+  // dashboard da plataforma e gerência financeira da plataforma.
   [UserRoles.SUPER_ADMIN]: [
-    ...new Set([
-      ...professionalSyndicPermissions,
-      Permissions.CREATE_CONDOMINIUM,
-      Permissions.EDIT_CONDOMINIUM,
-      Permissions.DELETE_CONDOMINIUM,
-      Permissions.VIEW_PLATFORM_DASHBOARD,
-      Permissions.MANAGE_SYNDICS,
-    ]),
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.CREATE_CONDOMINIUM,
+    Permissions.EDIT_CONDOMINIUM,
+    Permissions.DELETE_CONDOMINIUM,
+    Permissions.VIEW_SETTINGS,
+    Permissions.VIEW_PLATFORM_DASHBOARD,
+    Permissions.MANAGE_SYNDICS,
+    Permissions.MANAGE_BILLING_PLATFORM,
   ],
 
   // PROFESSIONAL_SYNDIC: Gerencia múltiplos condomínios (quase todas as permissões, exceto sistema)
   [UserRoles.PROFESSIONAL_SYNDIC]: professionalSyndicPermissions,
 
-  // ADMIN: Administrador de condomínio(s) específico(s)
+  // ADMIN (Conselheiro): administrador de apoio ao síndico, com acesso
+  // operacional mas SEM poder gerenciar outros usuários de nível gerencial
   [UserRoles.ADMIN]: [
     // Dashboard
     Permissions.VIEW_DASHBOARD,
@@ -280,7 +295,8 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.VIEW_HISTORY,
     Permissions.VIEW_ALL_HISTORY,
 
-    // Usuários
+    // Usuários (Conselheiro pode VER usuários do condomínio, mas NÃO
+    // pode criar/editar/deletar — essas ações são do síndico)
     Permissions.VIEW_USERS,
 
     // Relatórios
@@ -290,10 +306,14 @@ export const RolePermissions: Record<UserRole, string[]> = {
 
     // Configurações
     Permissions.VIEW_SETTINGS,
-    Permissions.EDIT_SETTINGS,
+
+    // Equipe — MANAGE_TEAM removido do Conselheiro; fica apenas com síndico
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
+    Permissions.CREATE_ANNOUNCEMENT,
+    // VIEW_BILLING NÃO é concedido ao Conselheiro — a assinatura é
+    // propriedade do síndico, não do condomínio.
   ],
 
   // SYNDIC: Síndico de condomínio - pode ter múltiplos condomínios atrelados pelo SUPER_ADMIN
@@ -512,13 +532,17 @@ export function isResident(userRole: UserRole | undefined | null): boolean {
 }
 
 /**
- * Verifica se o usuário tem permissão de administrador (SUPER_ADMIN, PROFESSIONAL_SYNDIC ou ADMIN)
+ * Verifica se o usuário tem permissão de administrador **dentro de um
+ * condomínio** (PROFESSIONAL_SYNDIC, SYNDIC ou ADMIN/Conselheiro).
+ *
+ * Importante: SUPER_ADMIN NÃO é condo-admin. Ele é operador de
+ * plataforma e não gerencia condomínios operacionalmente.
  */
 export function isAdminLevel(userRole: UserRole | undefined | null): boolean {
   if (!userRole) return false;
   const adminRoles: UserRole[] = [
-    UserRoles.SUPER_ADMIN,
     UserRoles.PROFESSIONAL_SYNDIC,
+    UserRoles.SYNDIC,
     UserRoles.ADMIN,
   ];
   return adminRoles.includes(userRole);

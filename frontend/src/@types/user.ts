@@ -125,7 +125,7 @@ export interface RegisterRequest {
   password: string;
   confirmPassword: string;
   role: UserRole;
-  condominiumId: string;
+  requestedCondominiumSlug: string;
 }
 
 /**

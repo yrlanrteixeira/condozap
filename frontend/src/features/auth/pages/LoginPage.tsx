@@ -34,8 +34,8 @@ export function LoginPage() {
     try {
       await signIn(values.email, values.password);
       navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao fazer login");
     }
   };
 
@@ -81,12 +81,6 @@ export function LoginPage() {
             />
             <span className="text-foreground/90">Manter conectado</span>
           </label>
-          <Link
-            to="/auth/reset-password"
-            className="hover:underline text-primary transition-colors"
-          >
-            Esqueceu a senha?
-          </Link>
         </div>
 
         <AuthErrorAlert message={error} />

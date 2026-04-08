@@ -70,7 +70,7 @@ export const useTowers = createQuery({
   queryKey: (condominiumId: string) => queryKeys.towers(condominiumId),
   queryFn: async (condominiumId: string): Promise<string[]> => {
     const { data } = await api.get(`/residents/${condominiumId}`);
-    const uniqueTowers = [...new Set(data.map((r: any) => r.tower))];
+    const uniqueTowers = [...new Set(data.map((r: Resident) => r.tower))];
     return uniqueTowers.sort() as string[];
   },
   enabled: (condominiumId: string) => !!condominiumId,

@@ -102,6 +102,8 @@ enum UserStatus {
 model Condominium {
   id        String            @id @default(cuid())
   name      String
+  /// Identificador único para URLs de cadastro (ex.: /auth/register/meu-condominio)
+  slug      String            @unique
   cnpj      String            @unique
   status    CondominiumStatus @default(TRIAL)
   createdAt DateTime          @default(now()) @map("created_at")
@@ -111,31 +113,36 @@ model Condominium {
   whatsappPhone      String? @map("whatsapp_phone")
   whatsappBusinessId String? @map("whatsapp_business_id")
 
-  // Trial management
-  trialEndsAt        DateTime? @map("trial_ends_at")
+  // Trial management (deprecated — replaced by Subscription model; kept for backward compat until destructive migration)
+  trialEndsAt DateTime? @map("trial_ends_at")
+
+  // Billing ownership (see billing spec)
+  primarySyndicId String? @map("primary_syndic_id")
+  primarySyndic   User?   @relation("OwnedCondominiums", fields: [primarySyndicId], references: [id])
 
   // Structure configuration (JSON)
   // Formato: { "towers": [{ "name": "A", "floors": ["1", "2", "3"], "unitsPerFloor": 4 }] }
   structure Json? @db.JsonB
 
   // Automation flags
-  autoTriageEnabled      Boolean @default(true)  @map("auto_triage_enabled")
-  autoAssignEnabled      Boolean @default(true)  @map("auto_assign_enabled")
-  autoCloseAfterDays     Int     @default(7)     @map("auto_close_after_days")
-  waitingAutoResolveDays Int     @default(14)    @map("waiting_auto_resolve_days")
-  reopenDeadlineDays     Int     @default(7)     @map("reopen_deadline_days")
+  autoTriageEnabled      Boolean @default(true) @map("auto_triage_enabled")
+  autoAssignEnabled      Boolean @default(true) @map("auto_assign_enabled")
+  autoCloseAfterDays     Int     @default(7) @map("auto_close_after_days")
+  waitingAutoResolveDays Int     @default(14) @map("waiting_auto_resolve_days")
+  reopenDeadlineDays     Int     @default(7) @map("reopen_deadline_days")
 
   // Relations
-  users          UserCondominium[]
-  residents      Resident[]
-  complaints     Complaint[]
-  messages       Message[]
-  sectors        Sector[]
-  slaConfigs     SlaConfig[]
-  announcements  Announcement[]
+  users           UserCondominium[]
+  residents       Resident[]
+  complaints      Complaint[]
+  messages        Message[]
+  sectors         Sector[]
+  slaConfigs      SlaConfig[]
+  announcements   Announcement[]
   cannedResponses CannedResponse[]
 
   @@index([cnpj])
+  @@index([primarySyndicId])
   @@map("condominiums")
 }
 
@@ -200,30 +207,34 @@ model User {
   forcePasswordReset Boolean @default(false) @map("force_password_reset")
 
   // Syndic Profile (public)
-  contactPhone    String?
-  photoUrl        String?
-  officeHours     String?
-  publicNotes     String?   @db.Text
+  contactPhone String?
+  photoUrl     String?
+  officeHours  String?
+  publicNotes  String? @db.Text
 
   // Syndic Profile (private)
-  address         String?
-  websiteUrl      String?
-  privateNotes    String?   @db.Text
+  address      String?
+  websiteUrl   String?
+  privateNotes String? @db.Text
 
   // Account Expiration
   accountExpiresAt DateTime?
 
   // Relations
-  condominiums           UserCondominium[]
-  resident               Resident?
-  sectorMembers          SectorMember[]
-  assigneeComplaints     Complaint[]           @relation("ComplaintAssignee")
-  escalatedComplaints    Complaint[]           @relation("ComplaintEscalationTarget")
-  assignedComplaints     ComplaintAssignment[] @relation("ComplaintAssignmentAssignedBy")
-  assignedToComplaints   ComplaintAssignment[] @relation("ComplaintAssignmentAssignee")
-  notifications          Notification[]        @relation("UserNotifications")
-  sentComplaintMessages  ComplaintMessage[]    @relation("ComplaintMessageSender")
-  createdAnnouncements   Announcement[]        @relation("AnnouncementAuthor")
+  condominiums          UserCondominium[]
+  resident              Resident?
+  sectorMembers         SectorMember[]
+  assigneeComplaints    Complaint[]           @relation("ComplaintAssignee")
+  escalatedComplaints   Complaint[]           @relation("ComplaintEscalationTarget")
+  assignedComplaints    ComplaintAssignment[] @relation("ComplaintAssignmentAssignedBy")
+  assignedToComplaints  ComplaintAssignment[] @relation("ComplaintAssignmentAssignee")
+  notifications         Notification[]        @relation("UserNotifications")
+  sentComplaintMessages ComplaintMessage[]    @relation("ComplaintMessageSender")
+  createdAnnouncements  Announcement[]        @relation("AnnouncementAuthor")
+
+  // Billing
+  subscription      Subscription? @relation("SyndicSubscription")
+  ownedCondominiums Condominium[] @relation("OwnedCondominiums")
 
   @@index([email])
   @@index([status])
@@ -386,8 +397,8 @@ model SectorMember {
   workload  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
 
-  sector            Sector                           @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  user              User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sector              Sector                           @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  user                User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
   permissionOverrides SectorMemberPermissionOverride[]
 
   @@unique([sectorId, userId])
@@ -401,7 +412,7 @@ model SectorPermission {
   action    String
   createdAt DateTime @default(now()) @map("created_at")
 
-  sector    Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  sector Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
 
   @@unique([sectorId, action])
   @@index([sectorId])
@@ -409,13 +420,13 @@ model SectorPermission {
 }
 
 model SectorMemberPermissionOverride {
-  id              String       @id @default(cuid())
-  sectorMemberId  String       @map("sector_member_id")
-  action          String
-  granted         Boolean
-  createdAt       DateTime     @default(now()) @map("created_at")
+  id             String   @id @default(cuid())
+  sectorMemberId String   @map("sector_member_id")
+  action         String
+  granted        Boolean
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  sectorMember    SectorMember @relation(fields: [sectorMemberId], references: [id], onDelete: Cascade)
+  sectorMember SectorMember @relation(fields: [sectorMemberId], references: [id], onDelete: Cascade)
 
   @@unique([sectorMemberId, action])
   @@index([sectorMemberId])
@@ -548,19 +559,139 @@ model ComplaintMessage {
 }
 
 model CannedResponse {
-  id            String       @id @default(cuid())
-  condominiumId String?      @map("condominium_id")
-  sectorId      String?      @map("sector_id")
+  id            String   @id @default(cuid())
+  condominiumId String?  @map("condominium_id")
+  sectorId      String?  @map("sector_id")
   title         String
-  content       String       @db.Text
-  createdBy     String       @map("created_by")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  content       String   @db.Text
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  condominium   Condominium? @relation(fields: [condominiumId], references: [id])
-  sector        Sector?      @relation(fields: [sectorId], references: [id])
+  condominium Condominium? @relation(fields: [condominiumId], references: [id])
+  sector      Sector?      @relation(fields: [sectorId], references: [id])
 
   @@index([condominiumId])
   @@index([sectorId])
   @@map("canned_responses")
+}
+
+// =====================================================
+// Billing & Subscriptions
+// =====================================================
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentBillType {
+  FIRST_CYCLE
+  SUBSCRIPTION_CYCLE
+  MANUAL
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+}
+
+enum PaymentBillStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+model Plan {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  displayName        String   @map("display_name")
+  minCondominiums    Int      @map("min_condominiums")
+  maxCondominiums    Int      @map("max_condominiums")
+  pricePerCondoCents Int      @map("price_per_condo_cents")
+  setupFeeCents      Int      @default(200000) @map("setup_fee_cents")
+  isActive           Boolean  @default(true) @map("is_active")
+  sortOrder          Int      @default(0) @map("sort_order")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+  bills         PaymentBill[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  syndicId           String             @unique @map("syndic_id")
+  currentPlanId      String?            @map("current_plan_id")
+  status             SubscriptionStatus @default(TRIAL)
+  trialEndsAt        DateTime?          @map("trial_ends_at")
+  currentPeriodStart DateTime?          @map("current_period_start")
+  currentPeriodEnd   DateTime?          @map("current_period_end")
+  cancelledAt        DateTime?          @map("cancelled_at")
+  setupPaid          Boolean            @default(false) @map("setup_paid")
+  providerId         String             @default("abacatepay") @map("provider_id")
+  externalCustomerId String?            @map("external_customer_id")
+  metadata           Json?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  syndic      User          @relation("SyndicSubscription", fields: [syndicId], references: [id], onDelete: Cascade)
+  currentPlan Plan?         @relation(fields: [currentPlanId], references: [id])
+  bills       PaymentBill[]
+
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@index([trialEndsAt])
+  @@map("subscriptions")
+}
+
+model PaymentBill {
+  id              String            @id @default(cuid())
+  subscriptionId  String            @map("subscription_id")
+  planId          String?           @map("plan_id")
+  type            PaymentBillType
+  method          PaymentMethod?
+  status          PaymentBillStatus @default(PENDING)
+  amountCents     Int               @map("amount_cents")
+  breakdown       Json
+  periodStart     DateTime?         @map("period_start")
+  periodEnd       DateTime?         @map("period_end")
+  providerId      String            @default("abacatepay") @map("provider_id")
+  externalId      String?           @map("external_id")
+  checkoutUrl     String?           @map("checkout_url")
+  pixBrCode       String?           @map("pix_brcode") @db.Text
+  pixBrCodeBase64 String?           @map("pix_brcode_base64") @db.Text
+  expiresAt       DateTime?         @map("expires_at")
+  paidAt          DateTime?         @map("paid_at")
+  providerPayload Json?             @map("provider_payload")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  plan         Plan?        @relation(fields: [planId], references: [id])
+
+  @@index([subscriptionId, status])
+  @@index([externalId])
+  @@map("payment_bills")
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  providerId  String    @default("abacatepay") @map("provider_id")
+  eventType   String    @map("event_type")
+  externalId  String?   @map("external_id")
+  payload     Json
+  processedAt DateTime? @map("processed_at")
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([providerId, eventType])
+  @@index([externalId])
+  @@map("webhook_events")
 }

@@ -59,6 +59,27 @@ export async function createAdmin(
   return newAdmin;
 }
 
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+const TRIAL_DAYS = 14;
+
+async function createTrialSubscription(
+  prisma: PrismaClient,
+  syndicId: string,
+): Promise<void> {
+  await prisma.subscription.create({
+    data: {
+      syndicId,
+      status: "TRIAL",
+      trialEndsAt: addDays(new Date(), TRIAL_DAYS),
+    },
+  });
+}
+
 export async function createSyndic(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
@@ -90,6 +111,23 @@ export async function createSyndic(
   }));
 
   await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
+
+  // Set primarySyndicId on each assigned condominium so cycle amount
+  // calculation can resolve a tier. Skip condominiums that already have
+  // a primary syndic to avoid clobbering existing ownership.
+  if (data.condominiumIds.length > 0) {
+    await prisma.condominium.updateMany({
+      where: {
+        id: { in: data.condominiumIds },
+        primarySyndicId: null,
+      },
+      data: { primarySyndicId: newSyndic.id },
+    });
+  }
+
+  // Provision a TRIAL subscription so the new syndic is not blocked by
+  // the global billing hook on operational writes from day one.
+  await createTrialSubscription(prisma, newSyndic.id);
 
   logger.info(
     `Syndic ${newSyndic.email} created by ${createdBy} for ${data.condominiumIds.length} condominiums`
@@ -133,7 +171,19 @@ export async function createProfessionalSyndic(
     }));
 
     await usersRepository.createManyUserCondominiums(prisma, userCondominiumsData);
+
+    // Set primarySyndicId for billing-tier resolution
+    await prisma.condominium.updateMany({
+      where: {
+        id: { in: data.condominiumIds },
+        primarySyndicId: null,
+      },
+      data: { primarySyndicId: newUser.id },
+    });
   }
+
+  // Provision a TRIAL subscription
+  await createTrialSubscription(prisma, newUser.id);
 
   logger.info(
     `ProfessionalSyndic ${newUser.email} created by ${createdBy} with GLOBAL scope`

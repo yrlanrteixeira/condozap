@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Info } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Info, Building2 } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
@@ -11,41 +12,65 @@ import {
   AuthHeader,
   AuthFooter,
   AuthErrorAlert,
-  RegisterSuccessCard,
   ConsentDialog,
   TextInput,
   PasswordInput,
 } from "../components";
+import { api } from "@/lib/api";
+
+type PublicCondominiumPreview = {
+  slug: string;
+  name: string;
+  status: string;
+  registrationOpen: boolean;
+};
+
+type RegisterResponse = {
+  user: { status?: string };
+  token: string;
+  refreshToken?: string;
+};
 
 export function RegisterPage() {
+  const { condoSlug = "" } = useParams<{ condoSlug: string }>();
+  const navigate = useNavigate();
   const { signUp } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
 
-  // Dialog states
   const [showDataDialog, setShowDataDialog] = useState(false);
   const [showWhatsappDialog, setShowWhatsappDialog] = useState(false);
 
+  const { data: condoPreview, isLoading: condoLoading, isError } = useQuery({
+    queryKey: ["publicCondominium", condoSlug],
+    queryFn: async (): Promise<PublicCondominiumPreview> => {
+      const { data } = await api.get<PublicCondominiumPreview>(
+        `/public/condominiums/${encodeURIComponent(condoSlug)}`
+      );
+      return data;
+    },
+    enabled: condoSlug.length > 0,
+    retry: false,
+  });
+
   const form = useForm<RegisterUserInput>({
     resolver: zodResolver(RegisterUserSchema),
-    mode: 'onBlur',
-    reValidateMode: 'onChange',
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       name: "",
       email: "",
-      condominiumId: "",
       phone: "",
       password: "",
       confirmPassword: "",
       role: "RESIDENT",
       consentDataProcessing: false,
-      consentWhatsapp: false, // Será obrigatório marcar true
+      consentWhatsapp: false,
     },
   });
 
   const handleNextStep = async () => {
-    const step1Fields = ["name", "email", "condominiumId", "phone"] as const;
+    const step1Fields = ["name", "email", "phone"] as const;
     const isStep1Valid = await form.trigger(step1Fields);
 
     if (isStep1Valid) {
@@ -57,19 +82,30 @@ export function RegisterPage() {
   const onSubmit = async (values: RegisterUserInput) => {
     setError(null);
     try {
-      await signUp({
+      const result = (await signUp({
         email: values.email,
         password: values.password,
         name: values.name,
         role: values.role,
-        condominiumId: values.condominiumId,
+        requestedCondominiumSlug: condoSlug,
         phone: values.phone,
         consentDataProcessing: values.consentDataProcessing,
         consentWhatsapp: values.consentWhatsapp,
-      });
-      setSuccess(true);
+      })) as RegisterResponse;
+
+      if (result.user?.status === "PENDING") {
+        navigate("/pending-approval", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao criar conta");
+      setError(
+        typeof err === "string"
+          ? err
+          : err instanceof Error
+            ? err.message
+            : "Erro ao criar conta"
+      );
     }
   };
 
@@ -82,7 +118,6 @@ export function RegisterPage() {
   };
 
   const handleWhatsappConsentClick = () => {
-    // Consentimento WhatsApp é OBRIGATÓRIO - não pode desmarcar
     if (!form.getValues("consentWhatsapp")) {
       setShowWhatsappDialog(true);
     }
@@ -97,11 +132,75 @@ export function RegisterPage() {
   };
 
   const isSubmitting = form.formState.isSubmitting;
-  const consentDataProcessing = useWatch({ control: form.control, name: "consentDataProcessing" });
-  const consentWhatsapp = useWatch({ control: form.control, name: "consentWhatsapp" });
+  const consentDataProcessing = useWatch({
+    control: form.control,
+    name: "consentDataProcessing",
+  });
+  const consentWhatsapp = useWatch({
+    control: form.control,
+    name: "consentWhatsapp",
+  });
 
-  if (success) {
-    return <RegisterSuccessCard email={form.getValues("email")} />;
+  if (!condoSlug) {
+    return (
+      <AuthCard maxWidth="md">
+        <AuthHeader
+          title="Link inválido"
+          description="Abra o cadastro pelo link enviado pelo seu condomínio."
+        />
+        <AuthFooter>
+          <Link
+            to="/auth/register"
+            className="text-primary hover:underline font-medium"
+          >
+            Saiba como obter o link
+          </Link>
+        </AuthFooter>
+      </AuthCard>
+    );
+  }
+
+  if (condoLoading) {
+    return (
+      <AuthCard maxWidth="xl">
+        <div className="flex flex-col items-center justify-center gap-4 py-16">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando condomínio…</p>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (isError || !condoPreview) {
+    return (
+      <AuthCard maxWidth="md">
+        <AuthHeader
+          title="Condomínio não encontrado"
+          description="Verifique se o link está completo ou peça um novo link ao síndico."
+        />
+        <AuthFooter>
+          <Link to="/auth/login" className="text-primary hover:underline font-medium">
+            Ir para o login
+          </Link>
+        </AuthFooter>
+      </AuthCard>
+    );
+  }
+
+  if (!condoPreview.registrationOpen) {
+    return (
+      <AuthCard maxWidth="md">
+        <AuthHeader
+          title="Cadastro indisponível"
+          description="Este condomínio não está aceitando novos cadastros no momento. Entre em contato com a administração."
+        />
+        <AuthFooter>
+          <Link to="/auth/login" className="text-primary hover:underline font-medium">
+            Ir para o login
+          </Link>
+        </AuthFooter>
+      </AuthCard>
+    );
   }
 
   return (
@@ -115,6 +214,18 @@ export function RegisterPage() {
               : "Crie sua senha e aceite os termos"
           }
         />
+
+        <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3">
+          <Building2 className="h-8 w-8 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Condomínio
+            </p>
+            <p className="truncate font-semibold text-foreground">
+              {condoPreview.name}
+            </p>
+          </div>
+        </div>
 
         <div className="flex items-center gap-2">
           <div
@@ -153,14 +264,6 @@ export function RegisterPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <TextInput
-                  type="text"
-                  label="Condomínio"
-                  placeholder="Nome do condomínio"
-                  error={form.formState.errors.condominiumId?.message}
-                  {...form.register("condominiumId")}
-                />
-
                 <TextInput
                   type="tel"
                   label="Telefone (WhatsApp)"
@@ -293,7 +396,6 @@ export function RegisterPage() {
         </AuthFooter>
       </AuthCard>
 
-      {/* Consent Dialogs */}
       <ConsentDialog
         isOpen={showDataDialog}
         onOpenChange={setShowDataDialog}

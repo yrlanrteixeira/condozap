@@ -5,6 +5,8 @@ import axios, {
 } from "axios";
 import qs from "qs";
 import { config } from "./config";
+import { refreshAccessToken } from "../shared/store/slices/authSlice";
+import type { Store } from "@reduxjs/toolkit";
 
 const BASE_URL = config.apiUrl;
 
@@ -69,13 +71,13 @@ const apiClient = axios.create({
  * Store do Redux - será definido após a configuração inicial
  * Usado para acessar tokens e dispatch de actions
  */
-let reduxStore: any = null;
+let reduxStore: Store | null = null;
 
 /**
  * Define o store do Redux para uso nos interceptors
  * Deve ser chamado na inicialização da aplicação
  */
-export const setReduxStore = (store: any) => {
+export const setReduxStore = (store: Store) => {
   reduxStore = store;
 };
 
@@ -155,12 +157,30 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Erro 402: Assinatura requerida — síndico sem assinatura ativa.
+    // Propaga um custom event que o SubscriptionStatusBanner escuta pra
+    // mostrar toast + redirecionar para /assinatura.
+    if (error.response?.status === 402) {
+      const body = error.response.data as {
+        error?: { code?: string; message?: string };
+      } | undefined;
+      const reason = body?.error?.code ?? "NO_SUBSCRIPTION";
+      const message = body?.error?.message ?? "Assinatura necessária";
+      window.dispatchEvent(
+        new CustomEvent("billing:blocked", {
+          detail: { reason, message },
+        }),
+      );
+      // Don't auto-redirect — the banner component decides what to do
+      return Promise.reject(error);
+    }
+
     // Erro 401: Token inválido ou expirado
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Se não tem store configurado, redireciona para login
       if (!reduxStore) {
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes("/auth/login")) {
+          window.location.href = "/auth/login";
         }
         return Promise.reject(error);
       }
@@ -188,15 +208,13 @@ apiClient.interceptors.response.use(
         // Se não tem refresh token, faz logout
         if (!refreshToken) {
           reduxStore.dispatch({ type: "auth/logout" });
-          if (!window.location.pathname.includes("/login")) {
-            window.location.href = "/login";
+          if (!window.location.pathname.includes("/auth/login")) {
+            window.location.href = "/auth/login";
           }
           return Promise.reject(error);
         }
 
         // Tenta renovar o token
-        const { refreshAccessToken } =
-          await import("../shared/store/slices/authSlice");
         const result = await reduxStore.dispatch(refreshAccessToken()).unwrap();
 
         // Token renovado com sucesso
@@ -220,8 +238,8 @@ apiClient.interceptors.response.use(
 
         reduxStore.dispatch({ type: "auth/logout" });
 
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes("/auth/login")) {
+          window.location.href = "/auth/login";
         }
 
         return Promise.reject(refreshError);

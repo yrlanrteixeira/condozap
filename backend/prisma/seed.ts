@@ -33,6 +33,7 @@ async function main() {
   const condo1 = await prisma.condominium.create({
     data: {
       name: "Condomínio Vista Verde",
+      slug: "vista-verde",
       cnpj: "12345678000190",
       status: "ACTIVE",
       whatsappPhone: "5511999990000",
@@ -46,6 +47,7 @@ async function main() {
   const condo2 = await prisma.condominium.create({
     data: {
       name: "Residencial Bela Vista",
+      slug: "bela-vista",
       cnpj: "98765432000199",
       status: "ACTIVE",
       whatsappPhone: "5511999990001",
@@ -167,19 +169,6 @@ async function main() {
       email: "superadmin@email.com",
       password: hashedPassword,
       name: "Super Admin",
-      role: "SUPER_ADMIN",
-      permissionScope: "GLOBAL",
-      status: "APPROVED",
-      approvedAt: new Date(),
-    },
-  });
-
-  // Yolan's SUPER_ADMIN account
-  const yrlanAdmin = await prisma.user.create({
-    data: {
-      email: "yrlan.01@email.com",
-      password: hashedPassword,
-      name: "Yolan - Super Admin",
       role: "SUPER_ADMIN",
       permissionScope: "GLOBAL",
       status: "APPROVED",

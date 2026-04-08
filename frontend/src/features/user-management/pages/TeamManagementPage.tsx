@@ -135,10 +135,11 @@ export function TeamManagementPage() {
 
       setUserToDelete(null);
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || 'Erro ao remover usuário.';
       toast({
         title: 'Erro ao remover usuário',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
     }
@@ -158,10 +159,11 @@ export function TeamManagementPage() {
         description: value ? `Função definida: ${value}` : 'Função removida.',
       });
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || 'Erro ao atualizar função.';
       toast({
         title: 'Erro ao atualizar função',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
     }

@@ -4,6 +4,7 @@ import { FormSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleto
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { TargetData, MessageType, MessageScope } from "@/features/messages/types";
+import type { Condominium } from "@/types";
 import { TEMPLATES } from "@/config/constants";
 import { filterResidentsByTarget } from "@/shared/utils/helpers";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
@@ -58,7 +59,7 @@ export function MessagingPage() {
 
   // Determine if current user has an assigned tower restriction
   const currentUserAssignedTower = user?.condominiums
-    ?.find((c: any) => c.id === currentCondominiumId)?.assignedTower;
+    ?.find((c: Condominium) => c.id === currentCondominiumId)?.assignedTower;
 
   // When the user has an assignedTower, pre-select it and prevent "all" scope
   useEffect(() => {

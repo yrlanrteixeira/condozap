@@ -1,6 +1,7 @@
 import type { FeatureRoute } from "@/routes/types";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { RegisterBlockedPage } from "./pages/RegisterBlockedPage";
 
 export const authRoutes: FeatureRoute[] = [
   {
@@ -9,10 +10,10 @@ export const authRoutes: FeatureRoute[] = [
   },
   {
     path: "/auth/register",
-    element: <RegisterPage />,
+    element: <RegisterBlockedPage />,
   },
   {
-    path: "/login",
-    element: <LoginPage />,
+    path: "/auth/register/:condoSlug",
+    element: <RegisterPage />,
   },
 ];

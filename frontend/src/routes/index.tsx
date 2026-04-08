@@ -17,6 +17,8 @@ import { platformRoutes } from "@/features/platform/routes";
 import { announcementRoutes } from "@/features/announcements/routes";
 import { reportRoutes } from "@/features/reports/routes";
 import { sectorDashboardRoutes } from "@/features/sector-dashboard/routes";
+import { billingRoutes } from "@/features/billing";
+import { platformBillingRoutes } from "@/features/platform-billing";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
@@ -43,6 +45,8 @@ export function AppRoutes() {
     ...announcementRoutes,
     ...reportRoutes,
     ...sectorDashboardRoutes,
+    ...billingRoutes,
+    ...platformBillingRoutes,
   ];
 
   return (

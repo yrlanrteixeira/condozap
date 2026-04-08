@@ -14,6 +14,7 @@ import {
   getMyStatus,
   getPendingUsers,
   getPendingUsersByCondominium,
+  getPendingUsersForMyCondominiums,
   rejectUser,
 } from "./user-approval.service";
 import type { AuthUser } from "../../types/auth";
@@ -31,6 +32,15 @@ export async function listPendingUsersHandler(
   reply: FastifyReply
 ) {
   const pendingUsers = await getPendingUsers(prisma);
+  return reply.send(pendingUsers);
+}
+
+export async function listPendingUsersForMyCondominiumsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const user = request.user as AuthUser;
+  const pendingUsers = await getPendingUsersForMyCondominiums(prisma, user);
   return reply.send(pendingUsers);
 }
 

@@ -54,7 +54,7 @@ import { ComplaintChat } from "./ComplaintChat";
 import { CsatDisplay } from "./CsatDisplay";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { api } from "@/lib/api";
-import type { ComplaintDetail, ComplaintStatus } from "../types";
+import type { ComplaintDetail, ComplaintStatus, CannedResponse } from "../types";
 import { formatDateTime } from "@/shared/utils/helpers";
 
 const ACTION_COMMENT = "COMMENT";
@@ -131,7 +131,7 @@ export function ComplaintDetailSheet({
     enabled: !!complaint,
   });
 
-  const filteredTemplates = cannedResponses.filter((t: any) =>
+  const filteredTemplates = cannedResponses.filter((t: CannedResponse) =>
     t.title.toLowerCase().includes(templateSearch.toLowerCase()) ||
     t.content.toLowerCase().includes(templateSearch.toLowerCase())
   );
@@ -267,7 +267,7 @@ export function ComplaintDetailSheet({
                         className="mb-2"
                       />
                       <div className="max-h-60 overflow-y-auto space-y-1">
-                        {filteredTemplates.map((t: any) => (
+                        {filteredTemplates.map((t: CannedResponse) => (
                           <button
                             key={t.id}
                             className="w-full text-left p-2 rounded hover:bg-muted text-sm"

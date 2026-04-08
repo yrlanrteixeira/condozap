@@ -40,13 +40,11 @@ export async function createCannedResponseHandler(
   const user = request.user as AuthUser;
   const body = createCannedResponseSchema.parse(request.body);
 
-  // If no condominiumId is provided, this is a global template — only SUPER_ADMIN may create them
+  // Canned responses are always scoped to a condominium.
   if (!body.condominiumId) {
-    if (user.role !== "SUPER_ADMIN") {
-      throw new ForbiddenError(
-        "Apenas SUPER_ADMIN pode criar respostas globais (sem condomínio)"
-      );
-    }
+    throw new ForbiddenError(
+      "Respostas enlatadas devem ser vinculadas a um condomínio"
+    );
   }
 
   const response = await cannedResponsesService.createCannedResponse(

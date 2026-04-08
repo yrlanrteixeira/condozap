@@ -13,6 +13,7 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import {
   usePendingUsers,
   useAllPendingUsers,
+  usePendingUsersForMyCondominiums,
   useApproveUser,
   useRejectUser,
   useCondominiums,
@@ -26,22 +27,31 @@ export function UserApprovalPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // SUPER_ADMIN e PROFESSIONAL_SYNDIC veem todos os pendentes; demais veem por condomínio
-  const canSeeAllPending =
-    user?.role === "SUPER_ADMIN" || user?.role === "PROFESSIONAL_SYNDIC";
+  // PROFESSIONAL_SYNDIC com escopo GLOBAL vê o feed agregado de TODOS os
+  // condomínios da plataforma; SYNDIC/ADMIN/PROFESSIONAL_SYNDIC sem global
+  // veem o agregado dos condomínios que gerenciam.
+  const isProGlobal =
+    user?.role === "PROFESSIONAL_SYNDIC" && user?.permissionScope === "GLOBAL";
+  const isSyndicLevel =
+    user?.role === "SYNDIC" ||
+    user?.role === "PROFESSIONAL_SYNDIC" ||
+    user?.role === "ADMIN";
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
-  const allPendingQuery = useAllPendingUsers({ enabled: canSeeAllPending });
-  const condoPendingQuery = usePendingUsers(currentCondominiumId || "");
+  const allPendingQuery = useAllPendingUsers({ enabled: isProGlobal });
+  const myCondoPendingQuery = usePendingUsersForMyCondominiums({
+    enabled: isSyndicLevel && !isProGlobal,
+  });
   const { data: condominiums = [] } = useCondominiums({
-    enabled: canSeeAllPending,
+    enabled: isProGlobal,
   });
 
   const {
     data: pendingUsers = [],
     isLoading,
     isError,
-  } = canSeeAllPending ? allPendingQuery : condoPendingQuery;
+  } = isProGlobal ? allPendingQuery : myCondoPendingQuery;
+  const canSeeAllPending = isProGlobal;
 
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
@@ -81,10 +91,11 @@ export function UserApprovalPage() {
         title: "Sucesso!",
         description: "Usuário aprovado e alocado com sucesso.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || "Ocorreu um erro inesperado.";
       toast({
         title: "Erro ao aprovar usuário",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: message,
         variant: "error",
       });
     }
@@ -99,10 +110,11 @@ export function UserApprovalPage() {
         description: "O usuário foi notificado sobre a rejeição.",
         variant: "default",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message || "Ocorreu um erro inesperado.";
       toast({
         title: "Erro ao rejeitar cadastro",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: message,
         variant: "error",
       });
     }

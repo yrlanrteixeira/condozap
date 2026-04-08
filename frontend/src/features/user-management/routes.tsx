@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { AnyPermissionGuard } from "@/shared/components/guards";
+import { PermissionGuard } from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
@@ -14,13 +14,13 @@ export const userManagementRoutes: FeatureRoute[] = [
   {
     path: "team",
     element: (
-      <AnyPermissionGuard
-        permissions={[Permissions.MANAGE_TEAM, Permissions.MANAGE_RESIDENTS]}
-      >
+      // Team management is síndico-only. ADMIN (Conselheiro) cannot
+      // manage other management-level users.
+      <PermissionGuard permission={Permissions.MANAGE_TEAM}>
         <Suspense fallback={<PageLoader />}>
           <TeamManagementPage />
         </Suspense>
-      </AnyPermissionGuard>
+      </PermissionGuard>
     ),
   },
 ];

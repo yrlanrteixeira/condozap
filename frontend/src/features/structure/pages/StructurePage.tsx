@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban } from "lucide-react";
+import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeaderSkeleton, StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
+import { useToast } from "@/shared/components/ui/use-toast";
 import type { Resident } from "@/features/residents/types";
 import { useAppSelector } from "@/shared/hooks";
 import { useAuth } from "@/shared/hooks/useAuth";
@@ -15,10 +16,24 @@ import { useStructure } from "../hooks/useStructureApi";
 export function StructurePage() {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
+  const { toast } = useToast();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStructureDialogOpen, setIsStructureDialogOpen] = useState(false);
   const [isSectorDialogOpen, setIsSectorDialogOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | undefined>();
+
+  const handleOpenSectorDialog = () => {
+    if (isSuperAdmin) {
+      toast({
+        title: "Acesso negado",
+        description: "O usuário Super Admin não pode criar um setor para um condomínio.",
+        variant: "error",
+      });
+      return;
+    }
+    setIsSectorDialogOpen(true);
+  };
 
   // Buscar moradores do condomínio selecionado
   const condoIdToFetch = currentCondominiumId || '';
@@ -36,10 +51,7 @@ export function StructurePage() {
   const residentsByTower = useMemo(() => {
     if (!residents) return {};
     return residents.reduce((acc, resident) => {
-      if (!acc[resident.tower]) {
-        acc[resident.tower] = [];
-      }
-      acc[resident.tower].push(resident);
+      (acc[resident.tower] ??= []).push(resident);
       return acc;
     }, {} as Record<string, Resident[]>);
   }, [residents]);
@@ -135,7 +147,7 @@ export function StructurePage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setIsSectorDialogOpen(true)}
+            onClick={handleOpenSectorDialog}
             className="w-full sm:w-auto"
           >
             <FolderKanban className="mr-2 h-4 w-4" />
