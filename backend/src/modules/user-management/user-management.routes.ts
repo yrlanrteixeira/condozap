@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireAdmin, requireSyndicStrict, requireRole } from "../../shared/middlewares";
-import { requireCondoAccess, requireCondoAccessUnlessSuperAdmin } from "../../auth/authorize";
+import { requireCondoAccess } from "../../auth/authorize";
 import {
   createAdminHandler,
   createSyndicHandler,
@@ -21,11 +21,13 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/create-admin",
     {
+      // SUPER_ADMIN removed: creating a conselheiro is an operational
+      // action owned by the síndico of the condominium.
       onRequest: [
         fastify.authenticate,
-        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"]),
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
       ],
-      preHandler: [requireCondoAccessUnlessSuperAdmin({ source: "body" })],
+      preHandler: [requireCondoAccess({ source: "body" })],
     },
     createAdminHandler
   );
@@ -123,11 +125,12 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   }, updateAssignedTowerHandler);
 
   fastify.post("/users/create-sector-member", {
+    // SUPER_ADMIN removed: sector member management is condo-operational.
     onRequest: [
       fastify.authenticate,
-      requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"]),
+      requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
     ],
-    preHandler: [requireCondoAccessUnlessSuperAdmin({ source: "body" })],
+    preHandler: [requireCondoAccess({ source: "body" })],
   }, createSectorMemberHandler);
 };
 

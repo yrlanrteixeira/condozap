@@ -191,8 +191,12 @@ export const requireRole = (roles: string[]) => {
 
 export const requireSuperAdmin = () => requireRole(["SUPER_ADMIN"]);
 
+// "Admin" here means "condominium admin" (síndico / conselheiro),
+// NOT platform admin. SUPER_ADMIN is the platform operator and has no
+// visibility into any condominium's operational data — see
+// docs/superpowers/specs/2026-03-26-role-permissions-redesign.md
 export const requireAdmin = () =>
-  requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
+  requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
 
 export const requireSyndicStrict = () =>
   requireRole(["PROFESSIONAL_SYNDIC", "SYNDIC"]);
@@ -209,14 +213,22 @@ export const requireGlobalScope = () => {
   };
 };
 
-/** Lista global de pendentes / condomínios para aprovação: SUPER_ADMIN ou síndico profissional com escopo GLOBAL */
+/**
+ * Lista global agregada (pendentes de aprovação, condomínios, etc):
+ * somente PROFESSIONAL_SYNDIC com escopo GLOBAL.
+ *
+ * SUPER_ADMIN NÃO tem acesso — é operador de plataforma, não de condomínios.
+ * Ver spec 2026-03-26-role-permissions-redesign.
+ *
+ * @deprecated Use `requireRole(['PROFESSIONAL_SYNDIC']) + requireGlobalScope()`
+ * in new code. Kept here so existing routes continue to compile.
+ */
 export const requireSuperAdminOrGlobalProfessionalSyndic = () => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as AuthUser | undefined;
     if (!user) {
       return reply.status(401).send({ error: "Usuário não autenticado" });
     }
-    if (user.role === "SUPER_ADMIN") return;
     if (
       user.role === "PROFESSIONAL_SYNDIC" &&
       user.permissionScope === "GLOBAL"
@@ -227,17 +239,16 @@ export const requireSuperAdminOrGlobalProfessionalSyndic = () => {
   };
 };
 
-/** Exige acesso ao condomínio exceto para SUPER_ADMIN (aprovação em qualquer condomínio da plataforma) */
+/**
+ * Exige acesso ao condomínio. SUPER_ADMIN NÃO tem bypass — ele não é
+ * operador de condomínio. Ver spec 2026-03-26-role-permissions-redesign.
+ *
+ * @deprecated Use `requireCondoAccess(config)` directly. Kept as an alias
+ * so existing routes continue to compile after the SA bypass was removed.
+ */
 export const requireCondoAccessUnlessSuperAdmin = (
   config: CondoAccessConfig = {}
-) => {
-  const guard = requireCondoAccess(config);
-  return async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = request.user as AuthUser | undefined;
-    if (user?.role === "SUPER_ADMIN") return;
-    return guard(request, reply);
-  };
-};
+) => requireCondoAccess(config);
 
 export const requireComplaintOwner = () => {
   return async (request: FastifyRequest, reply: FastifyReply) => {

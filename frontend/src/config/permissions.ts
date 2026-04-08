@@ -220,17 +220,19 @@ const professionalSyndicPermissions: string[] = [
  * Mapeamento de permissões por perfil de usuário
  */
 export const RolePermissions: Record<UserRole, string[]> = {
-  // SUPER_ADMIN: plataforma + mesmo núcleo operacional com condomínio selecionado (ocorrências, estrutura, etc.)
+  // SUPER_ADMIN: operador de plataforma (SaaS). Sem acesso operacional a
+  // condomínios. Vê apenas: CRUD de condomínios, gerência de síndicos,
+  // dashboard da plataforma e gerência financeira da plataforma.
+  // Ver spec docs/superpowers/specs/2026-03-26-role-permissions-redesign.md
   [UserRoles.SUPER_ADMIN]: [
-    ...new Set([
-      ...professionalSyndicPermissions,
-      Permissions.CREATE_CONDOMINIUM,
-      Permissions.EDIT_CONDOMINIUM,
-      Permissions.DELETE_CONDOMINIUM,
-      Permissions.VIEW_PLATFORM_DASHBOARD,
-      Permissions.MANAGE_SYNDICS,
-      Permissions.MANAGE_BILLING_PLATFORM,
-    ]),
+    Permissions.VIEW_CONDOMINIUMS,
+    Permissions.CREATE_CONDOMINIUM,
+    Permissions.EDIT_CONDOMINIUM,
+    Permissions.DELETE_CONDOMINIUM,
+    Permissions.VIEW_SETTINGS,
+    Permissions.VIEW_PLATFORM_DASHBOARD,
+    Permissions.MANAGE_SYNDICS,
+    Permissions.MANAGE_BILLING_PLATFORM,
   ],
 
   // PROFESSIONAL_SYNDIC: Gerencia múltiplos condomínios (quase todas as permissões, exceto sistema)
@@ -288,11 +290,9 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.VIEW_HISTORY,
     Permissions.VIEW_ALL_HISTORY,
 
-    // Usuários
+    // Usuários (Conselheiro pode VER usuários do condomínio, mas NÃO
+    // pode criar/editar/deletar — essas ações são do síndico)
     Permissions.VIEW_USERS,
-    Permissions.CREATE_USER,
-    Permissions.EDIT_USER,
-    Permissions.DELETE_USER,
 
     // Relatórios
     Permissions.VIEW_REPORTS,
@@ -302,12 +302,14 @@ export const RolePermissions: Record<UserRole, string[]> = {
     // Configurações
     Permissions.VIEW_SETTINGS,
 
-    // Equipe
-    Permissions.MANAGE_TEAM,
+    // Equipe — MANAGE_TEAM removido do Conselheiro; fica apenas com síndico
+    // Ver spec 2026-03-26
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
     Permissions.CREATE_ANNOUNCEMENT,
+    // VIEW_BILLING NÃO é concedido ao Conselheiro — a assinatura é
+    // propriedade do síndico, não do condomínio.
   ],
 
   // SYNDIC: Síndico de condomínio - pode ter múltiplos condomínios atrelados pelo SUPER_ADMIN
