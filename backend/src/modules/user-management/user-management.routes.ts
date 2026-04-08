@@ -87,7 +87,9 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/users/invite",
     {
-      onRequest: [fastify.authenticate, requireAdmin()],
+      // Per spec 2026-03-26: inviting another management-level user is
+      // a síndico-only action (ADMIN/Conselheiro cannot invite peers).
+      onRequest: [fastify.authenticate, requireSyndicStrict()],
     },
     inviteUserHandler
   );

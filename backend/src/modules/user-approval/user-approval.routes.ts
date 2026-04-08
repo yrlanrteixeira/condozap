@@ -41,7 +41,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "SUPER_ADMIN"]),
+        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
       ],
       preHandler: [
         requireCondoAccessUnlessSuperAdmin({ paramName: "condominiumId" }),
@@ -55,7 +55,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "SUPER_ADMIN"]),
+        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
       ],
       preHandler: [requireCondoAccessUnlessSuperAdmin({ source: "body" })],
     },
@@ -67,7 +67,7 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC", "SUPER_ADMIN"]),
+        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
       ],
     },
     rejectUserHandler

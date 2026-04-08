@@ -136,7 +136,9 @@ export const Permissions = {
 } as const;
 
 /**
- * Núcleo operacional de condomínio (síndico profissional). Reutilizado pelo Super Admin quando um condomínio está selecionado.
+ * Núcleo operacional de condomínio — atribuído ao síndico profissional.
+ * NÃO é reutilizado pelo SUPER_ADMIN: ver spec 2026-03-26-role-permissions-redesign
+ * (SA é operador de plataforma, sem acesso operacional a condomínios).
  */
 const professionalSyndicPermissions: string[] = [
   // Dashboard
@@ -238,7 +240,8 @@ export const RolePermissions: Record<UserRole, string[]> = {
   // PROFESSIONAL_SYNDIC: Gerencia múltiplos condomínios (quase todas as permissões, exceto sistema)
   [UserRoles.PROFESSIONAL_SYNDIC]: professionalSyndicPermissions,
 
-  // ADMIN: Administrador de condomínio(s) específico(s)
+  // ADMIN (Conselheiro): administrador de apoio ao síndico, com acesso
+  // operacional mas SEM poder gerenciar outros usuários de nível gerencial
   [UserRoles.ADMIN]: [
     // Dashboard
     Permissions.VIEW_DASHBOARD,
@@ -528,13 +531,18 @@ export function isResident(userRole: UserRole | undefined | null): boolean {
 }
 
 /**
- * Verifica se o usuário tem permissão de administrador (SUPER_ADMIN, PROFESSIONAL_SYNDIC ou ADMIN)
+ * Verifica se o usuário tem permissão de administrador **dentro de um
+ * condomínio** (PROFESSIONAL_SYNDIC, SYNDIC ou ADMIN/Conselheiro).
+ *
+ * Importante: SUPER_ADMIN NÃO é condo-admin. Ele é operador de
+ * plataforma e não gerencia condomínios operacionalmente.
+ * Ver spec 2026-03-26-role-permissions-redesign.
  */
 export function isAdminLevel(userRole: UserRole | undefined | null): boolean {
   if (!userRole) return false;
   const adminRoles: UserRole[] = [
-    UserRoles.SUPER_ADMIN,
     UserRoles.PROFESSIONAL_SYNDIC,
+    UserRoles.SYNDIC,
     UserRoles.ADMIN,
   ];
   return adminRoles.includes(userRole);
