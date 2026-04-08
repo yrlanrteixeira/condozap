@@ -5,7 +5,6 @@
  * - SUPER_ADMIN: operador de plataforma SaaS. Gerencia CRUD de condomínios,
  *   contas de síndicos, planos e financeiro da plataforma. NÃO tem acesso
  *   operacional a condomínios (ocorrências, moradores, mensagens, etc).
- *   Ver spec 2026-03-26-role-permissions-redesign.md.
  * - PROFESSIONAL_SYNDIC: síndico profissional que gerencia múltiplos condomínios.
  * - ADMIN: Conselheiro — apoio ao síndico com acesso operacional, sem poder
  *   criar/editar outros usuários de nível gerencial.
@@ -141,8 +140,8 @@ export const Permissions = {
 
 /**
  * Núcleo operacional de condomínio — atribuído ao síndico profissional.
- * NÃO é reutilizado pelo SUPER_ADMIN: ver spec 2026-03-26-role-permissions-redesign
- * (SA é operador de plataforma, sem acesso operacional a condomínios).
+ * NÃO é reutilizado pelo SUPER_ADMIN: SA é operador de plataforma, sem
+ * acesso operacional a condomínios.
  */
 const professionalSyndicPermissions: string[] = [
   // Dashboard
@@ -229,7 +228,6 @@ export const RolePermissions: Record<UserRole, string[]> = {
   // SUPER_ADMIN: operador de plataforma (SaaS). Sem acesso operacional a
   // condomínios. Vê apenas: CRUD de condomínios, gerência de síndicos,
   // dashboard da plataforma e gerência financeira da plataforma.
-  // Ver spec docs/superpowers/specs/2026-03-26-role-permissions-redesign.md
   [UserRoles.SUPER_ADMIN]: [
     Permissions.VIEW_CONDOMINIUMS,
     Permissions.CREATE_CONDOMINIUM,
@@ -310,7 +308,6 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.VIEW_SETTINGS,
 
     // Equipe — MANAGE_TEAM removido do Conselheiro; fica apenas com síndico
-    // Ver spec 2026-03-26
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
@@ -540,7 +537,6 @@ export function isResident(userRole: UserRole | undefined | null): boolean {
  *
  * Importante: SUPER_ADMIN NÃO é condo-admin. Ele é operador de
  * plataforma e não gerencia condomínios operacionalmente.
- * Ver spec 2026-03-26-role-permissions-redesign.
  */
 export function isAdminLevel(userRole: UserRole | undefined | null): boolean {
   if (!userRole) return false;

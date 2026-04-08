@@ -40,9 +40,7 @@ export async function createCannedResponseHandler(
   const user = request.user as AuthUser;
   const body = createCannedResponseSchema.parse(request.body);
 
-  // Canned responses are always scoped to a condominium. Global templates
-  // were removed when SUPER_ADMIN lost operational access — see
-  // docs/superpowers/specs/2026-03-26-role-permissions-redesign.md
+  // Canned responses are always scoped to a condominium.
   if (!body.condominiumId) {
     throw new ForbiddenError(
       "Respostas enlatadas devem ser vinculadas a um condomínio"

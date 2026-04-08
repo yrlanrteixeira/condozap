@@ -193,8 +193,7 @@ export const requireSuperAdmin = () => requireRole(["SUPER_ADMIN"]);
 
 // "Admin" here means "condominium admin" (síndico / conselheiro),
 // NOT platform admin. SUPER_ADMIN is the platform operator and has no
-// visibility into any condominium's operational data — see
-// docs/superpowers/specs/2026-03-26-role-permissions-redesign.md
+// visibility into any condominium's operational data.
 export const requireAdmin = () =>
   requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
 
@@ -218,7 +217,6 @@ export const requireGlobalScope = () => {
  * somente PROFESSIONAL_SYNDIC com escopo GLOBAL.
  *
  * SUPER_ADMIN NÃO tem acesso — é operador de plataforma, não de condomínios.
- * Ver spec 2026-03-26-role-permissions-redesign.
  *
  * @deprecated Use `requireRole(['PROFESSIONAL_SYNDIC']) + requireGlobalScope()`
  * in new code. Kept here so existing routes continue to compile.
@@ -241,7 +239,7 @@ export const requireSuperAdminOrGlobalProfessionalSyndic = () => {
 
 /**
  * Exige acesso ao condomínio. SUPER_ADMIN NÃO tem bypass — ele não é
- * operador de condomínio. Ver spec 2026-03-26-role-permissions-redesign.
+ * operador de condomínio.
  *
  * @deprecated Use `requireCondoAccess(config)` directly. Kept as an alias
  * so existing routes continue to compile after the SA bypass was removed.

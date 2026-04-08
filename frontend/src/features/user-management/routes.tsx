@@ -14,8 +14,8 @@ export const userManagementRoutes: FeatureRoute[] = [
   {
     path: "team",
     element: (
-      // Team management is síndico-only per spec 2026-03-26. ADMIN
-      // (Conselheiro) cannot manage other management-level users.
+      // Team management is síndico-only. ADMIN (Conselheiro) cannot
+      // manage other management-level users.
       <PermissionGuard permission={Permissions.MANAGE_TEAM}>
         <Suspense fallback={<PageLoader />}>
           <TeamManagementPage />
