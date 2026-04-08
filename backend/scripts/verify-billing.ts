@@ -116,13 +116,22 @@ function testSubscriptionState() {
       expectedCanWrite: true,
     },
     {
-      name: "ACTIVE expired exactly at grace boundary (3d) → grace",
+      name: "ACTIVE expired 2 days ago → still in grace (daysSince < 3)",
+      sub: buildSub({
+        status: SubscriptionStatus.ACTIVE,
+        currentPeriodEnd: addDays(now, -2),
+      }),
+      expectedPhase: "grace",
+      expectedCanWrite: true,
+    },
+    {
+      name: "ACTIVE expired exactly 3 days ago → soft_locked (grace boundary)",
       sub: buildSub({
         status: SubscriptionStatus.ACTIVE,
         currentPeriodEnd: addDays(now, -3),
       }),
-      expectedPhase: "grace",
-      expectedCanWrite: true,
+      expectedPhase: "soft_locked",
+      expectedCanWrite: false,
     },
     {
       name: "ACTIVE expired 4 days ago → soft_locked",
@@ -134,7 +143,7 @@ function testSubscriptionState() {
       expectedCanWrite: false,
     },
     {
-      name: "ACTIVE expired at soft-lock boundary (14d) → soft_locked",
+      name: "ACTIVE expired 14 days ago → soft_locked (last day before hard)",
       sub: buildSub({
         status: SubscriptionStatus.ACTIVE,
         currentPeriodEnd: addDays(now, -14),
@@ -143,7 +152,7 @@ function testSubscriptionState() {
       expectedCanWrite: false,
     },
     {
-      name: "ACTIVE expired 15 days ago → hard_locked",
+      name: "ACTIVE expired exactly 15 days ago → hard_locked (boundary)",
       sub: buildSub({
         status: SubscriptionStatus.ACTIVE,
         currentPeriodEnd: addDays(now, -15),

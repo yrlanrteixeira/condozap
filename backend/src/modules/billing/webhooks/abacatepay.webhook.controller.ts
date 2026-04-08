@@ -102,7 +102,7 @@ export async function handleAbacatePayWebhook(
     return reply.code(200).send({ ok: true });
   }
 
-  // Idempotency
+  // Fast-path idempotency: if we already marked PAID, just ack.
   if (bill.status === PaymentBillStatus.PAID && parsed.eventType === "bill.paid") {
     await markProcessed(null, parsed.externalBillId);
     return reply.code(200).send({ ok: true });
@@ -110,24 +110,40 @@ export async function handleAbacatePayWebhook(
 
   try {
     if (parsed.eventType === "bill.paid") {
-      await prisma.$transaction(async (tx) => {
-        await tx.paymentBill.update({
-          where: { id: bill.id },
-          data: {
-            status: PaymentBillStatus.PAID,
-            paidAt: parsed.paidAt ?? new Date(),
-          },
-        });
+      // Atomic state transition: only one webhook can win. Using updateMany
+      // with a `status: PENDING` filter gives us compare-and-swap semantics
+      // via Postgres row locking — if two webhooks race, exactly one of
+      // them returns count=1 and proceeds to extend the subscription; the
+      // other returns count=0 and becomes a no-op. This prevents double
+      // extensions of currentPeriodEnd when AbacatePay retries.
+      const claim = await prisma.paymentBill.updateMany({
+        where: { id: bill.id, status: PaymentBillStatus.PENDING },
+        data: {
+          status: PaymentBillStatus.PAID,
+          paidAt: parsed.paidAt ?? new Date(),
+        },
+      });
 
-        // Renewal anchoring: when the user pays before the previous period
-        // ends, we extend FROM the previous end (preserving prepaid days).
-        // When they pay after expiry (grace, soft-lock), the new cycle
-        // starts from now.
+      if (claim.count === 0) {
+        // Another concurrent webhook already processed this bill.
+        await markProcessed("already_processed", parsed.externalBillId);
+        return reply.code(200).send({ ok: true });
+      }
+
+      // Subscription renewal happens in a follow-up transaction. At this
+      // point the bill is already marked PAID, so even if this step fails
+      // we have a durable record to reconcile from. The webhook audit log
+      // captures the error for manual reprocessing.
+      await prisma.$transaction(async (tx) => {
         const existing = await tx.subscription.findUnique({
           where: { id: bill.subscriptionId },
           select: { currentPeriodEnd: true },
         });
         const now = new Date();
+        // Renewal anchoring: when the user pays before the previous period
+        // ends, we extend FROM the previous end (preserving prepaid days).
+        // When they pay after expiry (grace, soft-lock), the new cycle
+        // starts from now.
         const base =
           existing?.currentPeriodEnd && existing.currentPeriodEnd > now
             ? existing.currentPeriodEnd

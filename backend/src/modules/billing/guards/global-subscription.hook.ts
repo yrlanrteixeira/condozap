@@ -146,8 +146,17 @@ async function globalSubscriptionHook(
 }
 
 /**
- * Register the global billing hook. Call once, after all routes have been
- * registered, so the hook fires after route-level onRequest guards.
+ * Register the global billing hook.
+ *
+ * ⚠️ **MUST be called BEFORE any `fastify.register(...)` of operational
+ * route modules.** Fastify only inherits parent hooks into children whose
+ * `register()` runs AFTER `addHook()`. Registering this hook after the
+ * operational plugins silently makes it a no-op and disables billing
+ * enforcement entirely.
+ *
+ * The hook runs in `preHandler` stage, so it still fires AFTER each route's
+ * `onRequest: [fastify.authenticate]` — meaning `request.user` is already
+ * populated by the time the hook reads it.
  */
 export function registerGlobalBillingHook(fastify: FastifyInstance): void {
   fastify.addHook("preHandler", globalSubscriptionHook);

@@ -30,15 +30,25 @@ export interface SubscriptionState {
 }
 
 /**
- * Grace period (writes still allowed) after expiration.
+ * Number of full days of grace AFTER expiration during which writes are
+ * still allowed. With GRACE_DAYS = 3, grace covers `daysSince in [0, 1, 2]`
+ * and flips to soft-locked at `daysSince = 3`.
  */
 export const GRACE_DAYS = 3;
 
 /**
- * Total days after expiration at which soft lock ends and hard lock begins.
- * Soft lock runs from `GRACE_DAYS + 1` through `SOFT_LOCK_END_DAYS`.
+ * `daysSince` at which hard lock begins. Soft-locked is the half-open
+ * interval `[GRACE_DAYS, HARD_LOCK_START_DAYS)`. With the default values,
+ * soft-locked spans `daysSince in [3..14]` (12 full days) and hard-locked
+ * applies from `daysSince >= 15`, matching the spec:
+ *   grace 3 days → soft lock 12 days → hard lock on day 15.
  */
-export const SOFT_LOCK_END_DAYS = 14;
+export const HARD_LOCK_START_DAYS = 15;
+
+/**
+ * @deprecated Use HARD_LOCK_START_DAYS. Kept for backwards compatibility.
+ */
+export const SOFT_LOCK_END_DAYS = HARD_LOCK_START_DAYS;
 
 function diffInDays(from: Date, to: Date): number {
   const ms = to.getTime() - from.getTime();
@@ -48,7 +58,10 @@ function diffInDays(from: Date, to: Date): number {
 function resolvePostExpiryPhase(expiredAt: Date, now: Date): SubscriptionState {
   const daysSince = diffInDays(expiredAt, now);
 
-  if (daysSince <= GRACE_DAYS) {
+  // Grace: strictly less than GRACE_DAYS (3) full days since expiry.
+  // Per spec §4.7: expiry D+44, soft_locked starts D+47 → 3 full days of grace
+  // (daysSince = 0, 1, 2). At daysSince = 3 we transition to soft_locked.
+  if (daysSince < GRACE_DAYS) {
     const phaseEndsAt = new Date(expiredAt);
     phaseEndsAt.setDate(phaseEndsAt.getDate() + GRACE_DAYS);
     return {
@@ -60,14 +73,16 @@ function resolvePostExpiryPhase(expiredAt: Date, now: Date): SubscriptionState {
     };
   }
 
-  if (daysSince <= SOFT_LOCK_END_DAYS) {
+  // Soft-locked: GRACE_DAYS ≤ daysSince < HARD_LOCK_START_DAYS (15).
+  // That gives 12 full days of soft lock (daysSince 3..14 inclusive).
+  if (daysSince < HARD_LOCK_START_DAYS) {
     const phaseEndsAt = new Date(expiredAt);
-    phaseEndsAt.setDate(phaseEndsAt.getDate() + SOFT_LOCK_END_DAYS);
+    phaseEndsAt.setDate(phaseEndsAt.getDate() + HARD_LOCK_START_DAYS);
     return {
       phase: "soft_locked",
       canRead: true,
       canWrite: false,
-      daysUntilPhaseChange: SOFT_LOCK_END_DAYS - daysSince,
+      daysUntilPhaseChange: HARD_LOCK_START_DAYS - daysSince,
       phaseEndsAt,
     };
   }

@@ -31,25 +31,30 @@ export async function createCondominium(
   const primarySyndicId =
     caller && SYNDIC_ROLES.includes(caller.role) ? userId : undefined;
 
-  const condominium = await repo.create(prisma, {
-    name: data.name,
-    cnpj: data.cnpj,
-    whatsappPhone: data.whatsappPhone,
-    whatsappBusinessId: data.whatsappBusinessId,
-    primarySyndicId,
-  });
-
-  // If a syndic created the condominium, also link them via UserCondominium
-  // so existing access checks (requireCondoAccess) keep working.
-  if (primarySyndicId && caller) {
-    await prisma.userCondominium.create({
-      data: {
-        userId: primarySyndicId,
-        condominiumId: condominium.id,
-        role: caller.role,
-      },
+  // Atomic: create the condominium AND its syndic access link in a single
+  // transaction so a failed UserCondominium insert does not leave an
+  // orphaned condominium pointing at a syndic who cannot reach it.
+  const condominium = await prisma.$transaction(async (tx) => {
+    const created = await repo.create(tx as PrismaClient, {
+      name: data.name,
+      cnpj: data.cnpj,
+      whatsappPhone: data.whatsappPhone,
+      whatsappBusinessId: data.whatsappBusinessId,
+      primarySyndicId,
     });
-  }
+
+    if (primarySyndicId && caller) {
+      await tx.userCondominium.create({
+        data: {
+          userId: primarySyndicId,
+          condominiumId: created.id,
+          role: caller.role,
+        },
+      });
+    }
+
+    return created;
+  });
 
   logger.info(`Condominium ${condominium.id} created by ${userId}`);
 
