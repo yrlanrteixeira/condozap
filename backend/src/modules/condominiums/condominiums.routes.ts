@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireSyndicStrict } from "../../shared/middlewares";
 import { requireAdmin, requireCondoAccess } from "../../auth/authorize";
 import { prisma } from "../../shared/db/prisma";
+import { trialCondoLimitGuard } from "../billing/guards/trial-condo-limit.guard";
 import {
   listCondominiumsHandler,
   getCondominiumHandler,
@@ -49,6 +50,7 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
     "/",
     {
       onRequest: [fastify.authenticate, requireSuperAdmin()],
+      preHandler: [trialCondoLimitGuard],
     },
     createCondominiumHandler
   );

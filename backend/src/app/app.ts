@@ -28,6 +28,7 @@ import { reportRoutes } from "../modules/reports/reports.routes";
 import { cannedResponsesRoutes } from "../modules/canned-responses/canned-responses.routes";
 import { sectorDashboardRoutes } from "../modules/sector-dashboard/sector-dashboard.routes";
 import { billingRoutes } from "../modules/billing";
+import { registerGlobalBillingHook } from "../modules/billing/guards/global-subscription.hook";
 import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 import billingCronPlugin from "../modules/billing/cron/billing-cron.plugin";
 
@@ -108,6 +109,10 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(cannedResponsesRoutes, { prefix: "/api/canned-responses" });
   await fastify.register(sectorDashboardRoutes, { prefix: "/api/sector-dashboard" });
   await fastify.register(billingRoutes, { prefix: "/api/billing" });
+
+  // Global billing enforcement: must run AFTER all routes are registered so
+  // the preHandler fires after route-level authenticate guards.
+  registerGlobalBillingHook(fastify);
 
   await fastify.register(slaCronPlugin);
   await fastify.register(billingCronPlugin);
