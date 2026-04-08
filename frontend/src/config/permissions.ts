@@ -1,13 +1,17 @@
 /**
  * Sistema de Permissões do TalkZap
- * Hierarquia: SUPER_ADMIN > PROFESSIONAL_SYNDIC > ADMIN > SYNDIC > RESIDENT
  *
  * Perfis:
- * - SUPER_ADMIN: Acesso total ao sistema (gerencia todos os condomínios)
- * - PROFESSIONAL_SYNDIC: Síndico profissional (gerencia múltiplos condomínios)
- * - ADMIN: Conselheiro (admin do síndico)
- * - SYNDIC: Síndico de condomínio (gerencia um condomínio específico)
- * - RESIDENT: Morador (acesso limitado ao próprio condomínio)
+ * - SUPER_ADMIN: operador de plataforma SaaS. Gerencia CRUD de condomínios,
+ *   contas de síndicos, planos e financeiro da plataforma. NÃO tem acesso
+ *   operacional a condomínios (ocorrências, moradores, mensagens, etc).
+ *   Ver spec 2026-03-26-role-permissions-redesign.md.
+ * - PROFESSIONAL_SYNDIC: síndico profissional que gerencia múltiplos condomínios.
+ * - ADMIN: Conselheiro — apoio ao síndico com acesso operacional, sem poder
+ *   criar/editar outros usuários de nível gerencial.
+ * - SYNDIC: síndico de condomínio (pode gerenciar um ou múltiplos).
+ * - TRIAGE / SETOR_MANAGER / SETOR_MEMBER: perfis operacionais (ocorrências).
+ * - RESIDENT: morador — vê apenas as próprias ocorrências.
  */
 
 export const UserRoles = {
