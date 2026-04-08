@@ -16,6 +16,7 @@ import {
 } from "./auth.schemas";
 import type { AuthUser } from "../../types/auth";
 import { config } from "../../config/env";
+import { normalizeCondominiumSlug } from "../../shared/utils/condominium-slug";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/register", async (request, reply) => {
@@ -32,6 +33,29 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
     const userRole = (body.role || "RESIDENT") as string;
+
+    let requestedCondominiumId: string | undefined;
+    if (body.requestedCondominiumSlug?.trim()) {
+      const slug = normalizeCondominiumSlug(body.requestedCondominiumSlug);
+      const condo = await prisma.condominium.findUnique({
+        where: { slug },
+        select: { id: true, status: true },
+      });
+      if (!condo) {
+        return reply.status(400).send({
+          error:
+            "Condomínio não encontrado. Use o link de cadastro enviado pelo seu condomínio.",
+        });
+      }
+      if (condo.status === "SUSPENDED") {
+        return reply.status(400).send({
+          error:
+            "Este condomínio não está aceitando novos cadastros no momento.",
+        });
+      }
+      requestedCondominiumId = condo.id;
+    }
+
     const user = await prisma.user.create({
       data: {
         email: body.email,
@@ -39,7 +63,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         name: body.name,
         role: userRole as any,
         status: userRole === "RESIDENT" ? "PENDING" : "APPROVED",
-        requestedCondominiumId: body.requestedCondominiumId,
+        requestedCondominiumId,
         requestedTower: body.requestedTower,
         requestedFloor: body.requestedFloor,
         requestedUnit: body.requestedUnit,

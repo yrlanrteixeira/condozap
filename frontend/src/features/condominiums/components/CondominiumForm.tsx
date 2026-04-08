@@ -65,6 +65,7 @@ export function CondominiumForm({
       reValidateMode: "onChange",
       defaultValues: {
         name: condominium?.name || "",
+        slug: condominium?.slug || "",
         cnpj: condominium?.cnpj || "",
         whatsappPhone: condominium?.whatsappPhone || "",
         whatsappBusinessId: condominium?.whatsappBusinessId || "",
@@ -89,6 +90,7 @@ export function CondominiumForm({
       if (condominium) {
         form.reset({
           name: condominium.name,
+          slug: condominium.slug,
           cnpj: condominium.cnpj,
           whatsappPhone: condominium.whatsappPhone || "",
           whatsappBusinessId: condominium.whatsappBusinessId || "",
@@ -97,6 +99,7 @@ export function CondominiumForm({
       } else {
         form.reset({
           name: "",
+          slug: "",
           cnpj: "",
           whatsappPhone: "",
           whatsappBusinessId: "",
@@ -137,6 +140,29 @@ export function CondominiumForm({
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug (link de cadastro)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ex.: vista-verde (opcional na criação)"
+                      autoComplete="off"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Usado na URL de cadastro de moradores: /auth/register/
+                    <span className="font-mono">{field.value || "seu-slug"}</span>
+                    . Se vazio, é gerado a partir do nome.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

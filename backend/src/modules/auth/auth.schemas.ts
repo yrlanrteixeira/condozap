@@ -1,32 +1,45 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().min(3),
-  role: z
-    .enum([
-      "SUPER_ADMIN",
-      "PROFESSIONAL_SYNDIC",
-      "ADMIN",
-      "SYNDIC",
-      "TRIAGE",
-      "SETOR_MANAGER",
-      "SETOR_MEMBER",
-      "RESIDENT",
-    ])
-    .optional(),
-  requestedCondominiumId: z.string().optional(),
-  requestedTower: z.string().optional(),
-  requestedFloor: z.string().optional(),
-  requestedUnit: z.string().optional(),
-  requestedPhone: z.string().optional(),
-  consentWhatsapp: z.boolean().refine((value) => value === true, {
-    message:
-      "Você deve aceitar receber notificações via WhatsApp para se cadastrar",
-  }),
-  consentDataProcessing: z.boolean().default(true),
-});
+export const registerSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    name: z.string().min(3),
+    role: z
+      .enum([
+        "SUPER_ADMIN",
+        "PROFESSIONAL_SYNDIC",
+        "ADMIN",
+        "SYNDIC",
+        "TRIAGE",
+        "SETOR_MANAGER",
+        "SETOR_MEMBER",
+        "RESIDENT",
+      ])
+      .optional(),
+    /** Slug do condomínio (vem do link /auth/register/:slug). Obrigatório para morador. */
+    requestedCondominiumSlug: z.string().min(2).max(100).optional(),
+    requestedTower: z.string().optional(),
+    requestedFloor: z.string().optional(),
+    requestedUnit: z.string().optional(),
+    requestedPhone: z.string().optional(),
+    consentWhatsapp: z.boolean().refine((value) => value === true, {
+      message:
+        "Você deve aceitar receber notificações via WhatsApp para se cadastrar",
+    }),
+    consentDataProcessing: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    const role = data.role ?? "RESIDENT";
+    if (role === "RESIDENT" && !data.requestedCondominiumSlug?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "É necessário o link de cadastro do seu condomínio (slug ausente)",
+        path: ["requestedCondominiumSlug"],
+      });
+    }
+  });
 
 export const loginSchema = z.object({
   email: z.string().email(),

@@ -91,10 +91,12 @@ export const authMiddleware: Middleware = (store) => {
     const state = store.getState();
     const isAuthenticated = selectIsAuthenticated(state);
 
-    // Após ações de login bem-sucedido, iniciar verificações
-    if (typedAction.type === "auth/login/fulfilled") {
+    // Após login ou cadastro bem-sucedido, iniciar verificações de token
+    if (
+      typedAction.type === "auth/login/fulfilled" ||
+      typedAction.type === "auth/register/fulfilled"
+    ) {
       startTokenCheck();
-      // Verificar imediatamente após login
       checkAndRefreshToken();
     }
 

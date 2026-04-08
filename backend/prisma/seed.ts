@@ -33,6 +33,7 @@ async function main() {
   const condo1 = await prisma.condominium.create({
     data: {
       name: "Condomínio Vista Verde",
+      slug: "vista-verde",
       cnpj: "12345678000190",
       status: "ACTIVE",
       whatsappPhone: "5511999990000",
@@ -46,6 +47,7 @@ async function main() {
   const condo2 = await prisma.condominium.create({
     data: {
       name: "Residencial Bela Vista",
+      slug: "bela-vista",
       cnpj: "98765432000199",
       status: "ACTIVE",
       whatsappPhone: "5511999990001",

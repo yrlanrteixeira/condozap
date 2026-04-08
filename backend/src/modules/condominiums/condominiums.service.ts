@@ -1,6 +1,11 @@
 import { PrismaClient, Prisma, UserRole } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
-import { ConflictError, NotFoundError } from "../../shared/errors";
+import { BadRequestError, ConflictError, NotFoundError } from "../../shared/errors";
+import {
+  isValidCondominiumSlugFormat,
+  normalizeCondominiumSlug,
+  slugFromName,
+} from "../../shared/utils/condominium-slug";
 import type {
   CreateCondominiumRequest,
   UpdateCondominiumRequest,
@@ -8,6 +13,19 @@ import type {
 import * as repo from "./condominiums.repository";
 
 const SYNDIC_ROLES: UserRole[] = ["SYNDIC", "PROFESSIONAL_SYNDIC"];
+
+async function allocateUniqueCondominiumSlug(
+  prisma: PrismaClient,
+  base: string
+): Promise<string> {
+  let candidate = base;
+  let n = 0;
+  while (await repo.findBySlug(prisma, candidate)) {
+    n += 1;
+    candidate = `${base}-${n}`;
+  }
+  return candidate;
+}
 
 export async function createCondominium(
   prisma: PrismaClient,
@@ -31,12 +49,23 @@ export async function createCondominium(
   const primarySyndicId =
     caller && SYNDIC_ROLES.includes(caller.role) ? userId : undefined;
 
+  const baseSlug = data.slug
+    ? normalizeCondominiumSlug(data.slug)
+    : slugFromName(data.name);
+  if (!isValidCondominiumSlugFormat(baseSlug)) {
+    throw new BadRequestError(
+      "Slug inválido: use apenas letras minúsculas, números e hífens (2–100 caracteres)."
+    );
+  }
+  const uniqueSlug = await allocateUniqueCondominiumSlug(prisma, baseSlug);
+
   // Atomic: create the condominium AND its syndic access link in a single
   // transaction so a failed UserCondominium insert does not leave an
   // orphaned condominium pointing at a syndic who cannot reach it.
   const condominium = await prisma.$transaction(async (tx) => {
     const created = await repo.create(tx as PrismaClient, {
       name: data.name,
+      slug: uniqueSlug,
       cnpj: data.cnpj,
       whatsappPhone: data.whatsappPhone,
       whatsappBusinessId: data.whatsappBusinessId,
@@ -80,8 +109,26 @@ export async function updateCondominium(
     }
   }
 
+  if (data.slug !== undefined) {
+    const nextSlug = normalizeCondominiumSlug(data.slug);
+    if (!isValidCondominiumSlugFormat(nextSlug)) {
+      throw new BadRequestError(
+        "Slug inválido: use apenas letras minúsculas, números e hífens (2–100 caracteres)."
+      );
+    }
+    if (nextSlug !== existing.slug) {
+      const taken = await repo.findBySlug(prisma, nextSlug);
+      if (taken && taken.id !== id) {
+        throw new ConflictError("Slug já em uso");
+      }
+    }
+  }
+
   const updateData: Prisma.CondominiumUpdateInput = {
     ...(data.name !== undefined && { name: data.name }),
+    ...(data.slug !== undefined && {
+      slug: normalizeCondominiumSlug(data.slug),
+    }),
     ...(data.cnpj !== undefined && { cnpj: data.cnpj }),
     ...(data.status !== undefined && { status: data.status }),
     ...(data.whatsappPhone !== undefined && { whatsappPhone: data.whatsappPhone }),

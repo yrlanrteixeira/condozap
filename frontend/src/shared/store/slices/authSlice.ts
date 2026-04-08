@@ -118,7 +118,7 @@ export const register = createAsyncThunk(
       password: string;
       name: string;
       role?: string;
-      requestedCondominiumId?: string;
+      requestedCondominiumSlug?: string;
       requestedPhone?: string;
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;

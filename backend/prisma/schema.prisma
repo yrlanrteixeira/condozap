@@ -102,6 +102,8 @@ enum UserStatus {
 model Condominium {
   id        String            @id @default(cuid())
   name      String
+  /// Identificador único para URLs de cadastro (ex.: /auth/register/meu-condominio)
+  slug      String            @unique
   cnpj      String            @unique
   status    CondominiumStatus @default(TRIAL)
   createdAt DateTime          @default(now()) @map("created_at")

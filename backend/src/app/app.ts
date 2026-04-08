@@ -28,6 +28,7 @@ import { reportRoutes } from "../modules/reports/reports.routes";
 import { cannedResponsesRoutes } from "../modules/canned-responses/canned-responses.routes";
 import { sectorDashboardRoutes } from "../modules/sector-dashboard/sector-dashboard.routes";
 import { billingRoutes } from "../modules/billing";
+import { publicRoutes } from "../modules/public";
 import { registerGlobalBillingHook } from "../modules/billing/guards/global-subscription.hook";
 import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 import billingCronPlugin from "../modules/billing/cron/billing-cron.plugin";
@@ -87,6 +88,8 @@ export const createApp = async (): Promise<FastifyInstance> => {
   fastify.get("/health", healthPayload);
   /** Alias útil se CDN/proxy tiver regra de redirect só em `/health` (evita loop 301→mesma URL). */
   fastify.get("/api/health", healthPayload);
+
+  await fastify.register(publicRoutes, { prefix: "/api/public" });
 
   // Global billing enforcement: register hook BEFORE all operational routes
   // so it propagates into their encapsulated plugin scopes. Fastify only
