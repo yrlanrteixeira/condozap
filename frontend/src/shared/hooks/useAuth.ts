@@ -18,7 +18,7 @@ import {
 } from "@/shared/store/slices/condominiumSlice";
 import { store, type RootState } from "@/shared/store";
 import { api } from "@/lib/api";
-import type { LoginRequest, Condominium } from "@/types/user";
+import type { LoginRequest, Condominium, LoginResponse } from "@/types/user";
 import type { User } from "@/types";
 
 /**
@@ -73,7 +73,7 @@ export const useAuth = () => {
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;
     }) => {
-      const result = await dispatch(
+      const result = (await dispatch(
         registerAction({
           email: data.email,
           password: data.password,
@@ -84,7 +84,18 @@ export const useAuth = () => {
           consentDataProcessing: data.consentDataProcessing ?? false,
           consentWhatsapp: data.consentWhatsapp ?? false,
         })
-      ).unwrap();
+      ).unwrap()) as LoginResponse;
+
+      if (result.user?.condominiums && result.user.condominiums.length > 0) {
+        dispatch(setCondominiums(result.user.condominiums));
+        const state = store.getState() as RootState;
+        const currentCondoId = state?.condominium?.currentCondominiumId;
+        const ids = result.user.condominiums.map((c: Condominium) => c.id);
+        if (!currentCondoId || !ids.includes(currentCondoId)) {
+          const first = result.user.condominiums[0];
+          if (first) dispatch(setCurrentCondominium(first.id));
+        }
+      }
 
       return result;
     },

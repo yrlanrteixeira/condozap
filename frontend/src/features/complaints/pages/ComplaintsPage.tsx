@@ -46,7 +46,11 @@ export function ComplaintsPage() {
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
-  const condoIdToFetch = currentCondominiumId || '';
+  /** Fallback quando o slice ainda não foi preenchido (ex.: primeiro acesso pós-aprovação). */
+  const effectiveCondominiumId =
+    currentCondominiumId || user?.condominiums?.[0]?.id || "";
+
+  const condoIdToFetch = effectiveCondominiumId;
 
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
     condoIdToFetch,
@@ -63,7 +67,7 @@ export function ComplaintsPage() {
     category: string;
     content: string;
   }) => {
-    if (!currentCondominiumId) {
+    if (!effectiveCondominiumId) {
       toast({
         title: "Erro",
         description: "Nenhum condomínio selecionado.",
@@ -88,7 +92,7 @@ export function ComplaintsPage() {
 
     try {
       await createComplaint.mutateAsync({
-        condominiumId: currentCondominiumId,
+        condominiumId: effectiveCondominiumId,
         residentId: residentId,
         category: data.category,
         content: data.content,
@@ -209,7 +213,7 @@ export function ComplaintsPage() {
   }
 
   // No condominium selected
-  if (!currentCondominiumId && user?.role !== "SUPER_ADMIN") {
+  if (!effectiveCondominiumId && user?.role !== "SUPER_ADMIN") {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <Card className="p-6 sm:p-8 max-w-md text-center">
@@ -230,7 +234,7 @@ export function ComplaintsPage() {
       <ResidentComplaintsPage
         complaints={complaints}
         onSubmit={handleComplaintSubmit}
-        condominiumId={currentCondominiumId || ""}
+        condominiumId={effectiveCondominiumId}
       />
     );
   }

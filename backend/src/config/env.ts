@@ -50,9 +50,10 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_S3_BUCKET: z.string().optional(),
 
-  // AbacatePay
-  ABACATEPAY_API_KEY: z.string(),
-  BILLING_WEBHOOK_SECRET: z.string(),
+  // AbacatePay — opcionais até você configurar billing no deploy (ex.: Railway).
+  // Rotas de cobrança e getPaymentProvider() falham com erro claro se usadas sem chave.
+  ABACATEPAY_API_KEY: z.string().optional(),
+  BILLING_WEBHOOK_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

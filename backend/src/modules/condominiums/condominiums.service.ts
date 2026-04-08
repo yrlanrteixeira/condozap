@@ -82,6 +82,18 @@ export async function createCondominium(
       });
     }
 
+    // SUPER_ADMIN precisa de vínculo operacional para gerenciar setores, equipe e
+    // fluxos do condomínio (requireCondoAccess); síndicos já recebem vínculo acima.
+    if (caller?.role === "SUPER_ADMIN") {
+      await tx.userCondominium.create({
+        data: {
+          userId,
+          condominiumId: created.id,
+          role: "SUPER_ADMIN",
+        },
+      });
+    }
+
     return created;
   });
 

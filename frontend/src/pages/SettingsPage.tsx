@@ -100,7 +100,7 @@ export function SettingsPage() {
       icon: FileText,
       title: "Respostas Padrão",
       description: "Modelos de resposta para agilizar o atendimento",
-      roles: [UserRoles.SYNDIC, UserRoles.PROFESSIONAL_SYNDIC],
+      roles: [UserRoles.SYNDIC, UserRoles.PROFESSIONAL_SYNDIC, UserRoles.ADMIN],
       component: CannedResponsesManager,
     },
     {
