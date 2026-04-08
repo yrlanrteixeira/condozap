@@ -22,30 +22,30 @@ export type UpdatePlanInput = Partial<CreatePlanInput> & {
 
 export const platformBillingApi = {
   async listAllPlans(): Promise<PlanDto[]> {
-    const { data } = await apiClient.get<PlanDto[]>("/api/billing/plans/all");
+    const { data } = await apiClient.get<PlanDto[]>("/billing/plans/all");
     return data;
   },
 
   async createPlan(input: CreatePlanInput): Promise<PlanDto> {
-    const { data } = await apiClient.post<PlanDto>("/api/billing/plans", input);
+    const { data } = await apiClient.post<PlanDto>("/billing/plans", input);
     return data;
   },
 
   async updatePlan(id: string, input: UpdatePlanInput): Promise<PlanDto> {
-    const { data } = await apiClient.patch<PlanDto>(`/api/billing/plans/${id}`, input);
+    const { data } = await apiClient.patch<PlanDto>(`/billing/plans/${id}`, input);
     return data;
   },
 
   async deactivatePlan(id: string): Promise<{ plan: PlanDto; warning: string | null }> {
     const { data } = await apiClient.delete<{ plan: PlanDto; warning: string | null }>(
-      `/api/billing/plans/${id}`,
+      `/billing/plans/${id}`,
     );
     return data;
   },
 
   async getMetrics(): Promise<PlatformMetricsDto> {
     const { data } = await apiClient.get<PlatformMetricsDto>(
-      "/api/billing/subscriptions/platform/metrics",
+      "/billing/subscriptions/platform/metrics",
     );
     return data;
   },
@@ -54,7 +54,7 @@ export const platformBillingApi = {
     total: number;
     items: Array<SubscriptionDto & { syndic: { id: string; name: string; email: string } }>;
   }> {
-    const { data } = await apiClient.get("/api/billing/subscriptions");
+    const { data } = await apiClient.get("/billing/subscriptions");
     return data as {
       total: number;
       items: Array<SubscriptionDto & { syndic: { id: string; name: string; email: string } }>;
@@ -63,21 +63,21 @@ export const platformBillingApi = {
 
   async getSubscriptionBySyndic(syndicId: string): Promise<SubscriptionDto> {
     const { data } = await apiClient.get<SubscriptionDto>(
-      `/api/billing/subscriptions/${syndicId}`,
+      `/billing/subscriptions/${syndicId}`,
     );
     return data;
   },
 
   async listBillsForSyndic(syndicId: string): Promise<BillDto[]> {
     const { data } = await apiClient.get<BillDto[]>(
-      `/api/billing/bills/syndic/${syndicId}`,
+      `/billing/bills/syndic/${syndicId}`,
     );
     return data;
   },
 
   async extendTrial(syndicId: string, days: number): Promise<SubscriptionDto> {
     const { data } = await apiClient.post<SubscriptionDto>(
-      `/api/billing/subscriptions/${syndicId}/extend-trial`,
+      `/billing/subscriptions/${syndicId}/extend-trial`,
       { days },
     );
     return data;
@@ -85,7 +85,7 @@ export const platformBillingApi = {
 
   async cancelSubscription(syndicId: string): Promise<SubscriptionDto> {
     const { data } = await apiClient.post<SubscriptionDto>(
-      `/api/billing/subscriptions/${syndicId}/cancel`,
+      `/billing/subscriptions/${syndicId}/cancel`,
     );
     return data;
   },
@@ -95,7 +95,7 @@ export const platformBillingApi = {
     periodEndDays = 30,
   ): Promise<SubscriptionDto> {
     const { data } = await apiClient.post<SubscriptionDto>(
-      `/api/billing/subscriptions/${syndicId}/reactivate`,
+      `/billing/subscriptions/${syndicId}/reactivate`,
       { periodEndDays },
     );
     return data;
@@ -107,7 +107,7 @@ export const platformBillingApi = {
     periodEndDays = 30,
   ): Promise<SubscriptionDto> {
     const { data } = await apiClient.post<SubscriptionDto>(
-      `/api/billing/subscriptions/${syndicId}/assign-plan`,
+      `/billing/subscriptions/${syndicId}/assign-plan`,
       { planId, periodEndDays },
     );
     return data;
@@ -119,7 +119,7 @@ export const platformBillingApi = {
     description: string,
   ): Promise<BillDto> {
     const { data } = await apiClient.post<BillDto>(
-      `/api/billing/bills/manual/${syndicId}`,
+      `/billing/bills/manual/${syndicId}`,
       { amountCents, description },
     );
     return data;

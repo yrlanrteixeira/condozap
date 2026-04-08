@@ -1,6 +1,8 @@
-import { PrismaClient, UserRole, SubscriptionStatus } from "@prisma/client";
+import { UserRole, SubscriptionStatus } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { createPrismaClient } from "../src/shared/db/prisma";
+
+const prisma = createPrismaClient();
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);

@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "../src/shared/db/prisma";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const TIERS = [
   {
