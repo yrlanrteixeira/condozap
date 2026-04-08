@@ -192,7 +192,7 @@ export const requireRole = (roles: string[]) => {
 export const requireSuperAdmin = () => requireRole(["SUPER_ADMIN"]);
 
 export const requireAdmin = () =>
-  requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
+  requireRole(["SUPER_ADMIN", "PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]);
 
 export const requireSyndicStrict = () =>
   requireRole(["PROFESSIONAL_SYNDIC", "SYNDIC"]);
