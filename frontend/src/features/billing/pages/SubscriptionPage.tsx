@@ -177,8 +177,10 @@ export function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      {/* Payment actions */}
-      {(subscription.phase !== "active" || pending) && (
+      {/* Payment actions — hidden for cancelled subscriptions, which must be
+          reactivated by an admin before the syndic can pay again. */}
+      {subscription.phase !== "cancelled" &&
+        (subscription.phase !== "active" || pending) && (
         <Card>
           <CardHeader>
             <CardTitle>Pagar assinatura</CardTitle>

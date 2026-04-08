@@ -38,7 +38,18 @@ const OPERATIONAL_PREFIXES = [
   "/api/announcements",
   "/api/structure",
   "/api/canned-responses",
+  // /api/condominiums is partially gated: POST is handled separately by
+  // trialCondoLimitGuard, but PATCH/DELETE on existing condominiums
+  // (especially /:id/settings) belong here.
+  "/api/condominiums",
 ] as const;
+
+// POST /api/condominiums is allowed during trial up to TRIAL_CONDO_LIMIT,
+// gated by trialCondoLimitGuard rather than this hook.
+function isCondominiumCreate(method: string, url: string): boolean {
+  if (method !== "POST") return false;
+  return url === "/api/condominiums" || url === "/api/condominiums/";
+}
 
 const WRITE_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -88,6 +99,9 @@ async function globalSubscriptionHook(
 ): Promise<void> {
   if (!WRITE_METHODS.has(request.method)) return;
   if (!matchesOperationalPrefix(request.url)) return;
+  // POST /api/condominiums is gated by the dedicated trialCondoLimitGuard
+  // applied at the route level — skip it here to avoid double enforcement.
+  if (isCondominiumCreate(request.method, request.url)) return;
 
   const user = request.user as AuthUser | undefined;
   // Unauthenticated requests are rejected by the route's own auth guard.

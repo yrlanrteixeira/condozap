@@ -49,9 +49,12 @@ export async function createPixBillForCurrentCycle(
   const sub = await subRepo.findBySyndicId(prisma, syndicId);
   if (!sub) throw new NotFoundError("Assinatura");
 
-  // Reuse an existing pending bill if one already exists for this cycle.
+  // Reuse an existing fully-formed pending bill (idempotency on click-spam).
+  // A bill is "fully formed" when it has both an externalId AND a pixBrCode —
+  // bills missing either are abandoned (e.g. provider call failed mid-creation)
+  // and will be cleaned up by the scheduled job.
   const existing = await repo.findPendingForSubscription(prisma, sub.id);
-  if (existing && existing.pixBrCode) return existing;
+  if (existing && existing.externalId && existing.pixBrCode) return existing;
 
   const isFirstCycle = !sub.setupPaid;
   const amount = await computeCycleAmount(prisma, syndicId, isFirstCycle);
@@ -78,31 +81,39 @@ export async function createPixBillForCurrentCycle(
     periodEnd,
   });
 
-  const provider = getPaymentProvider();
-  const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
+  // If the provider call fails, roll back the dangling bill row so the user
+  // can retry from a clean state. We swallow rollback errors to surface the
+  // original cause.
+  try {
+    const provider = getPaymentProvider();
+    const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
 
-  const description = isFirstCycle
-    ? `Condozap — primeiro ciclo (${amount.activeCondos} condomínio(s) + setup)`
-    : `Condozap — ciclo mensal (${amount.activeCondos} condomínio(s))`;
+    const description = isFirstCycle
+      ? `Condozap — primeiro ciclo (${amount.activeCondos} condomínio(s) + setup)`
+      : `Condozap — ciclo mensal (${amount.activeCondos} condomínio(s))`;
 
-  const pixResult = await provider.createPixBill({
-    amountCents: amount.totalAmountCents,
-    description,
-    expiresInSeconds: PIX_EXPIRATION_SECONDS,
-    customerExternalId: customerExternalId ?? undefined,
-    metadata: { billId: bill.id, subscriptionId: sub.id },
-  });
+    const pixResult = await provider.createPixBill({
+      amountCents: amount.totalAmountCents,
+      description,
+      expiresInSeconds: PIX_EXPIRATION_SECONDS,
+      customerExternalId: customerExternalId ?? undefined,
+      metadata: { billId: bill.id, subscriptionId: sub.id },
+    });
 
-  return repo.update(prisma, bill.id, {
-    externalId: pixResult.externalId,
-    pixBrCode: pixResult.brCode,
-    pixBrCodeBase64: pixResult.brCodeBase64,
-    expiresAt: pixResult.expiresAt,
-    providerPayload: {
+    return await repo.update(prisma, bill.id, {
       externalId: pixResult.externalId,
-      expiresAt: pixResult.expiresAt.toISOString(),
-    } as unknown as import("@prisma/client").Prisma.InputJsonValue,
-  });
+      pixBrCode: pixResult.brCode,
+      pixBrCodeBase64: pixResult.brCodeBase64,
+      expiresAt: pixResult.expiresAt,
+      providerPayload: {
+        externalId: pixResult.externalId,
+        expiresAt: pixResult.expiresAt.toISOString(),
+      } as unknown as import("@prisma/client").Prisma.InputJsonValue,
+    });
+  } catch (err) {
+    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function createCardBillForCurrentCycle(
@@ -136,32 +147,38 @@ export async function createCardBillForCurrentCycle(
     periodEnd,
   });
 
-  const provider = getPaymentProvider();
-  const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
+  try {
+    const provider = getPaymentProvider();
+    const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
 
-  const returnUrl = process.env.BILLING_RETURN_URL ?? "http://localhost:5173/assinatura";
-  const completionUrl = process.env.BILLING_COMPLETION_URL ?? "http://localhost:5173/assinatura?status=ok";
+    const returnUrl = process.env.BILLING_RETURN_URL ?? "http://localhost:5173/assinatura";
+    const completionUrl =
+      process.env.BILLING_COMPLETION_URL ?? "http://localhost:5173/assinatura?status=ok";
 
-  const cardResult = await provider.createCardBill({
-    amountCents: amount.totalAmountCents,
-    description: isFirstCycle
-      ? "Condozap — primeiro ciclo"
-      : "Condozap — ciclo mensal",
-    productName: "Assinatura Condozap",
-    customerExternalId: customerExternalId ?? undefined,
-    returnUrl,
-    completionUrl,
-    metadata: { billId: bill.id, subscriptionId: sub.id },
-  });
+    const cardResult = await provider.createCardBill({
+      amountCents: amount.totalAmountCents,
+      description: isFirstCycle
+        ? "Condozap — primeiro ciclo"
+        : "Condozap — ciclo mensal",
+      productName: "Assinatura Condozap",
+      customerExternalId: customerExternalId ?? undefined,
+      returnUrl,
+      completionUrl,
+      metadata: { billId: bill.id, subscriptionId: sub.id },
+    });
 
-  return repo.update(prisma, bill.id, {
-    externalId: cardResult.externalId,
-    checkoutUrl: cardResult.checkoutUrl,
-    providerPayload: {
+    return await repo.update(prisma, bill.id, {
       externalId: cardResult.externalId,
       checkoutUrl: cardResult.checkoutUrl,
-    } as unknown as import("@prisma/client").Prisma.InputJsonValue,
-  });
+      providerPayload: {
+        externalId: cardResult.externalId,
+        checkoutUrl: cardResult.checkoutUrl,
+      } as unknown as import("@prisma/client").Prisma.InputJsonValue,
+    });
+  } catch (err) {
+    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function listMyBills(
@@ -200,26 +217,31 @@ export async function createManualBill(
     breakdown: { manual: true, description },
   });
 
-  const provider = getPaymentProvider();
-  const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
+  try {
+    const provider = getPaymentProvider();
+    const customerExternalId = await ensureProviderCustomer({ provider, prisma }, sub);
 
-  const pixResult = await provider.createPixBill({
-    amountCents,
-    description,
-    expiresInSeconds: PIX_EXPIRATION_SECONDS,
-    customerExternalId: customerExternalId ?? undefined,
-    metadata: { billId: bill.id, subscriptionId: sub.id },
-  });
+    const pixResult = await provider.createPixBill({
+      amountCents,
+      description,
+      expiresInSeconds: PIX_EXPIRATION_SECONDS,
+      customerExternalId: customerExternalId ?? undefined,
+      metadata: { billId: bill.id, subscriptionId: sub.id },
+    });
 
-  return repo.update(prisma, bill.id, {
-    externalId: pixResult.externalId,
-    pixBrCode: pixResult.brCode,
-    pixBrCodeBase64: pixResult.brCodeBase64,
-    expiresAt: pixResult.expiresAt,
-    providerPayload: {
+    return await repo.update(prisma, bill.id, {
       externalId: pixResult.externalId,
-    } as unknown as import("@prisma/client").Prisma.InputJsonValue,
-  });
+      pixBrCode: pixResult.brCode,
+      pixBrCodeBase64: pixResult.brCodeBase64,
+      expiresAt: pixResult.expiresAt,
+      providerPayload: {
+        externalId: pixResult.externalId,
+      } as unknown as import("@prisma/client").Prisma.InputJsonValue,
+    });
+  } catch (err) {
+    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    throw err;
+  }
 }
 
 // Exported for the webhook handler — kept here to keep bill-mutation logic

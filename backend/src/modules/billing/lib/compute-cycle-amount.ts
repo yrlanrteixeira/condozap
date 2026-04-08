@@ -1,5 +1,5 @@
 import { PrismaClient, type Plan } from "@prisma/client";
-import { noMatchingPlanError } from "./errors";
+import { noCondominiumsToBillError, noMatchingPlanError } from "./errors";
 
 export interface CycleAmountBreakdown {
   activeCondos: number;
@@ -29,6 +29,10 @@ export async function computeCycleAmount(
   const activeCondos = await prisma.condominium.count({
     where: { primarySyndicId: syndicId },
   });
+
+  if (activeCondos === 0) {
+    throw noCondominiumsToBillError();
+  }
 
   // Find the plan tier that covers this count.
   // For the last tier, maxCondominiums = -1 (unlimited).

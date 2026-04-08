@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, UserRole } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import { ConflictError, NotFoundError } from "../../shared/errors";
 import type {
@@ -6,6 +6,8 @@ import type {
   UpdateCondominiumRequest,
 } from "./condominiums.schema";
 import * as repo from "./condominiums.repository";
+
+const SYNDIC_ROLES: UserRole[] = ["SYNDIC", "PROFESSIONAL_SYNDIC"];
 
 export async function createCondominium(
   prisma: PrismaClient,
@@ -18,12 +20,36 @@ export async function createCondominium(
     throw new ConflictError("CNPJ já cadastrado");
   }
 
+  // When the caller is a syndic, they automatically become the billing owner
+  // (primarySyndicId) so cycle amount calculation can find a matching tier.
+  // SUPER_ADMIN created condominiums start with no billing owner and must be
+  // assigned to a syndic via the user-management flow before billing kicks in.
+  const caller = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  const primarySyndicId =
+    caller && SYNDIC_ROLES.includes(caller.role) ? userId : undefined;
+
   const condominium = await repo.create(prisma, {
     name: data.name,
     cnpj: data.cnpj,
     whatsappPhone: data.whatsappPhone,
     whatsappBusinessId: data.whatsappBusinessId,
+    primarySyndicId,
   });
+
+  // If a syndic created the condominium, also link them via UserCondominium
+  // so existing access checks (requireCondoAccess) keep working.
+  if (primarySyndicId && caller) {
+    await prisma.userCondominium.create({
+      data: {
+        userId: primarySyndicId,
+        condominiumId: condominium.id,
+        role: caller.role,
+      },
+    });
+  }
 
   logger.info(`Condominium ${condominium.id} created by ${userId}`);
 

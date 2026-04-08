@@ -50,6 +50,7 @@ export const create = (
     cnpj: string;
     whatsappPhone?: string;
     whatsappBusinessId?: string;
+    primarySyndicId?: string;
   }
 ) =>
   prisma.condominium.create({
@@ -59,6 +60,9 @@ export const create = (
       status: "TRIAL",
       whatsappPhone: data.whatsappPhone,
       whatsappBusinessId: data.whatsappBusinessId,
+      ...(data.primarySyndicId && {
+        primarySyndic: { connect: { id: data.primarySyndicId } },
+      }),
     },
   });
 

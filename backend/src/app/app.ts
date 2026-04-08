@@ -88,6 +88,11 @@ export const createApp = async (): Promise<FastifyInstance> => {
   /** Alias útil se CDN/proxy tiver regra de redirect só em `/health` (evita loop 301→mesma URL). */
   fastify.get("/api/health", healthPayload);
 
+  // Global billing enforcement: register hook BEFORE all operational routes
+  // so it propagates into their encapsulated plugin scopes. Fastify only
+  // applies parent hooks to children whose register() runs AFTER addHook().
+  registerGlobalBillingHook(fastify);
+
   await fastify.register(authRoutes, { prefix: "/api/auth" });
   await fastify.register(userApprovalRoutes, { prefix: "/api" });
   await fastify.register(userManagementRoutes, { prefix: "/api" });
@@ -109,10 +114,6 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await fastify.register(cannedResponsesRoutes, { prefix: "/api/canned-responses" });
   await fastify.register(sectorDashboardRoutes, { prefix: "/api/sector-dashboard" });
   await fastify.register(billingRoutes, { prefix: "/api/billing" });
-
-  // Global billing enforcement: must run AFTER all routes are registered so
-  // the preHandler fires after route-level authenticate guards.
-  registerGlobalBillingHook(fastify);
 
   await fastify.register(slaCronPlugin);
   await fastify.register(billingCronPlugin);

@@ -1,9 +1,19 @@
+import { timingSafeEqual } from "node:crypto";
 import { PaymentBillStatus, SubscriptionStatus } from "@prisma/client";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../../shared/db/prisma";
 import { getPaymentProvider } from "../providers";
 
 const CYCLE_DAYS = 30;
+
+function safeSecretEqual(provided: string, expected: string): boolean {
+  if (provided.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
@@ -64,8 +74,9 @@ export async function handleAbacatePayWebhook(
       .catch(() => undefined);
   };
 
-  // Path-secret check — if wrong, we still return 200 (no info leak)
-  if (!expected || secret !== expected) {
+  // Path-secret check — if wrong, we still return 200 (no info leak).
+  // Constant-time comparison defends against timing attacks.
+  if (!expected || !safeSecretEqual(secret, expected)) {
     await markProcessed("invalid_secret");
     return reply.code(200).send({ ok: true });
   }
@@ -108,11 +119,25 @@ export async function handleAbacatePayWebhook(
           },
         });
 
+        // Renewal anchoring: when the user pays before the previous period
+        // ends, we extend FROM the previous end (preserving prepaid days).
+        // When they pay after expiry (grace, soft-lock), the new cycle
+        // starts from now.
+        const existing = await tx.subscription.findUnique({
+          where: { id: bill.subscriptionId },
+          select: { currentPeriodEnd: true },
+        });
+        const now = new Date();
+        const base =
+          existing?.currentPeriodEnd && existing.currentPeriodEnd > now
+            ? existing.currentPeriodEnd
+            : now;
+
         const subUpdateData: import("@prisma/client").Prisma.SubscriptionUpdateInput = {
           status: SubscriptionStatus.ACTIVE,
           setupPaid: true,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: addDays(new Date(), CYCLE_DAYS),
+          currentPeriodStart: now,
+          currentPeriodEnd: addDays(base, CYCLE_DAYS),
           cancelledAt: null,
         };
         if (bill.planId) {

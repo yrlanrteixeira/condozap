@@ -42,3 +42,6 @@ export const findPendingForSubscription = (
     where: { subscriptionId, status: "PENDING" },
     orderBy: { createdAt: "desc" },
   });
+
+export const deleteById = (prisma: PrismaClient, id: string) =>
+  prisma.paymentBill.delete({ where: { id } });

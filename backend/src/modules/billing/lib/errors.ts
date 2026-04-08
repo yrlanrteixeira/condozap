@@ -22,6 +22,7 @@ export type BillingErrorCode =
   | "TRIAL_CONDO_LIMIT"
   | "CUSTOMER_CPF_REQUIRED"
   | "NO_MATCHING_PLAN"
+  | "NO_CONDOMINIUMS_TO_BILL"
   | "BILL_ALREADY_PAID";
 
 export function noSubscriptionError(): PaymentRequiredError {
@@ -77,5 +78,12 @@ export function noMatchingPlanError(condoCount: number): PaymentRequiredError {
   return new PaymentRequiredError(
     `Nenhum plano ativo comporta ${condoCount} condomínio(s). Verifique com o administrador da plataforma.`,
     "NO_MATCHING_PLAN",
+  );
+}
+
+export function noCondominiumsToBillError(): PaymentRequiredError {
+  return new PaymentRequiredError(
+    "Você precisa ter pelo menos 1 condomínio cadastrado para gerar uma cobrança. Cadastre seu primeiro condomínio antes de assinar.",
+    "NO_CONDOMINIUMS_TO_BILL",
   );
 }

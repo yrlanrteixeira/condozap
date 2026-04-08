@@ -7,7 +7,19 @@ import type { AbacateResponse } from "./abacatepay.types";
  * This module is server-only: never import it from any code that runs in the
  * browser bundle. The API key is read from the environment and sent as a
  * Bearer token.
+ *
+ * The condozap backend is plain Node/Fastify and the frontend lives in a
+ * separate Vite project, so cross-bundle imports are physically prevented
+ * by the project boundary. The runtime check below is a belt-and-suspenders
+ * defense in case this file is ever transitively imported into a build that
+ * targets the browser.
  */
+declare const globalThis: { window?: unknown };
+if (typeof globalThis !== "undefined" && (globalThis as { window?: unknown }).window !== undefined) {
+  throw new Error(
+    "abacatepay.client must not be loaded in a browser environment",
+  );
+}
 
 const BASE_URL = "https://api.abacatepay.com";
 

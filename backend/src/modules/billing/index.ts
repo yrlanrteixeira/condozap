@@ -1,6 +1,6 @@
 export { billingRoutes } from "./billing.routes";
-export { subscriptionGuard } from "./guards/subscription.guard";
 export { trialCondoLimitGuard, TRIAL_CONDO_LIMIT } from "./guards/trial-condo-limit.guard";
+export { registerGlobalBillingHook } from "./guards/global-subscription.hook";
 export {
   resolveSubscriptionState,
   type SubscriptionPhase,

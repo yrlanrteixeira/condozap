@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { requireSuperAdmin } from "../../../auth/authorize";
+import { requireRole, requireSuperAdmin } from "../../../auth/authorize";
 import {
   createCardBillHandler,
   createManualBillHandler,
@@ -8,17 +8,21 @@ import {
   listMyBillsHandler,
 } from "./bills.controller";
 
+const requireSyndic = () =>
+  requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]);
+
 export const billsRoutes: FastifyPluginAsync = async (fastify) => {
-  // Syndic self-service
+  // Syndic self-service — only syndicos can generate their own cycle bills.
+  // (SUPER_ADMIN uses the manual bill endpoint instead.)
   fastify.post(
     "/pix",
-    { onRequest: [fastify.authenticate] },
+    { onRequest: [fastify.authenticate, requireSyndic()] },
     createPixBillHandler,
   );
 
   fastify.post(
     "/card",
-    { onRequest: [fastify.authenticate] },
+    { onRequest: [fastify.authenticate, requireSyndic()] },
     createCardBillHandler,
   );
 
