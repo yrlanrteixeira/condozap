@@ -33,6 +33,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import {
   CreateCondominiumSchema,
+  UpdateCondominiumSchema,
   type CreateCondominiumInput,
 } from "../schemas";
 import type { Condominium, CondominiumStatus } from "../types";
@@ -58,7 +59,7 @@ export function CondominiumForm({
 
   const form = useForm<CreateCondominiumInput & { status?: CondominiumStatus }>(
     {
-      resolver: zodResolver(CreateCondominiumSchema),
+      resolver: zodResolver(isEditing ? UpdateCondominiumSchema : CreateCondominiumSchema),
       mode: "onBlur",
       reValidateMode: "onChange",
       defaultValues: {
