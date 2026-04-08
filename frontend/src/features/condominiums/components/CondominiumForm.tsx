@@ -2,6 +2,7 @@
  * Condominium Form Component
  */
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -76,26 +77,34 @@ export function CondominiumForm({
     data: CreateCondominiumInput & { status?: CondominiumStatus }
   ) => {
     await onSubmit(data);
-    form.reset();
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-    }
     onOpenChange(open);
   };
 
-  // Reset form when condominium changes
-  if (condominium && form.getValues("name") !== condominium.name) {
-    form.reset({
-      name: condominium.name,
-      cnpj: condominium.cnpj,
-      whatsappPhone: condominium.whatsappPhone || "",
-      whatsappBusinessId: condominium.whatsappBusinessId || "",
-      status: condominium.status,
-    });
-  }
+  // Reset form when condominium changes or dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      if (condominium) {
+        form.reset({
+          name: condominium.name,
+          cnpj: condominium.cnpj,
+          whatsappPhone: condominium.whatsappPhone || "",
+          whatsappBusinessId: condominium.whatsappBusinessId || "",
+          status: condominium.status,
+        });
+      } else {
+        form.reset({
+          name: "",
+          cnpj: "",
+          whatsappPhone: "",
+          whatsappBusinessId: "",
+          status: "TRIAL",
+        });
+      }
+    }
+  }, [isOpen, condominium, form]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
