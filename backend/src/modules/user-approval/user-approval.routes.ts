@@ -8,6 +8,7 @@ import {
   approveUserHandler,
   listCondominiumsHandler,
   listPendingUsersByCondoHandler,
+  listPendingUsersForMyCondominiumsHandler,
   listPendingUsersHandler,
   myStatusHandler,
   rejectUserHandler,
@@ -34,6 +35,19 @@ export const userApprovalRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     listPendingUsersHandler
+  );
+
+  // Pending users requesting any of the caller's managed condominiums.
+  // Used by SYNDIC / PROFESSIONAL_SYNDIC / ADMIN to see all approvals at once.
+  fastify.get(
+    "/users/pending/my-condominiums",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"]),
+      ],
+    },
+    listPendingUsersForMyCondominiumsHandler
   );
 
   fastify.get(

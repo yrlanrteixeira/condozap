@@ -1,5 +1,10 @@
 /**
  * Funções no condomínio (`councilPosition`) — alinhado ao backend e à lista da equipe.
+ *
+ * Os itens em "Gestão" representam papéis de gestão/administração do
+ * condomínio. O label "Gestão" é apenas um cabeçalho de categoria — quem
+ * estiver criando o membro deve clicar diretamente em "Síndico",
+ * "Conselheiro", "Subsíndico" ou "Auxiliar administrativo".
  */
 export const MEMBER_FUNCTION_GROUPS: {
   label: string;
@@ -8,6 +13,7 @@ export const MEMBER_FUNCTION_GROUPS: {
   {
     label: "Gestão",
     options: [
+      { value: "Síndico", label: "Síndico" },
       { value: "Conselheiro", label: "Conselheiro" },
       { value: "Subsíndico", label: "Subsíndico" },
       { value: "Auxiliar administrativo", label: "Auxiliar administrativo" },

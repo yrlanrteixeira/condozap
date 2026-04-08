@@ -77,6 +77,42 @@ export async function findPendingUsersByCondominium(
   });
 }
 
+/**
+ * Returns pending users requesting any of the given condominium ids.
+ * Used by SYNDIC / PROFESSIONAL_SYNDIC to see all approvals across the
+ * condominiums they manage in a single list.
+ */
+export async function findPendingUsersByCondominiumIds(
+  prisma: PrismaClient,
+  condominiumIds: string[]
+) {
+  if (condominiumIds.length === 0) return [];
+  return prisma.user.findMany({
+    where: {
+      status: "PENDING",
+      requestedCondominiumId: { in: condominiumIds },
+    },
+    select: selectPendingUser,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Returns the condominium ids that the given user has access to via
+ * UserCondominium links. Used to scope cross-condominium queries to
+ * what the caller actually manages.
+ */
+export async function findUserCondominiumIds(
+  prisma: PrismaClient,
+  userId: string
+): Promise<string[]> {
+  const links = await prisma.userCondominium.findMany({
+    where: { userId },
+    select: { condominiumId: true },
+  });
+  return links.map((l) => l.condominiumId);
+}
+
 export async function findUserCondominiumAccess(
   prisma: PrismaClient,
   userId: string,

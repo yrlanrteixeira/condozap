@@ -20,6 +20,30 @@ export async function getPendingUsers(prisma: PrismaClient) {
   return repo.findPendingUsers(prisma);
 }
 
+/**
+ * Returns pending users requesting any of the condominiums the caller
+ * manages. Used by SYNDIC / PROFESSIONAL_SYNDIC / ADMIN to see all
+ * approvals across their managed condominiums in one list, without
+ * requiring them to switch the active condominium first.
+ */
+export async function getPendingUsersForMyCondominiums(
+  prisma: PrismaClient,
+  currentUser: AuthUser
+) {
+  if (
+    !["PROFESSIONAL_SYNDIC", "ADMIN", "SYNDIC"].includes(currentUser.role)
+  ) {
+    throw new ForbiddenError();
+  }
+
+  const condominiumIds = await repo.findUserCondominiumIds(
+    prisma,
+    currentUser.id
+  );
+  if (condominiumIds.length === 0) return [];
+  return repo.findPendingUsersByCondominiumIds(prisma, condominiumIds);
+}
+
 export async function getPendingUsersByCondominium(
   prisma: PrismaClient,
   condominiumId: string,
