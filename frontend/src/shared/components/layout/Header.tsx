@@ -16,7 +16,6 @@ import {
   selectCondominiums,
   setCurrentCondominium,
 } from "@/shared/store/slices/condominiumSlice";
-import { useCondominiums } from "@/features/condominiums/hooks/useCondominiumsApi";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 interface HeaderProps {
@@ -35,31 +34,20 @@ export const Header = ({
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const userCondominiums = useAppSelector(selectCondominiums);
 
-  // SUPER_ADMIN pode ver todos os condomínios; fallback para userCondominiums (Redux) enquanto carrega
-  const { data: allCondominiums = [] } = useCondominiums({
-    enabled: user?.role === "SUPER_ADMIN",
-  });
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
-  const condominiumsToShow =
-    user?.role === "SUPER_ADMIN"
-      ? (allCondominiums.length > 0 ? allCondominiums : userCondominiums)
-      : userCondominiums;
-
-  // Mostra o seletor para SUPER_ADMIN (com lista) ou para usuários com múltiplos condomínios
+  // SUPER_ADMIN não opera dentro de condomínios — não tem seletor.
+  // Apenas síndicos/funcionários/moradores com mais de um vínculo veem o seletor.
+  const condominiumsToShow = userCondominiums;
   const showCondominiumSelector =
-    condominiumsToShow.length > 1 ||
-    (user?.role === "SUPER_ADMIN" && condominiumsToShow.length > 0);
+    !isSuperAdmin && condominiumsToShow.length > 1;
 
-  // Auto-selecionar primeiro condomínio se nenhum está selecionado (não-SUPER_ADMIN)
+  // Auto-selecionar primeiro condomínio se nenhum está selecionado
   useEffect(() => {
-    if (
-      !currentCondominiumId &&
-      user?.role !== "SUPER_ADMIN" &&
-      userCondominiums.length > 0
-    ) {
+    if (!currentCondominiumId && !isSuperAdmin && userCondominiums.length > 0) {
       dispatch(setCurrentCondominium(userCondominiums[0].id));
     }
-  }, [currentCondominiumId, user?.role, userCondominiums, dispatch]);
+  }, [currentCondominiumId, isSuperAdmin, userCondominiums, dispatch]);
 
   const handleCondominiumChange = (condoId: string) => {
     dispatch(setCurrentCondominium(condoId));
