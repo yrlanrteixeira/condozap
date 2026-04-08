@@ -7,7 +7,11 @@ import {
   deleteCannedResponseHandler,
 } from "./canned-responses.controller";
 
-const writeGuard = requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN"]);
+const writeGuard = requireRole([
+  "SYNDIC",
+  "PROFESSIONAL_SYNDIC",
+  "ADMIN",
+]);
 
 export const cannedResponsesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(

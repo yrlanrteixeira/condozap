@@ -4,7 +4,7 @@
  * Página exibida para usuários que estão aguardando aprovação do síndico/admin
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Clock, Home, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -12,6 +12,13 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAppDispatch } from '@/shared/hooks/useAppDispatch';
+import { fetchCurrentUser } from '@/shared/store/slices/authSlice';
+import {
+  setCondominiums,
+  setCurrentCondominium,
+} from '@/shared/store/slices/condominiumSlice';
+import type { Condominium } from '@/types/user';
 
 interface UserStatus {
   id: string;
@@ -28,6 +35,8 @@ interface UserStatus {
 export function PendingApprovalPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const hasSyncedApproval = useRef(false);
 
   // Check user status periodically
   const { data: userStatus, refetch } = useQuery<UserStatus>({
@@ -39,12 +48,26 @@ export function PendingApprovalPage() {
     refetchInterval: 30000, // Check every 30 seconds
   });
 
-  // Redirect if approved
+  // Ao aprovar: atualizar sessão (/me), sincronizar condomínio no Redux e ir à home.
+  // Antes: redirect para /dashboard quebrava moradores (sem VIEW_DASHBOARD) → tela escura.
   useEffect(() => {
-    if (userStatus?.status === 'APPROVED') {
-      navigate('/dashboard');
-    }
-  }, [userStatus, navigate]);
+    if (userStatus?.status !== "APPROVED" || hasSyncedApproval.current) return;
+
+    (async () => {
+      try {
+        const user = await dispatch(fetchCurrentUser()).unwrap();
+        const condos = user?.condominiums as Condominium[] | undefined;
+        if (condos && condos.length > 0) {
+          dispatch(setCondominiums(condos));
+          dispatch(setCurrentCondominium(condos[0].id));
+        }
+        hasSyncedApproval.current = true;
+        navigate("/", { replace: true });
+      } catch {
+        // Permite nova tentativa no próximo poll / Verificar status
+      }
+    })();
+  }, [userStatus?.status, dispatch, navigate]);
 
   const handleLogout = () => {
     logout();

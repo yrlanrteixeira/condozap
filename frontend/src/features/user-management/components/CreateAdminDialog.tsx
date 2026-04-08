@@ -196,7 +196,7 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
             </Select>
             <p className="text-xs text-muted-foreground">
               {memberKind === 'gestao'
-                ? 'Perfil administrativo no condomínio. O rótulo do sistema para este papel é “Conselheiro”; defina a função abaixo se quiser outro cargo (porteiro, obras, etc.).'
+                ? 'Em seguida escolha o cargo na lista (ex.: Síndico). Os títulos em maiúsculas no menu abaixo são apenas categorias — selecione o cargo desejado, não o nome da seção.'
                 : 'Perfil focado em chamados do setor escolhido (cadastro em Estrutura → Setores).'}
             </p>
           </div>
@@ -216,8 +216,8 @@ export function CreateAdminDialog({ open, onOpenChange, onSuccess }: CreateAdmin
                   <SelectItem value="__none__">Definir depois na lista</SelectItem>
                   {MEMBER_FUNCTION_GROUPS.map((group) => (
                     <SelectGroup key={group.label}>
-                      <SelectLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-                        {group.label}
+                      <SelectLabel className="pointer-events-none text-xs font-normal text-muted-foreground pl-2 pt-1">
+                        {group.label} — escolha um cargo abaixo
                       </SelectLabel>
                       {group.options.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>

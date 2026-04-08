@@ -52,6 +52,8 @@ export function UserApprovalPage() {
     isError,
   } = isProGlobal ? allPendingQuery : myCondoPendingQuery;
   const canSeeAllPending = isProGlobal;
+  /** Lista agregada /users/pending/my-condominiums não exige condomínio no seletor */
+  const needsCondominiumSelected = !canSeeAllPending && !isSyndicLevel;
 
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
@@ -128,12 +130,12 @@ export function UserApprovalPage() {
     );
   }
 
-  if (isError || (!canSeeAllPending && !currentCondominiumId)) {
+  if (isError || (needsCondominiumSelected && !currentCondominiumId)) {
     return (
       <Card className="border-border">
         <CardContent className="p-6">
           <p className="text-muted-foreground">
-            {!currentCondominiumId && !canSeeAllPending
+            {!currentCondominiumId && needsCondominiumSelected
               ? "Selecione um condomínio para visualizar cadastros pendentes."
               : "Erro ao carregar cadastros pendentes."}
           </p>

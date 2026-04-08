@@ -18,7 +18,8 @@
     "db:fresh": "prisma migrate reset --force",
     "db:update-consent": "tsx prisma/update-consent.ts",
     "storage:create-buckets": "tsx scripts/create-storage-buckets.ts",
-    "storage:test": "tsx scripts/test-storage.ts"
+    "storage:test": "tsx scripts/test-storage.ts",
+    "billing:test-webhook": "tsx --env-file=.env scripts/test-abacatepay-webhook.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1010.0",

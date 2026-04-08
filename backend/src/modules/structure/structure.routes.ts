@@ -45,7 +45,13 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:condominiumId/sectors",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess({
+          superAdminForbiddenMessage:
+            "O usuário Super Admin não pode criar um setor para um condomínio",
+        }),
+      ],
     },
     createSectorHandler
   );

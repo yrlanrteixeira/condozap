@@ -101,10 +101,16 @@ const canAccessTicket = (
 interface CondoAccessConfig {
   paramName?: string;
   source?: "params" | "query" | "body";
+  /** Mensagem 403 quando o usuário é SUPER_ADMIN sem vínculo ao condomínio */
+  superAdminForbiddenMessage?: string;
 }
 
 export const requireCondoAccess = (config: CondoAccessConfig = {}) => {
-  const { paramName = "condominiumId", source = "params" } = config;
+  const {
+    paramName = "condominiumId",
+    source = "params",
+    superAdminForbiddenMessage,
+  } = config;
 
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as AuthUser | undefined;
@@ -124,7 +130,11 @@ export const requireCondoAccess = (config: CondoAccessConfig = {}) => {
       return deny(reply, 400, `${paramName} não fornecido`);
     }
     if (!isCondominiumAllowed(context, condominiumId)) {
-      return deny(reply, 403, "Acesso negado ao condomínio solicitado");
+      const msg =
+        user.role === "SUPER_ADMIN" && superAdminForbiddenMessage
+          ? superAdminForbiddenMessage
+          : "Acesso negado ao condomínio solicitado";
+      return deny(reply, 403, msg);
     }
   };
 };
