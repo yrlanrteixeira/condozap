@@ -22,6 +22,8 @@ import {
   BarChart3,
   Clock,
   Globe,
+  CreditCard,
+  DollarSign,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -124,6 +126,24 @@ export const Sidebar = ({
       href: "/condominiums",
       icon: Building2,
       permission: Permissions.CREATE_CONDOMINIUM,
+    },
+    {
+      title: "Planos",
+      href: "/super/planos",
+      icon: CreditCard,
+      permission: Permissions.MANAGE_BILLING_PLATFORM,
+    },
+    {
+      title: "Financeiro",
+      href: "/super/financeiro",
+      icon: DollarSign,
+      permission: Permissions.MANAGE_BILLING_PLATFORM,
+    },
+    {
+      title: "Minha assinatura",
+      href: "/assinatura",
+      icon: CreditCard,
+      permission: Permissions.VIEW_BILLING,
     },
     {
       title: "Estrutura",

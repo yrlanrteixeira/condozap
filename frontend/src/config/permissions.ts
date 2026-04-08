@@ -119,6 +119,10 @@ export const Permissions = {
   MANAGE_SYNDICS: "manage:syndics",
   MANAGE_TEAM: "manage:team",
 
+  // Assinatura / Financeiro (SaaS)
+  VIEW_BILLING: "view:billing",               // Ver própria assinatura (síndico)
+  MANAGE_BILLING_PLATFORM: "manage:billing_platform", // Gerenciar planos e financeiro (SUPER_ADMIN)
+
   // Comunicados
   VIEW_ANNOUNCEMENTS: "view:announcements",
   CREATE_ANNOUNCEMENT: "create:announcement",
@@ -207,6 +211,9 @@ const professionalSyndicPermissions: string[] = [
   // Comunicados
   Permissions.VIEW_ANNOUNCEMENTS,
   Permissions.CREATE_ANNOUNCEMENT,
+
+  // Assinatura (síndicos veem e gerenciam sua própria)
+  Permissions.VIEW_BILLING,
 ];
 
 /**
@@ -222,6 +229,7 @@ export const RolePermissions: Record<UserRole, string[]> = {
       Permissions.DELETE_CONDOMINIUM,
       Permissions.VIEW_PLATFORM_DASHBOARD,
       Permissions.MANAGE_SYNDICS,
+      Permissions.MANAGE_BILLING_PLATFORM,
     ]),
   ],
 

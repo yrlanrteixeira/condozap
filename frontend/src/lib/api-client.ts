@@ -157,6 +157,24 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Erro 402: Assinatura requerida — síndico sem assinatura ativa.
+    // Propaga um custom event que o SubscriptionStatusBanner escuta pra
+    // mostrar toast + redirecionar para /assinatura.
+    if (error.response?.status === 402) {
+      const body = error.response.data as {
+        error?: { code?: string; message?: string };
+      } | undefined;
+      const reason = body?.error?.code ?? "NO_SUBSCRIPTION";
+      const message = body?.error?.message ?? "Assinatura necessária";
+      window.dispatchEvent(
+        new CustomEvent("billing:blocked", {
+          detail: { reason, message },
+        }),
+      );
+      // Don't auto-redirect — the banner component decides what to do
+      return Promise.reject(error);
+    }
+
     // Erro 401: Token inválido ou expirado
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Se não tem store configurado, redireciona para login

@@ -1,0 +1,1 @@
+export { platformBillingRoutes } from "./routes";
