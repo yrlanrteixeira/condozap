@@ -120,6 +120,10 @@ export const register = createAsyncThunk(
       role?: string;
       requestedCondominiumSlug?: string;
       requestedPhone?: string;
+      requestedTower?: string;
+      requestedFloor?: string;
+      requestedUnit?: string;
+      inviteToken?: string;
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;
     },
@@ -130,6 +134,26 @@ export const register = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error) || "Erro ao registrar");
+    }
+  }
+);
+
+export const completeFirstPassword = createAsyncThunk(
+  "auth/completeFirstPassword",
+  async (
+    data: { newPassword: string; confirmNewPassword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post<LoginResponse>(
+        "/auth/complete-first-password",
+        data
+      );
+      return response.data;
+    } catch (error: unknown) {
+      return rejectWithValue(
+        getApiErrorMessage(error) || "Erro ao definir senha"
+      );
     }
   }
 );
@@ -316,6 +340,27 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Primeiro acesso — nova senha
+      .addCase(completeFirstPassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        completeFirstPassword.fulfilled,
+        (state, action: PayloadAction<LoginResponse>) => {
+          state.isLoading = false;
+          state.isAuthenticated = true;
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          state.refreshToken = action.payload.refreshToken;
+          state.tokenExpiresAt = calculateTokenExpiry(action.payload.token);
+          state.error = null;
+        }
+      )
+      .addCase(completeFirstPassword.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })

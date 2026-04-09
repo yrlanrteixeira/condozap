@@ -57,6 +57,22 @@ export const updateConsentSchema = z.object({
   { message: "Pelo menos um campo de consentimento deve ser fornecido" }
 );
 
+export const provisionResidentSchema = z.object({
+  condominiumId: z.string().min(1),
+  mode: z.enum(["invite_link", "temp_password"]),
+  name: z.string().min(3),
+  phone: z.string().min(10),
+  email: z.string().email().optional(),
+  tower: z.string().optional(),
+  floor: z.string().optional(),
+  unit: z.string().optional(),
+  type: residentTypeEnum.optional(),
+  consentWhatsapp: z.boolean().optional(),
+  consentDataProcessing: z.boolean().optional(),
+  /** Obrigatório se o síndico quiser definir manualmente (senão o sistema gera). */
+  provisionalPassword: z.string().min(8).optional(),
+});
+
 export const importResidentsSchema = z.object({
   condominiumId: z.string().min(1),
   residents: z.array(
@@ -78,4 +94,5 @@ export type UpdateResidentRequest = z.infer<typeof updateResidentSchema>;
 export type ResidentFilters = z.infer<typeof residentFiltersSchema>;
 export type UpdateConsentRequest = z.infer<typeof updateConsentSchema>;
 export type ImportResidentsRequest = z.infer<typeof importResidentsSchema>;
+export type ProvisionResidentBody = z.infer<typeof provisionResidentSchema>;
 

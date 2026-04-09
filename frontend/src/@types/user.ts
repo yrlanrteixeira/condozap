@@ -68,6 +68,8 @@ export interface User {
   sectors?: UserSectorMembership[]; // Setores associados (SETOR_MEMBER / SETOR_MANAGER)
   consentWhatsapp?: boolean;
   consentDataProcessing?: boolean;
+  /** Conta criada com senha provisória — exige troca no primeiro acesso */
+  mustChangePassword?: boolean;
   // Extended syndic profile fields
   photoUrl?: string;
   contactPhone?: string;

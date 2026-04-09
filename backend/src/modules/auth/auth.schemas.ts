@@ -28,6 +28,8 @@ export const registerSchema = z
         "Você deve aceitar receber notificações via WhatsApp para se cadastrar",
     }),
     consentDataProcessing: z.boolean().default(true),
+    /** Token opaco do convite do síndico (query ?invite=). */
+    inviteToken: z.string().min(16).optional(),
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "RESIDENT";
@@ -38,6 +40,29 @@ export const registerSchema = z
           "É necessário o link de cadastro do seu condomínio (slug ausente)",
         path: ["requestedCondominiumSlug"],
       });
+    }
+    if (role === "RESIDENT" && !data.inviteToken?.trim()) {
+      if (!data.requestedTower?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Torre é obrigatória",
+          path: ["requestedTower"],
+        });
+      }
+      if (!data.requestedFloor?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Andar é obrigatório",
+          path: ["requestedFloor"],
+        });
+      }
+      if (!data.requestedUnit?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Unidade é obrigatória",
+          path: ["requestedUnit"],
+        });
+      }
     }
   });
 
@@ -74,8 +99,21 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token é obrigatório"),
 });
 
+export const completeFirstPasswordSchema = z
+  .object({
+    newPassword: z.string().min(8, "Nova senha deve ter no mínimo 8 caracteres"),
+    confirmNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmNewPassword"],
+  });
+
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type UpdateProfileBody = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
 export type RefreshTokenBody = z.infer<typeof refreshTokenSchema>;
+export type CompleteFirstPasswordBody = z.infer<
+  typeof completeFirstPasswordSchema
+>;

@@ -140,10 +140,34 @@ model Condominium {
   slaConfigs      SlaConfig[]
   announcements   Announcement[]
   cannedResponses CannedResponse[]
+  residentInvites ResidentInvite[]
 
   @@index([cnpj])
   @@index([primarySyndicId])
   @@map("condominiums")
+}
+
+/// Convite criado pelo síndico para o morador concluir cadastro via link (WhatsApp).
+model ResidentInvite {
+  id               String    @id @default(cuid())
+  condominiumId  String    @map("condominium_id")
+  createdByUserId  String    @map("created_by_user_id")
+  name             String
+  phone            String
+  tower            String?
+  floor            String?
+  unit             String?
+  tokenHash        String    @unique @map("token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  consumedAt       DateTime? @map("consumed_at")
+  consumedByUserId String?   @map("consumed_by_user_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation("ResidentInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([condominiumId, phone])
+  @@map("resident_invites")
 }
 
 model Announcement {
@@ -235,6 +259,7 @@ model User {
   // Billing
   subscription      Subscription? @relation("SyndicSubscription")
   ownedCondominiums Condominium[] @relation("OwnedCondominiums")
+  createdResidentInvites ResidentInvite[] @relation("ResidentInviteCreator")
 
   @@index([email])
   @@index([status])

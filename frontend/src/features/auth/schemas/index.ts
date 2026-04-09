@@ -9,28 +9,68 @@ export const LoginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 })
 
-export const RegisterUserSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(10, 'Telefone inválido'),
-  password: z
-    .string()
-    .min(8, 'Senha deve ter no mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
-    .regex(/[a-z]/, 'Senha deve conter pelo menos uma letra minúscula')
-    .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
-    .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
-  confirmPassword: z.string(),
-  role: z.enum(['SUPER_ADMIN', 'PROFESSIONAL_SYNDIC', 'ADMIN', 'SYNDIC', 'RESIDENT']).optional(),
-  // LGPD Consent
-  consentDataProcessing: z.boolean().refine(val => val === true, {
-    message: 'Você precisa aceitar os termos de uso para criar sua conta',
-  }),
-  consentWhatsapp: z.boolean().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
-  path: ['confirmPassword'],
-})
+export const RegisterUserSchema = z
+  .object({
+    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    email: z.string().email('Email inválido'),
+    phone: z.string().min(10, 'Telefone inválido'),
+    password: z
+      .string()
+      .min(8, 'Senha deve ter no mínimo 8 caracteres')
+      .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
+      .regex(/[a-z]/, 'Senha deve conter pelo menos uma letra minúscula')
+      .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
+      .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
+    confirmPassword: z.string(),
+    role: z
+      .enum([
+        'SUPER_ADMIN',
+        'PROFESSIONAL_SYNDIC',
+        'ADMIN',
+        'SYNDIC',
+        'RESIDENT',
+      ])
+      .optional(),
+    requestedTower: z.string().optional(),
+    requestedFloor: z.string().optional(),
+    requestedUnit: z.string().optional(),
+    inviteToken: z.string().optional(),
+    // LGPD Consent
+    consentDataProcessing: z.boolean().refine((val) => val === true, {
+      message: 'Você precisa aceitar os termos de uso para criar sua conta',
+    }),
+    consentWhatsapp: z.boolean().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
+  .superRefine((data, ctx) => {
+    if (data.inviteToken?.trim()) {
+      return;
+    }
+    if (!data.requestedTower?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Torre é obrigatória',
+        path: ['requestedTower'],
+      });
+    }
+    if (!data.requestedFloor?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Andar é obrigatório',
+        path: ['requestedFloor'],
+      });
+    }
+    if (!data.requestedUnit?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Unidade é obrigatória',
+        path: ['requestedUnit'],
+      });
+    }
+  })
 
 export const ForgotPasswordSchema = z.object({
   email: z.string().email('Email inválido'),
