@@ -12,6 +12,16 @@ export const useSectors = (condominiumId: string) =>
     enabled: !!condominiumId,
   });
 
+export const useSectorCategories = (condominiumId: string | undefined) =>
+  useQuery({
+    queryKey: ["sector-categories", condominiumId],
+    queryFn: async (): Promise<string[]> => {
+      const { data } = await api.get(`/structure/${condominiumId}/public/categories`);
+      return data;
+    },
+    enabled: !!condominiumId,
+  });
+
 export const useCreateSector = () => {
   const queryClient = useQueryClient();
   return useMutation({

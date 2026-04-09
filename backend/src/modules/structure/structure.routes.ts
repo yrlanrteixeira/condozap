@@ -10,6 +10,7 @@ import {
   listSectorsHandler,
   setSectorMembersHandler,
   updateSectorHandler,
+  listSectorCategoriesHandler,
 } from "./sectors.controller";
 import {
   getSectorPermissionsHandler,
@@ -55,6 +56,21 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     listSectorsHandler
+  );
+
+  fastify.get(
+    "/:condominiumId/sectors/categories",
+    {
+      onRequest: [fastify.authenticate, requireCondoAccess()],
+    },
+    listSectorCategoriesHandler
+  );
+
+  // Público - sem auth, para morador criar ocorrência
+  fastify.get(
+    "/:condominiumId/public/categories",
+    {},
+    listSectorCategoriesHandler
   );
 
   fastify.post(

@@ -227,6 +227,7 @@ export function AccessHubPage() {
           }}
           condominiumId={condominiumId}
           initialSectorId={selectedSectorId}
+          singleSectorMode={!!selectedSectorId}
         />
       )}
 

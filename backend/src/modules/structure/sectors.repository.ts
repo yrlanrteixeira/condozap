@@ -15,6 +15,15 @@ export const findSectors = (prisma: PrismaClient, condominiumId: string) =>
     orderBy: { name: "asc" },
   });
 
+export const findSectorCategories = (prisma: PrismaClient, condominiumId: string) =>
+  prisma.sector.findMany({
+    where: { condominiumId },
+    select: { categories: true },
+  }).then((sectors) => {
+    const allCategories = sectors.flatMap((s) => s.categories ?? []);
+    return [...new Set(allCategories)].sort();
+  });
+
 export const findByNameInCondominium = (
   prisma: PrismaClient,
   condominiumId: string,

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useSectors } from "@/features/structure/hooks/useSectorsApi";
+import { useSectors, useSectorCategories } from "@/features/structure/hooks/useSectorsApi";
 import { useAppSelector } from "@/shared/hooks";
 import { usePermissions } from "@/shared/hooks/usePermissions";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
@@ -118,25 +118,21 @@ const complaintFormSchema = z
   });
 
 interface ComplaintFormProps {
-  onSubmit: (data: { category: string; content: string }) => void;
+  onSubmit: (data: { category: string; content: string }) => Promise<void>;
 }
 
 export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { can } = usePermissions();
-  const canViewStructure = can("view:structure");
-  const { data: sectors } = useSectors(
-    canViewStructure ? (currentCondominiumId ?? "") : ""
-  );
+  const { data: sectorCategories } = useSectorCategories(currentCondominiumId ?? undefined);
 
   const dynamicCategories = useMemo(() => {
-    if (sectors?.length) {
-      const merged = [...new Set(sectors.flatMap((s) => s.categories))].sort();
-      return merged.includes("Outras") ? merged : [...merged, "Outras"];
+    if (sectorCategories?.length) {
+      return sectorCategories.includes("Outras") ? sectorCategories : [...sectorCategories, "Outras"];
     }
     const base = [...COMPLAINT_CATEGORIES];
     return base.includes("Outros") ? base : [...base, "Outros"];
-  }, [sectors]);
+  }, [sectorCategories]);
 
   const {
     register,
@@ -175,11 +171,14 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     prevCategoryRef.current = category;
   }, [category, setValue]);
 
-  const handleSubmit = (data: ComplaintFormShape) => {
-    const content = buildComplaintContent(data.category, data);
-    onSubmit({ content, category: data.category });
-    reset({ ...defaultComplaintFormValues });
-    prevCategoryRef.current = "";
+  const handleSubmit = async (data: ComplaintFormShape) => {
+    try {
+      await onSubmit({ content: buildComplaintContent(data.category, data), category: data.category });
+      reset({ ...defaultComplaintFormValues });
+      prevCategoryRef.current = "";
+    } catch {
+      // Erro já tratado pelo onSubmit
+    }
   };
 
   const renderCategoryFields = () => {

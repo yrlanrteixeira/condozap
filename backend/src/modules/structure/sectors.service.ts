@@ -6,6 +6,7 @@ import {
   findSectors,
   findByNameInCondominium,
   findSectorInCondominium,
+  findSectorCategories,
   createSector as repoCreateSector,
   updateSector as repoUpdateSector,
   findUserMemberships,
@@ -20,6 +21,11 @@ export const listSectors = async (
   prisma: PrismaClient,
   condominiumId: string
 ) => findSectors(prisma, condominiumId);
+
+export const getSectorCategories = async (
+  prisma: PrismaClient,
+  condominiumId: string
+) => findSectorCategories(prisma, condominiumId);
 
 export const createSector = async (
   prisma: PrismaClient,

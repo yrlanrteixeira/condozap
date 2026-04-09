@@ -139,6 +139,11 @@ export interface SectorMember {
   email?: string;
   order?: number;
   workload?: number;
+  /** O backend retorna o usuário aninhado em alguns casos */
+  user?: {
+    name?: string;
+    email?: string;
+  };
 }
 
 export interface Sector {
