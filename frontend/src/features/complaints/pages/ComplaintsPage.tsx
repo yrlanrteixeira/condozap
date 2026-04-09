@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
@@ -26,6 +27,7 @@ import {
 type ViewMode = "kanban" | "table";
 
 export function ComplaintsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
 
   // Default: tabela. No mobile: cards (componente dedicado). No desktop: respeita preferência.
@@ -41,6 +43,18 @@ export function ComplaintsPage() {
   const openComplaintDetail = useCallback((complaint: Complaint) => {
     setDetailSheet({ id: complaint.id, open: true });
   }, []);
+
+  // Auto-open complaint detail when navigating via ?open=<id>
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (openId) {
+      setDetailSheet({ id: Number(openId), open: true });
+      setSearchParams((prev) => {
+        prev.delete("open");
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { isResident, isManagementLevel } = useRole();
   const { user } = useAuth();

@@ -1,4 +1,5 @@
 import { Bell, CheckCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/shared/components/ui/button";
@@ -17,7 +18,17 @@ import {
 } from "../hooks/useNotificationsApi";
 import type { AppNotification } from "../types";
 
+const COMPLAINT_NOTIFICATION_TYPES = new Set([
+  "complaint_status",
+  "complaint_assigned",
+  "complaint_nudge",
+  "complaint_comment",
+  "sla_warning",
+  "sla_escalation",
+]);
+
 export function NotificationBell() {
+  const navigate = useNavigate();
   const { data: unreadData } = useUnreadCount();
   const { data: notificationsData } = useNotifications(10);
   const markAsRead = useMarkAsRead();
@@ -31,6 +42,14 @@ export function NotificationBell() {
   function handleNotificationClick(notification: AppNotification) {
     if (!notification.read) {
       markAsRead.mutate(notification.id);
+    }
+
+    const complaintId = notification.data?.complaintId;
+    if (
+      complaintId &&
+      COMPLAINT_NOTIFICATION_TYPES.has(notification.type)
+    ) {
+      navigate(`/complaints?open=${complaintId}`);
     }
   }
 
