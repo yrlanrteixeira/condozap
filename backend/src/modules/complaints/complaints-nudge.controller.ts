@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
 import { evolutionService } from "../evolution/evolution.service";
+import { sendSSENotification } from "../../plugins/sse";
 
 const NUDGE_COOLDOWN_HOURS = 24;
 
@@ -16,7 +17,20 @@ export async function nudgeComplaintHandler(
   const complaint = await prisma.complaint.findUnique({
     where: { id: complaintId },
     include: {
-      sector: { include: { members: { where: { isActive: true }, include: { user: true } } } },
+      sector: {
+        include: {
+          members: {
+            where: { isActive: true },
+            include: {
+              user: {
+                include: {
+                  resident: { select: { phone: true } },
+                },
+              },
+            },
+          },
+        },
+      },
       condominium: true,
     },
   });
@@ -66,17 +80,52 @@ export async function nudgeComplaintHandler(
     data: { lastNudgedAt: new Date() },
   });
 
-  // Send WhatsApp to active sector members
+  // Notify each active sector member (in-app + WhatsApp)
   let notifiedCount = 0;
-  const message = `Ocorrência #${complaintId} (${complaint.category}) aguarda posicionamento do setor ${complaint.sector.name}. Por favor, atualize o status.`;
+  const whatsappMessage = `⚠️ Ocorrência #${complaintId} (${complaint.category}) aguarda posicionamento do setor ${complaint.sector.name}. Por favor, atualize o status.`;
 
   for (const member of complaint.sector.members) {
     const memberUser = member.user;
-    const phone = memberUser.requestedPhone;
+
+    // 1. Create in-app notification
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: memberUser.id,
+          type: "complaint_nudge",
+          title: "Cobrança de posicionamento",
+          body: `Ocorrência #${complaintId} (${complaint.category}) aguarda posicionamento do setor ${complaint.sector.name}.`,
+          data: {
+            complaintId,
+            category: complaint.category,
+            sectorName: complaint.sector.name,
+          },
+        },
+      });
+
+      // Send real-time SSE notification
+      sendSSENotification(memberUser.id, "notification", {
+        type: "complaint_nudge",
+        title: "Cobrança de posicionamento",
+        body: `Ocorrência #${complaintId} (${complaint.category}) aguarda posicionamento.`,
+        complaintId,
+      });
+
+      notifiedCount++;
+    } catch (err) {
+      request.log.warn({ err, userId: memberUser.id }, "Failed to create nudge notification");
+    }
+
+    // 2. Send WhatsApp (best-effort) — resolve phone from multiple sources
+    const phone =
+      memberUser.contactPhone ||
+      memberUser.requestedPhone ||
+      memberUser.resident?.phone ||
+      null;
+
     if (phone) {
       try {
-        await evolutionService.sendText({ number: phone, text: message });
-        notifiedCount++;
+        await evolutionService.sendText({ number: phone, text: whatsappMessage });
       } catch (err) {
         request.log.warn({ err, userId: memberUser.id }, "Failed to send nudge WhatsApp");
       }
