@@ -68,6 +68,11 @@ enum CondominiumStatus {
   SUSPENDED
 }
 
+enum CondominiumPermissionMode {
+  ROLE_DEFAULT
+  CUSTOM
+}
+
 enum MessageType {
   TEXT
   TEMPLATE
@@ -274,16 +279,31 @@ model UserCondominium {
   role            UserRole
   councilPosition String?  @map("council_position") // Função no condomínio (ex: Conselheiro, Porteiro, Obras)
   assignedTower   String?  @map("assigned_tower")
+  permissionMode  CondominiumPermissionMode @default(ROLE_DEFAULT) @map("permission_mode")
   createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  condominium Condominium @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condominium        Condominium                 @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  customPermissions  UserCondominiumPermission[]
 
   @@unique([userId, condominiumId])
   @@index([userId])
   @@index([condominiumId])
   @@map("user_condominiums")
+}
+
+model UserCondominiumPermission {
+  id                String   @id @default(cuid())
+  userCondominiumId String   @map("user_condominium_id")
+  action            String
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  userCondominium UserCondominium @relation(fields: [userCondominiumId], references: [id], onDelete: Cascade)
+
+  @@unique([userCondominiumId, action])
+  @@index([userCondominiumId])
+  @@map("user_condominium_permissions")
 }
 
 model Resident {

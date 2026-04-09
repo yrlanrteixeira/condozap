@@ -132,6 +132,8 @@ export interface StructureNavigation {
 }
 
 export interface SectorMember {
+  /** ID do registro em `sector_members` (necessário para permissões por membro) */
+  id: string;
   userId: string;
   name?: string;
   email?: string;

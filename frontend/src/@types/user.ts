@@ -16,6 +16,9 @@ export type UserRole =
   | "PROFESSIONAL_SYNDIC"
   | "ADMIN"
   | "SYNDIC"
+  | "TRIAGE"
+  | "SETOR_MANAGER"
+  | "SETOR_MEMBER"
   | "RESIDENT";
 
 /**
@@ -28,6 +31,8 @@ export type PermissionScope = "GLOBAL" | "LOCAL";
 /**
  * Informações de um condomínio
  */
+export type CondominiumPermissionMode = "ROLE_DEFAULT" | "CUSTOM";
+
 export interface Condominium {
   id: string;
   name: string;
@@ -36,6 +41,9 @@ export interface Condominium {
   role?: string;
   councilPosition?: string | null;
   assignedTower?: string | null;
+  permissionMode?: CondominiumPermissionMode;
+  /** Calculado no servidor; quando presente, o cliente deve usar para `can()` */
+  effectivePermissions?: string[];
 }
 
 /**

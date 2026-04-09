@@ -26,6 +26,7 @@ import { reportRoutes } from "@/features/reports/routes";
 import { sectorDashboardRoutes } from "@/features/sector-dashboard/routes";
 import { billingRoutes } from "@/features/billing";
 import { platformBillingRoutes } from "@/features/platform-billing";
+import { accessHubRoutes } from "@/features/access-hub/routes";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
 
@@ -54,6 +55,7 @@ export function AppRoutes() {
     ...sectorDashboardRoutes,
     ...billingRoutes,
     ...platformBillingRoutes,
+    ...accessHubRoutes,
   ];
 
   return (

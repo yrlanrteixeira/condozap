@@ -13,6 +13,11 @@ import {
   updateCondominiumSettingsHandler,
   getOnboardingHandler,
 } from "./condominiums.controller";
+import {
+  getMembershipPermissionsHandler,
+  getPermissionsCatalogHandler,
+  putMembershipPermissionsHandler,
+} from "./membership-permissions.controller";
 import { getAnnouncementsByCondominiumHandler } from "../announcements";
 
 export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -25,6 +30,17 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   fastify.get(
+    "/permissions-catalog",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN"]),
+      ],
+    },
+    getPermissionsCatalogHandler
+  );
+
+  fastify.get(
     "/:id/announcements",
     {
       onRequest: [
@@ -33,6 +49,30 @@ export const condominiumsRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     getAnnouncementsByCondominiumHandler
+  );
+
+  fastify.get(
+    "/:id/members/:userId/permissions",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireCondoAccess({ paramName: "id" }),
+      ],
+    },
+    getMembershipPermissionsHandler
+  );
+
+  fastify.put(
+    "/:id/members/:userId/permissions",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
+        requireCondoAccess({ paramName: "id" }),
+      ],
+    },
+    putMembershipPermissionsHandler
   );
 
   fastify.get(

@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireRole, requireGlobalScope } from "../../shared/middlewares";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireCondoAccess, requireCondoPermission } from "../../auth/authorize";
 import {
   createResidentHandler,
   deleteResidentHandler,
@@ -33,7 +33,11 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:residents"),
+      ],
     },
     listResidentsByCondoHandler
   );
@@ -42,7 +46,10 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     "/",
     {
       onRequest: [fastify.authenticate],
-      preHandler: [requireCondoAccess({ source: "body" })],
+      preHandler: [
+        requireCondoAccess({ source: "body" }),
+        requireCondoPermission("create:resident", { source: "body" }),
+      ],
     },
     createResidentHandler
   );
@@ -51,7 +58,10 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
     "/import",
     {
       onRequest: [fastify.authenticate],
-      preHandler: [requireCondoAccess({ source: "body" })],
+      preHandler: [
+        requireCondoAccess({ source: "body" }),
+        requireCondoPermission("manage:residents", { source: "body" }),
+      ],
     },
     importResidentsHandler
   );

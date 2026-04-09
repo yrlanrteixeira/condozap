@@ -6,6 +6,7 @@ import {
   resolveAccessContext,
   isCondominiumAllowed,
 } from "./context";
+import { getEffectivePermissionsForCondominiumMembership } from "./effective-permissions";
 import { roleCanExecute, TicketAction, TicketActions } from "./permissions";
 import {
   Role,
@@ -289,6 +290,119 @@ export const requireComplaintOwnerAction = (errorMessage: string) => {
     if (!complaint) return reply.status(404).send({ error: "Ocorrência não encontrada" });
     if (complaint.residentId !== user.residentId)
       return reply.status(403).send({ error: errorMessage });
+  };
+};
+
+/**
+ * Exige uma chave de permissão efetiva no condomínio (após vínculo validado por `requireCondoAccess`).
+ */
+export const requireCondoPermission = (
+  permission: string,
+  config: CondoAccessConfig = {}
+) => {
+  const { paramName = "condominiumId", source = "params" } = config;
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return deny(reply, 401, "Usuário não autenticado");
+    }
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
+    let condominiumId: string | undefined;
+    if (source === "params") {
+      condominiumId = (request.params as Record<string, string>)[paramName];
+    } else if (source === "query") {
+      condominiumId = (request.query as Record<string, string>)[paramName];
+    } else {
+      condominiumId = (request.body as Record<string, string>)?.[paramName];
+    }
+    if (!condominiumId) {
+      return deny(reply, 400, `${paramName} não fornecido`);
+    }
+    const effective = await getEffectivePermissionsForCondominiumMembership(
+      prisma,
+      user.id,
+      condominiumId
+    );
+    if (!effective.includes(permission)) {
+      return deny(reply, 403, "Permissão insuficiente para esta ação");
+    }
+  };
+};
+
+/**
+ * Mesmo que `requireCondoPermission`, mas o condomínio vem da ocorrência `:id`.
+ */
+export const requireCondoPermissionAny = (
+  permissions: string[],
+  config: CondoAccessConfig = {}
+) => {
+  const { paramName = "condominiumId", source = "params" } = config;
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return deny(reply, 401, "Usuário não autenticado");
+    }
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
+    let condominiumId: string | undefined;
+    if (source === "params") {
+      condominiumId = (request.params as Record<string, string>)[paramName];
+    } else if (source === "query") {
+      condominiumId = (request.query as Record<string, string>)[paramName];
+    } else {
+      condominiumId = (request.body as Record<string, string>)?.[paramName];
+    }
+    if (!condominiumId) {
+      return deny(reply, 400, `${paramName} não fornecido`);
+    }
+    const effective = await getEffectivePermissionsForCondominiumMembership(
+      prisma,
+      user.id,
+      condominiumId
+    );
+    const ok = permissions.some((p) => effective.includes(p));
+    if (!ok) {
+      return deny(reply, 403, "Permissão insuficiente para esta ação");
+    }
+  };
+};
+
+export const requireCondoPermissionFromComplaint = (
+  permission: string,
+  paramName = "id"
+) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as AuthUser | undefined;
+    if (!user) {
+      return deny(reply, 401, "Usuário não autenticado");
+    }
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
+    const complaintId = Number(
+      (request.params as Record<string, string>)[paramName]
+    );
+    if (Number.isNaN(complaintId)) {
+      return deny(reply, 400, "Identificador da ocorrência inválido");
+    }
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+      select: { condominiumId: true },
+    });
+    if (!complaint) {
+      return deny(reply, 404, "Ocorrência não encontrada");
+    }
+    const effective = await getEffectivePermissionsForCondominiumMembership(
+      prisma,
+      user.id,
+      complaint.condominiumId
+    );
+    if (!effective.includes(permission)) {
+      return deny(reply, 403, "Permissão insuficiente para esta ação");
+    }
   };
 };
 

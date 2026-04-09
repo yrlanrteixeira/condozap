@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 import { UserRoles, isValidUserRole } from "@/config/permissions";
 import { jwtDecode } from "jwt-decode";
+import { setCondominiums } from "./condominiumSlice";
 
 interface JWTPayload {
   exp: number;
@@ -163,10 +164,14 @@ export const completeFirstPassword = createAsyncThunk(
  */
 export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const response = await api.get("/auth/me");
-      return response.data;
+      const data = response.data;
+      if (data?.condominiums?.length) {
+        dispatch(setCondominiums(data.condominiums));
+      }
+      return data;
     } catch (_error: unknown) {
       return rejectWithValue("Sessão inválida");
     }

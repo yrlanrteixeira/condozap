@@ -79,6 +79,11 @@ export const Permissions = {
   UPDATE_COMPLAINT_STATUS: "update:complaint_status",
   UPDATE_COMPLAINT_PRIORITY: "update:complaint_priority",
   DELETE_COMPLAINT: "delete:complaint",
+  /** Comentário em ocorrência (setor / granular) */
+  COMMENT_COMPLAINT: "comment:complaint",
+  RESOLVE_COMPLAINT: "resolve:complaint",
+  RETURN_COMPLAINT: "return:complaint",
+  REASSIGN_COMPLAINT: "reassign:complaint",
   VIEW_ANONYMOUS_COMPLAINTS: "view:anonymous_complaints", // Ver autor de denúncias anônimas
 
   // Mensagens/Comunicados
@@ -425,6 +430,12 @@ export const RolePermissions: Record<UserRole, string[]> = {
     Permissions.VIEW_SECTOR_DASHBOARD,
     Permissions.VIEW_SECTOR_COMPLAINTS,
     Permissions.VIEW_COMPLAINTS,
+    Permissions.COMMENT_COMPLAINT,
+    Permissions.UPDATE_COMPLAINT_STATUS,
+    Permissions.RESOLVE_COMPLAINT,
+    Permissions.RETURN_COMPLAINT,
+    Permissions.REASSIGN_COMPLAINT,
+    Permissions.EDIT_COMPLAINT,
 
     // Comunicados
     Permissions.VIEW_ANNOUNCEMENTS,
