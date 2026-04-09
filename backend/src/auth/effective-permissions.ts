@@ -14,12 +14,13 @@ export async function getEffectivePermissionsForCondominiums(
   condominiumIds: string[]
 ): Promise<Map<string, string[]>> {
   const result = new Map<string, string[]>();
-  if (condominiumIds.length === 0) {
+  const uniqueCondominiumIds = [...new Set(condominiumIds)];
+  if (uniqueCondominiumIds.length === 0) {
     return result;
   }
 
   const ucs = await prisma.userCondominium.findMany({
-    where: { userId, condominiumId: { in: condominiumIds } },
+    where: { userId, condominiumId: { in: uniqueCondominiumIds } },
     include: { customPermissions: { select: { action: true } } },
   });
   const ucByCondo = new Map(ucs.map((uc) => [uc.condominiumId, uc]));
@@ -28,7 +29,7 @@ export async function getEffectivePermissionsForCondominiums(
     where: {
       userId,
       isActive: true,
-      sector: { condominiumId: { in: condominiumIds } },
+      sector: { condominiumId: { in: uniqueCondominiumIds } },
     },
     select: {
       id: true,
@@ -97,7 +98,7 @@ export async function getEffectivePermissionsForCondominiums(
     membersByCondo.get(cid)!.push(sm);
   }
 
-  for (const condoId of condominiumIds) {
+  for (const condoId of uniqueCondominiumIds) {
     const uc = ucByCondo.get(condoId);
     if (!uc) {
       result.set(condoId, []);

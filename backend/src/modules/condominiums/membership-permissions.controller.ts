@@ -9,7 +9,7 @@ import {
 } from "../../auth/permission-catalog";
 import { getEffectivePermissionsForCondominiumMembership } from "../../auth/effective-permissions";
 import type { AuthUser } from "../../types/auth";
-import { writeAuditLog } from "../../shared/audit/write-audit-log";
+import { buildAuditLogData } from "../../shared/audit/write-audit-log";
 
 const paramsSchema = z.object({
   id: z.string().min(1),
@@ -109,6 +109,17 @@ export const putMembershipPermissionsHandler = async (
     });
   }
 
+  const auditData = buildAuditLogData({
+    actorUserId: actor,
+    action: "membership_permissions.update",
+    resource: `condominium:${condominiumId}:member:${targetUserId}`,
+    metadata: {
+      permissionMode: body.permissionMode,
+      actions: body.actions,
+    },
+    ipAddress: ip,
+  });
+
   if (body.permissionMode === CondominiumPermissionMode.ROLE_DEFAULT) {
     await prisma.$transaction([
       prisma.userCondominium.update({
@@ -118,6 +129,7 @@ export const putMembershipPermissionsHandler = async (
       prisma.userCondominiumPermission.deleteMany({
         where: { userCondominiumId: uc.id },
       }),
+      prisma.auditLog.create({ data: auditData }),
     ]);
   } else {
     const creates: Prisma.UserCondominiumPermissionCreateManyInput[] =
@@ -139,19 +151,9 @@ export const putMembershipPermissionsHandler = async (
         prisma.userCondominiumPermission.createMany({ data: creates })
       );
     }
+    ops.push(prisma.auditLog.create({ data: auditData }));
     await prisma.$transaction(ops);
   }
-
-  await writeAuditLog(prisma, {
-    actorUserId: actor,
-    action: "membership_permissions.update",
-    resource: `condominium:${condominiumId}:member:${targetUserId}`,
-    metadata: {
-      permissionMode: body.permissionMode,
-      actions: body.actions,
-    },
-    ipAddress: ip,
-  });
 
   const effectivePermissions =
     await getEffectivePermissionsForCondominiumMembership(

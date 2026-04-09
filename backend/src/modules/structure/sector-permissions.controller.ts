@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../shared/db/prisma";
 import { isSectorAssignableKey } from "../../auth/permission-catalog";
 import type { AuthUser } from "../../types/auth";
-import { writeAuditLog } from "../../shared/audit/write-audit-log";
+import { buildAuditLogData } from "../../shared/audit/write-audit-log";
 
 const sectorPermissionsParamsSchema = z.object({
   condominiumId: z.string().min(1),
@@ -104,15 +104,16 @@ export const updateSectorPermissionsHandler = async (
     prisma.sectorPermission.createMany({
       data: actions.map((action) => ({ sectorId, action })),
     }),
+    prisma.auditLog.create({
+      data: buildAuditLogData({
+        actorUserId: actor,
+        action: "sector_permissions.update",
+        resource: `condominium:${condominiumId}:sector:${sectorId}`,
+        metadata: { actions },
+        ipAddress: ip,
+      }),
+    }),
   ]);
-
-  await writeAuditLog(prisma, {
-    actorUserId: actor,
-    action: "sector_permissions.update",
-    resource: `condominium:${condominiumId}:sector:${sectorId}`,
-    metadata: { actions },
-    ipAddress: ip,
-  });
 
   return reply.send({ sectorId, actions });
 };
@@ -151,15 +152,16 @@ export const updateMemberPermissionOverridesHandler = async (
         granted: o.granted,
       })),
     }),
+    prisma.auditLog.create({
+      data: buildAuditLogData({
+        actorUserId: actor,
+        action: "sector_member_overrides.update",
+        resource: `condominium:${condominiumId}:sector:${sectorId}:member:${memberId}`,
+        metadata: { overrides },
+        ipAddress: ip,
+      }),
+    }),
   ]);
-
-  await writeAuditLog(prisma, {
-    actorUserId: actor,
-    action: "sector_member_overrides.update",
-    resource: `condominium:${condominiumId}:sector:${sectorId}:member:${memberId}`,
-    metadata: { overrides },
-    ipAddress: ip,
-  });
 
   return reply.send({ memberId, overrides });
 };

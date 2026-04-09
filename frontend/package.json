@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run check:role-ceiling && tsc && vite build",
+    "check:role-ceiling": "node ../backend/scripts/check-role-ceiling-sync.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
