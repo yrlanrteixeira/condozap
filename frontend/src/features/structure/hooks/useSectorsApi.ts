@@ -120,3 +120,47 @@ export const useDeleteSector = () => {
   });
 };
 
+export const useAvailableMembers = (
+  condominiumId: string | undefined,
+  sectorId: string | undefined
+) =>
+  useQuery({
+    queryKey: ["available-members", condominiumId, sectorId],
+    queryFn: async () => {
+      const { data } = await api.get(
+        `/structure/${condominiumId}/sectors/${sectorId}/available-members`
+      );
+      return data as Array<{ id: string; name: string; email: string }>;
+    },
+    enabled: !!condominiumId && !!sectorId,
+  });
+
+export const useAddExistingMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      condominiumId,
+      sectorId,
+      userId,
+    }: {
+      condominiumId: string;
+      sectorId: string;
+      userId: string;
+    }) => {
+      const { data } = await api.post(
+        `/structure/${condominiumId}/sectors/${sectorId}/add-member`,
+        { userId }
+      );
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["sectors", variables.condominiumId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["available-members", variables.condominiumId, variables.sectorId],
+      });
+    },
+  });
+};
+

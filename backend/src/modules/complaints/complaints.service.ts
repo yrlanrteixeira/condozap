@@ -1,4 +1,5 @@
 import {
+  Prisma,
   PrismaClient,
   ComplaintStatus,
   ComplaintPriority,
@@ -34,6 +35,31 @@ export async function createComplaint(
   logger: FastifyBaseLogger,
   data: CreateComplaintRequest
 ) {
+  const requestKey = data.idempotencyKey?.trim() || null;
+
+  if (requestKey) {
+    const existing = await prisma.complaint.findFirst({
+      where: {
+        residentId: data.residentId,
+        condominiumId: data.condominiumId,
+        requestKey,
+      },
+      include: {
+        resident: true,
+        attachments: true,
+        sector: true,
+        assignee: true,
+      },
+    });
+    if (existing) {
+      logger.info(
+        { complaintId: existing.id, requestKey },
+        "Idempotency hit: returning existing complaint"
+      );
+      return existing;
+    }
+  }
+
   const resident = await findResidentById(prisma, data.residentId);
   if (!resident) {
     throw new NotFoundError("Resident");
@@ -49,26 +75,67 @@ export async function createComplaint(
   const responseDueAt = addMinutes(now, slaConfig.responseMinutes);
   const resolutionDueAt = addMinutes(now, slaConfig.resolutionMinutes);
 
-  const complaint = await prisma.complaint.create({
-    data: {
-      condominiumId: data.condominiumId,
-      residentId: data.residentId,
-      category: data.category,
-      content: data.content,
-      priority: (data.priority as ComplaintPriority) || "MEDIUM",
-      isAnonymous: data.isAnonymous ?? false,
-      status: ComplaintStatus.NEW,
-      sectorId: data.sectorId ?? null,
-      responseDueAt,
-      resolutionDueAt,
-    },
+  type ComplaintWithRelations = Prisma.ComplaintGetPayload<{
     include: {
-      resident: true,
-      attachments: true,
-      sector: true,
-      assignee: true,
-    },
-  });
+      resident: true;
+      attachments: true;
+      sector: true;
+      assignee: true;
+    };
+  }>;
+  let complaint: ComplaintWithRelations;
+  try {
+    complaint = await prisma.complaint.create({
+      data: {
+        condominiumId: data.condominiumId,
+        residentId: data.residentId,
+        requestKey,
+        category: data.category,
+        content: data.content,
+        priority: (data.priority as ComplaintPriority) || "MEDIUM",
+        isAnonymous: data.isAnonymous ?? false,
+        status: ComplaintStatus.NEW,
+        sectorId: data.sectorId ?? null,
+        responseDueAt,
+        resolutionDueAt,
+      },
+      include: {
+        resident: true,
+        attachments: true,
+        sector: true,
+        assignee: true,
+      },
+    });
+  } catch (error) {
+    // Concorrência de duplo clique/retry com a mesma chave.
+    if (
+      requestKey &&
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existing = await prisma.complaint.findFirst({
+        where: {
+          residentId: data.residentId,
+          condominiumId: data.condominiumId,
+          requestKey,
+        },
+        include: {
+          resident: true,
+          attachments: true,
+          sector: true,
+          assignee: true,
+        },
+      });
+      if (existing) {
+        logger.info(
+          { complaintId: existing.id, requestKey },
+          "Idempotency race: returning existing complaint"
+        );
+        return existing;
+      }
+    }
+    throw error;
+  }
 
   let effectiveSectorId = data.sectorId ?? null;
 

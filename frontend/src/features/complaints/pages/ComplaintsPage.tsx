@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
@@ -51,9 +51,11 @@ export function ComplaintsPage() {
     currentCondominiumId || user?.condominiums?.[0]?.id || "";
 
   const condoIdToFetch = effectiveCondominiumId;
+  // Morador não acessa `/residents/:condominiumId`; evita 403 desnecessário.
+  const residentsCondoId = isResident ? "" : condoIdToFetch;
 
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
-    condoIdToFetch,
+    residentsCondoId,
     {}
   );
 
@@ -62,11 +64,16 @@ export function ComplaintsPage() {
 
   const createComplaint = useCreateComplaint();
   const updateComplaintStatus = useUpdateComplaintStatus();
+  const pendingSubmitKeyRef = useRef<string | null>(null);
 
   const handleComplaintSubmit = async (data: {
     category: string;
     content: string;
   }) => {
+    if (createComplaint.isPending) {
+      return;
+    }
+
     if (!effectiveCondominiumId) {
       toast({
         title: "Erro",
@@ -90,12 +97,17 @@ export function ComplaintsPage() {
       return;
     }
 
+    if (!pendingSubmitKeyRef.current) {
+      pendingSubmitKeyRef.current = crypto.randomUUID();
+    }
+
     try {
       await createComplaint.mutateAsync({
         condominiumId: effectiveCondominiumId,
         residentId: residentId,
         category: data.category,
         content: data.content,
+        idempotencyKey: pendingSubmitKeyRef.current,
         priority: "MEDIUM",
         isAnonymous: false,
       });
@@ -115,6 +127,8 @@ export function ComplaintsPage() {
         variant: "error",
         duration: 5000,
       });
+    } finally {
+      pendingSubmitKeyRef.current = null;
     }
   };
 

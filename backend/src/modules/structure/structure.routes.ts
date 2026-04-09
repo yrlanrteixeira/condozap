@@ -15,6 +15,9 @@ import {
   getSectorPermissionsHandler,
   updateSectorPermissionsHandler,
   updateMemberPermissionOverridesHandler,
+  updateSectorMemberHandler,
+  getAvailableMembersHandler,
+  addMemberToSectorHandler,
 } from "./sector-permissions.controller";
 
 export const structureRoutes: FastifyPluginAsync = async (fastify) => {
@@ -141,5 +144,41 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     updateMemberPermissionOverridesHandler
+  );
+
+  fastify.patch(
+    "/:condominiumId/sectors/:sectorId/members/:memberId",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
+    },
+    updateSectorMemberHandler
+  );
+
+  fastify.get(
+    "/:condominiumId/sectors/:sectorId/available-members",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:structure"),
+      ],
+    },
+    getAvailableMembersHandler
+  );
+
+  fastify.post(
+    "/:condominiumId/sectors/:sectorId/add-member",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
+    },
+    addMemberToSectorHandler
   );
 };

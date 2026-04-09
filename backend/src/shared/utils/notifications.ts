@@ -10,6 +10,13 @@ export function buildComplaintCreatedMessage(
   category: string,
   priority: string
 ): string {
+  const priorityText = {
+    CRITICAL: "Crítica",
+    HIGH: "Alta",
+    MEDIUM: "Média",
+    LOW: "Baixa",
+  }[priority] || "Média";
+
   const priorityEmoji = {
     CRITICAL: "🔴",
     HIGH: "🟠",
@@ -22,7 +29,7 @@ export function buildComplaintCreatedMessage(
   message += `Sua denúncia foi recebida e registrada no sistema.\n\n`;
   message += `🆔 Protocolo: *#${complaintId}*\n`;
   message += `📋 Categoria: ${category}\n`;
-  message += `${priorityEmoji} Prioridade: ${priority}\n`;
+  message += `${priorityEmoji} Prioridade: ${priorityText}\n`;
   message += `📅 Data: ${new Date().toLocaleDateString("pt-BR")}\n\n`;
   message += `Você pode acompanhar o andamento pelo sistema TalkZap.`;
 

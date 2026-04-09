@@ -44,6 +44,8 @@ import {
   useCreateSector,
   useUpdateSector,
   useDeleteSector,
+  useAvailableMembers,
+  useAddExistingMember,
 } from "../hooks/useSectorsApi";
 import type { SectorMember } from "../types";
 
@@ -598,6 +600,108 @@ function CreateMemberForm({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface AddExistingMemberFormProps {
+  condominiumId: string;
+  sectorId: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+function AddExistingMemberForm({
+  condominiumId,
+  sectorId,
+  onSuccess,
+  onCancel,
+}: AddExistingMemberFormProps) {
+  const { toast } = useToast();
+  const { data: availableMembers = [], isLoading } = useAvailableMembers(
+    condominiumId,
+    sectorId
+  );
+  const addMember = useAddExistingMember();
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  const handleSubmit = async () => {
+    if (!selectedUserId) {
+      toast({
+        title: "Selecione um membro",
+        description: "Escolha um usuário da lista.",
+        variant: "error",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      await addMember.mutateAsync({
+        condominiumId,
+        sectorId,
+        userId: selectedUserId,
+      });
+      toast({
+        title: "Membro adicionado!",
+        description: "O usuário foi adicionado ao setor.",
+        variant: "success",
+        duration: 3000,
+      });
+      onSuccess();
+    } catch (_error: unknown) {
+      toast({
+        title: "Erro ao adicionar membro",
+        description: getApiErrorMessage(_error),
+        variant: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  return (
+    <Card className="border-dashed border-primary/40">
+      <CardContent className="p-3 space-y-3">
+        <p className="text-sm font-medium">Adicionar membro existente</p>
+        <Select
+          value={selectedUserId}
+          onValueChange={setSelectedUserId}
+          disabled={isLoading || addMember.isPending}
+        >
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Selecione um usuário" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableMembers.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.name}</span>
+                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={addMember.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={addMember.isPending || !selectedUserId}
+          >
+            {addMember.isPending ? "Adicionando..." : "Adicionar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Dialog ──────────────────────────────────────────────────────────────
 
 interface SectorManagementDialogProps {
@@ -630,6 +734,7 @@ export const SectorManagementDialog = ({
   const [showPermissions, setShowPermissions] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
+  const [showAddExistingMember, setShowAddExistingMember] = useState(false);
 
   const isMutating =
     createSector.isPending ||
@@ -932,6 +1037,19 @@ export const SectorManagementDialog = ({
                           <UserPlus className="h-3.5 w-3.5" />
                           Criar membro
                         </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-7 gap-1 text-xs shrink-0"
+                          onClick={() => {
+                            setShowAddExistingMember((p) => !p);
+                            if (!showMembers) setShowMembers(true);
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Adicionar existente
+                        </Button>
                       </div>
 
                       {showMembers && (
@@ -948,6 +1066,15 @@ export const SectorManagementDialog = ({
                                 />
                               </CardContent>
                             </Card>
+                          )}
+
+                          {showAddExistingMember && (
+                            <AddExistingMemberForm
+                              condominiumId={condominiumId}
+                              sectorId={editingSectorId}
+                              onSuccess={() => setShowAddExistingMember(false)}
+                              onCancel={() => setShowAddExistingMember(false)}
+                            />
                           )}
 
                           <MembersSection

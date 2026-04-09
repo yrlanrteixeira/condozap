@@ -16,6 +16,7 @@ import {
 } from "@/shared/components/ui/select";
 import { useSectors } from "@/features/structure/hooks/useSectorsApi";
 import { useAppSelector } from "@/shared/hooks";
+import { usePermissions } from "@/shared/hooks/usePermissions";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { COMPLAINT_CATEGORIES } from "@/config/constants";
 import {
@@ -122,7 +123,11 @@ interface ComplaintFormProps {
 
 export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
-  const { data: sectors } = useSectors(currentCondominiumId ?? "");
+  const { can } = usePermissions();
+  const canViewStructure = can("view:structure");
+  const { data: sectors } = useSectors(
+    canViewStructure ? (currentCondominiumId ?? "") : ""
+  );
 
   const dynamicCategories = useMemo(() => {
     if (sectors?.length) {
@@ -130,7 +135,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
       return merged.includes("Outras") ? merged : [...merged, "Outras"];
     }
     const base = [...COMPLAINT_CATEGORIES];
-    return base.includes("Outras") ? base : [...base, "Outras"];
+    return base.includes("Outros") ? base : [...base, "Outros"];
   }, [sectors]);
 
   const {

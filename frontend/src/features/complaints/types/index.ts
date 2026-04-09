@@ -57,6 +57,7 @@ export interface CreateComplaintInput {
   residentId: string;
   category: string;
   content: string;
+  idempotencyKey?: string;
   priority?: ComplaintPriority;
   isAnonymous?: boolean;
   sectorId?: string;

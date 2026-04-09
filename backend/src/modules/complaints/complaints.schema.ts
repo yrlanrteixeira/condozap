@@ -18,6 +18,7 @@ export const createComplaintSchema = z.object({
   residentId: z.string().min(1),
   category: z.string().min(3),
   content: z.string().min(10),
+  idempotencyKey: z.string().min(8).max(120).optional(),
   priority: priorityEnum.optional().default("MEDIUM"),
   isAnonymous: z.boolean().optional().default(false),
   sectorId: z.string().optional(),
