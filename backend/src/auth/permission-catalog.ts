@@ -89,3 +89,53 @@ export const isKnownPermissionKey = (key: string): boolean =>
 
 export const isCondoAssignableKey = (key: string): boolean =>
   CONDO_ASSIGNABLE_PERMISSION_KEYS.includes(key);
+
+/**
+ * Subconjunto do catálogo de condomínio para o template de permissões de um setor
+ * (operação local — não expõe gestão de usuários, exportações amplas, etc.).
+ */
+const SECTOR_ASSIGNABLE_RAW = [
+  "view:dashboard",
+  "view:metrics",
+  "view:unified_dashboard",
+  "view:condominiums",
+  "switch:condominium",
+  "view:structure",
+  "view:residents",
+  "view:all_residents",
+  "view:complaints",
+  "view:all_complaints",
+  "view:own_complaints",
+  "create:complaint",
+  "edit:complaint",
+  "update:complaint_status",
+  "update:complaint_priority",
+  "delete:complaint",
+  "view:anonymous_complaints",
+  "comment:complaint",
+  "resolve:complaint",
+  "return:complaint",
+  "reassign:complaint",
+  "view:messages",
+  "view:message_history",
+  "send:message",
+  "send:bulk_message",
+  "send:to_all",
+  "send:to_tower",
+  "send:to_floor",
+  "send:to_unit",
+  "view:whatsapp_status",
+  "view:history",
+  "view:all_history",
+  "view:announcements",
+  "create:announcement",
+  "view_sector_dashboard",
+  "view_sector_complaints",
+  "submit:csat",
+] as const;
+
+export const SECTOR_ASSIGNABLE_PERMISSION_KEYS: readonly string[] =
+  SECTOR_ASSIGNABLE_RAW.filter((k) => isCondoAssignableKey(k));
+
+export const isSectorAssignableKey = (key: string): boolean =>
+  SECTOR_ASSIGNABLE_PERMISSION_KEYS.includes(key);

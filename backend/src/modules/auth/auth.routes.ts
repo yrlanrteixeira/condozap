@@ -22,7 +22,7 @@ import { normalizeCondominiumSlug } from "../../shared/utils/condominium-slug";
 import { buildAccessTokenPayload } from "./auth-jwt-payload";
 import { registerResidentWithInvite } from "./register-invite.service";
 import { userToApi } from "./user-response";
-import { getEffectivePermissionsForCondominiumMembership } from "../../auth/effective-permissions";
+import { getEffectivePermissionsForCondominiums } from "../../auth/effective-permissions";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -267,22 +267,23 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         ...userWithoutPassword
       } = user;
 
-      const userCondominiums = await Promise.all(
-        condominiums.map(async (uc) => ({
-          id: uc.condominium.id,
-          name: uc.condominium.name,
-          role: uc.role,
-          councilPosition: uc.councilPosition,
-          assignedTower: uc.assignedTower,
-          permissionMode: uc.permissionMode,
-          effectivePermissions:
-            await getEffectivePermissionsForCondominiumMembership(
-              prisma,
-              userId,
-              uc.condominiumId
-            ),
-        }))
+      const condoIds = condominiums.map((uc) => uc.condominiumId);
+      const effectiveByCondo = await getEffectivePermissionsForCondominiums(
+        prisma,
+        userId,
+        condoIds
       );
+
+      const userCondominiums = condominiums.map((uc) => ({
+        id: uc.condominium.id,
+        name: uc.condominium.name,
+        role: uc.role,
+        councilPosition: uc.councilPosition,
+        assignedTower: uc.assignedTower,
+        permissionMode: uc.permissionMode,
+        effectivePermissions:
+          effectiveByCondo.get(uc.condominiumId) ?? [],
+      }));
 
       // Resolve sector data for SETOR_MEMBER/SETOR_MANAGER
       let sectors: any[] = [];
@@ -295,12 +296,25 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           },
         });
 
+        const sectorIds = [...new Set(sectorMemberships.map((m) => m.sectorId))];
+        const sectorPermRows =
+          sectorIds.length > 0
+            ? await prisma.sectorPermission.findMany({
+                where: { sectorId: { in: sectorIds } },
+                select: { sectorId: true, action: true },
+              })
+            : [];
+
+        const permsBySector = new Map<string, Set<string>>();
+        for (const row of sectorPermRows) {
+          if (!permsBySector.has(row.sectorId)) {
+            permsBySector.set(row.sectorId, new Set());
+          }
+          permsBySector.get(row.sectorId)!.add(row.action);
+        }
+
         for (const sm of sectorMemberships) {
-          const sectorPerms = await prisma.sectorPermission.findMany({
-            where: { sectorId: sm.sectorId },
-            select: { action: true },
-          });
-          const allowed = new Set(sectorPerms.map((p) => p.action));
+          const allowed = new Set(permsBySector.get(sm.sectorId) ?? []);
           for (const override of sm.permissionOverrides) {
             if (override.granted) allowed.add(override.action);
             else allowed.delete(override.action);
@@ -366,22 +380,23 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         ...userWithoutPassword
       } = user;
 
-      const userCondominiums = await Promise.all(
-        condominiums.map(async (uc) => ({
-          id: uc.condominium.id,
-          name: uc.condominium.name,
-          role: uc.role,
-          councilPosition: uc.councilPosition,
-          assignedTower: uc.assignedTower,
-          permissionMode: uc.permissionMode,
-          effectivePermissions:
-            await getEffectivePermissionsForCondominiumMembership(
-              prisma,
-              userId,
-              uc.condominiumId
-            ),
-        }))
+      const condoIdsPatch = condominiums.map((uc) => uc.condominiumId);
+      const effectivePatch = await getEffectivePermissionsForCondominiums(
+        prisma,
+        userId,
+        condoIdsPatch
       );
+
+      const userCondominiums = condominiums.map((uc) => ({
+        id: uc.condominium.id,
+        name: uc.condominium.name,
+        role: uc.role,
+        councilPosition: uc.councilPosition,
+        assignedTower: uc.assignedTower,
+        permissionMode: uc.permissionMode,
+        effectivePermissions:
+          effectivePatch.get(uc.condominiumId) ?? [],
+      }));
 
       const base = userToApi(userWithoutPassword as never, {
         residentId: resident?.id,

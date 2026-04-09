@@ -19,7 +19,8 @@
     "db:update-consent": "tsx prisma/update-consent.ts",
     "storage:create-buckets": "tsx scripts/create-storage-buckets.ts",
     "storage:test": "tsx scripts/test-storage.ts",
-    "billing:test-webhook": "tsx --env-file=.env scripts/test-abacatepay-webhook.ts"
+    "billing:test-webhook": "tsx --env-file=.env scripts/test-abacatepay-webhook.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1010.0",
@@ -52,6 +53,7 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "pino-pretty": "^13.1.3",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "vitest": "^3.0.5"
   }
 }

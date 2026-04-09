@@ -49,14 +49,14 @@ import type { SectorMember } from "../types";
 
 // ─── Catálogo de permissões (API) ─────────────────────────────────────────────
 
-function useCatalogPermissionKeys() {
+function useSectorCatalogPermissionKeys() {
   return useQuery({
-    queryKey: ["permissions-catalog"],
+    queryKey: ["permissions-catalog", "sector"],
     queryFn: async () => {
-      const { data } = await api.get<{ keys: string[] }>(
+      const { data } = await api.get<{ keys: string[]; sectorKeys: string[] }>(
         "/condominiums/permissions-catalog"
       );
-      return data.keys;
+      return data.sectorKeys?.length ? data.sectorKeys : data.keys;
     },
   });
 }
@@ -217,7 +217,7 @@ function SectorPermissionsSection({
   const { toast } = useToast();
   const { data, isLoading } = useSectorPermissions(condominiumId, sectorId);
   const { data: catalogKeys, isLoading: catalogLoading } =
-    useCatalogPermissionKeys();
+    useSectorCatalogPermissionKeys();
   const updatePermissions = useUpdateSectorPermissions();
   const ALL_ACTIONS = catalogKeys ?? [];
 
@@ -306,7 +306,7 @@ function MemberOverridePanel({
 }: MemberOverridePanelProps) {
   const { toast } = useToast();
   const { data: catalogKeys, isLoading: catalogLoading } =
-    useCatalogPermissionKeys();
+    useSectorCatalogPermissionKeys();
   const ALL_ACTIONS = catalogKeys ?? [];
   const { data, isLoading } = useMemberPermissions(
     condominiumId,
