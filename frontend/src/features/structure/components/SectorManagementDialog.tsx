@@ -66,7 +66,12 @@ function useSectorCatalogPermissionKeys() {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SectorPermissionsData {
-  actions: string[];
+  sectorPermissions: string[];
+  memberOverrides: Array<{
+    memberId: string;
+    memberName: string;
+    overrides: Array<{ action: string; granted: boolean }>;
+  }>;
 }
 
 interface MemberOverride {
@@ -228,7 +233,7 @@ function SectorPermissionsSection({
 
   useEffect(() => {
     if (data && !initialized) {
-      setLocalActions(data.actions ?? []);
+      setLocalActions(data.sectorPermissions ?? []);
       setInitialized(true);
     }
   }, [data, initialized]);
@@ -483,15 +488,15 @@ function MembersSection({ condominiumId, sectorId, members }: MembersSectionProp
   return (
     <div className="space-y-2">
       {members.map((member) => {
-        const isExpanded = expandedMemberId === member.userId;
+        const isExpanded = expandedMemberId === member.id;
         return (
-          <div key={member.userId} className="rounded-md border border-border p-3">
+          <div key={member.id} className="rounded-md border border-border p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {member.name ?? member.userId}
+                    {member.name}
                   </p>
                   {member.email && (
                     <p className="text-xs text-muted-foreground truncate">
@@ -505,7 +510,7 @@ function MembersSection({ condominiumId, sectorId, members }: MembersSectionProp
                 size="sm"
                 className="shrink-0 h-7 gap-1 text-xs"
                 onClick={() =>
-                  setExpandedMemberId(isExpanded ? null : member.userId)
+                  setExpandedMemberId(isExpanded ? null : member.id)
                 }
               >
                 <Shield className="h-3.5 w-3.5" />

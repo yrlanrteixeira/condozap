@@ -135,7 +135,7 @@ export interface SectorMember {
   /** ID do registro em `sector_members` (necessário para permissões por membro) */
   id: string;
   userId: string;
-  name?: string;
+  name: string;
   email?: string;
   order?: number;
   workload?: number;
