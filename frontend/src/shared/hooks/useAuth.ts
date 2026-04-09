@@ -4,6 +4,7 @@ import { useAppDispatch } from "./useAppDispatch";
 import {
   login as loginAction,
   register as registerAction,
+  completeFirstPassword as completeFirstPasswordAction,
   logout as logoutAction,
   updateProfile as updateProfileAction,
   selectAuth,
@@ -39,10 +40,8 @@ export const useAuth = () => {
     [dispatch]
   );
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const result = await dispatch(loginAction({ email, password })).unwrap();
-
+  const syncCondominiumsAfterAuth = useCallback(
+    (result: LoginResponse) => {
       if (result.user.condominiums && result.user.condominiums.length > 0) {
         dispatch(setCondominiums(result.user.condominiums));
         const state = store.getState() as RootState;
@@ -56,10 +55,28 @@ export const useAuth = () => {
           }
         }
       }
-
-      return result;
     },
     [dispatch]
+  );
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const result = await dispatch(loginAction({ email, password })).unwrap();
+      syncCondominiumsAfterAuth(result);
+      return result;
+    },
+    [dispatch, syncCondominiumsAfterAuth]
+  );
+
+  const completeFirstPassword = useCallback(
+    async (data: { newPassword: string; confirmNewPassword: string }) => {
+      const result = await dispatch(
+        completeFirstPasswordAction(data)
+      ).unwrap();
+      syncCondominiumsAfterAuth(result);
+      return result;
+    },
+    [dispatch, syncCondominiumsAfterAuth]
   );
 
   const signUp = useCallback(
@@ -70,6 +87,10 @@ export const useAuth = () => {
       role?: string;
       requestedCondominiumSlug: string;
       phone?: string;
+      requestedTower?: string;
+      requestedFloor?: string;
+      requestedUnit?: string;
+      inviteToken?: string;
       consentDataProcessing?: boolean;
       consentWhatsapp?: boolean;
     }) => {
@@ -81,25 +102,20 @@ export const useAuth = () => {
           role: data.role || "RESIDENT",
           requestedCondominiumSlug: data.requestedCondominiumSlug,
           requestedPhone: data.phone,
+          requestedTower: data.requestedTower,
+          requestedFloor: data.requestedFloor,
+          requestedUnit: data.requestedUnit,
+          inviteToken: data.inviteToken,
           consentDataProcessing: data.consentDataProcessing ?? false,
           consentWhatsapp: data.consentWhatsapp ?? false,
         })
       ).unwrap()) as LoginResponse;
 
-      if (result.user?.condominiums && result.user.condominiums.length > 0) {
-        dispatch(setCondominiums(result.user.condominiums));
-        const state = store.getState() as RootState;
-        const currentCondoId = state?.condominium?.currentCondominiumId;
-        const ids = result.user.condominiums.map((c: Condominium) => c.id);
-        if (!currentCondoId || !ids.includes(currentCondoId)) {
-          const first = result.user.condominiums[0];
-          if (first) dispatch(setCurrentCondominium(first.id));
-        }
-      }
+      syncCondominiumsAfterAuth(result);
 
       return result;
     },
-    [dispatch]
+    [dispatch, syncCondominiumsAfterAuth]
   );
 
   const signOut = useCallback(async () => {
@@ -136,6 +152,7 @@ export const useAuth = () => {
     logout,
     signIn,
     signUp,
+    completeFirstPassword,
     signOut,
     updateProfile: updateUserProfile,
   };

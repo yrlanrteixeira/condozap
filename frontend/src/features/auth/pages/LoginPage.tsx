@@ -32,8 +32,12 @@ export function LoginPage() {
   const onSubmit = async (values: LoginInput) => {
     setError(null);
     try {
-      await signIn(values.email, values.password);
-      navigate("/");
+      const result = await signIn(values.email, values.password);
+      if (result.user.mustChangePassword) {
+        navigate("/auth/first-access", { replace: true });
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     }

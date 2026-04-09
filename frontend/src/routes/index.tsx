@@ -1,6 +1,13 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import { ApprovalGuard, InitialRedirect, ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
+import {
+  ApprovalGuard,
+  FirstPasswordGuard,
+  InitialRedirect,
+  ProtectedRoute,
+  PermissionGuard,
+} from "@/shared/components/guards";
+import { FirstAccessPage } from "@/features/auth/pages/FirstAccessPage";
 import { MainLayout } from "@/shared/components/layout";
 import { Permissions } from "@/config/permissions";
 import { authRoutes } from "@/features/auth/routes";
@@ -70,12 +77,23 @@ export function AppRoutes() {
       />
 
       <Route
+        path="/auth/first-access"
+        element={
+          <ProtectedRoute>
+            <FirstAccessPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/*"
         element={
           <ProtectedRoute>
-            <ApprovalGuard>
-              <MainLayout />
-            </ApprovalGuard>
+            <FirstPasswordGuard>
+              <ApprovalGuard>
+                <MainLayout />
+              </ApprovalGuard>
+            </FirstPasswordGuard>
           </ProtectedRoute>
         }
       >

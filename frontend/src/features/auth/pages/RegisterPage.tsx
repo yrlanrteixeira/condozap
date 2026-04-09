@@ -1,10 +1,23 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Info, Building2 } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import { Input } from "@/shared/components/ui/input";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
 import {
@@ -17,22 +30,43 @@ import {
   PasswordInput,
 } from "../components";
 import { api } from "@/lib/api";
+import type { CondominiumStructure } from "@/features/structure/hooks/useStructureApi";
+import {
+  formatTowerHeading,
+  resolveTowerValueForSelect,
+} from "@/features/structure/utils/towerDisplay";
 
 type PublicCondominiumPreview = {
+  id: string;
   slug: string;
   name: string;
   status: string;
   registrationOpen: boolean;
+  structure: CondominiumStructure | null;
+};
+
+type RegisterInvitePreview = {
+  condominiumId: string;
+  condominiumSlug: string;
+  condominiumName: string;
+  name: string;
+  phone: string;
+  tower: string | null;
+  floor: string | null;
+  unit: string | null;
+  registrationOpen: boolean;
 };
 
 type RegisterResponse = {
-  user: { status?: string };
+  user: { status?: string; mustChangePassword?: boolean };
   token: string;
   refreshToken?: string;
 };
 
 export function RegisterPage() {
   const { condoSlug = "" } = useParams<{ condoSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const inviteParam = searchParams.get("invite")?.trim() ?? "";
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +87,22 @@ export function RegisterPage() {
     retry: false,
   });
 
+  const {
+    data: invitePreview,
+    isLoading: inviteLoading,
+    isError: inviteError,
+  } = useQuery({
+    queryKey: ["registerInvite", inviteParam],
+    queryFn: async (): Promise<RegisterInvitePreview> => {
+      const { data } = await api.get<RegisterInvitePreview>(
+        `/public/register-invites/${encodeURIComponent(inviteParam)}`
+      );
+      return data;
+    },
+    enabled: inviteParam.length > 0,
+    retry: false,
+  });
+
   const form = useForm<RegisterUserInput>({
     resolver: zodResolver(RegisterUserSchema),
     mode: "onBlur",
@@ -64,16 +114,85 @@ export function RegisterPage() {
       password: "",
       confirmPassword: "",
       role: "RESIDENT",
+      requestedTower: "A",
+      requestedFloor: "",
+      requestedUnit: "",
+      inviteToken: "",
       consentDataProcessing: false,
       consentWhatsapp: false,
     },
   });
 
-  const handleNextStep = async () => {
-    const step1Fields = ["name", "email", "phone"] as const;
-    const isStep1Valid = await form.trigger(step1Fields);
+  useEffect(() => {
+    if (!invitePreview) return;
+    if (invitePreview.condominiumSlug !== condoSlug) {
+      setError(
+        "Este convite não corresponde ao link do condomínio. Use o link completo enviado pelo WhatsApp."
+      );
+      return;
+    }
+    form.setValue("inviteToken", inviteParam);
+    form.setValue("name", invitePreview.name);
+    form.setValue("phone", invitePreview.phone);
+    if (invitePreview.tower) form.setValue("requestedTower", invitePreview.tower);
+    if (invitePreview.floor) form.setValue("requestedFloor", invitePreview.floor);
+    if (invitePreview.unit) form.setValue("requestedUnit", invitePreview.unit);
+  }, [invitePreview, condoSlug, inviteParam, form]);
 
-    if (isStep1Valid) {
+  const structure = condoPreview?.structure ?? null;
+  const towerNames = (() => {
+    const base = structure?.towers?.map((t) => t.name) ?? [];
+    const set = new Set(base);
+    const t = form.watch("requestedTower");
+    if (t && !set.has(t)) set.add(t);
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { numeric: true })
+    );
+  })();
+
+  const towerSelectValue = resolveTowerValueForSelect(
+    form.watch("requestedTower") || "",
+    towerNames.length > 0 ? towerNames : ["A", "B", "C"]
+  );
+
+  const handleNextStep = async () => {
+    const baseFields = ["name", "email", "phone"] as const;
+
+    if (inviteParam) {
+      if (!invitePreview || invitePreview.condominiumSlug !== condoSlug) {
+        setError("Convite inválido ou ainda carregando.");
+        return;
+      }
+      const okName = await form.trigger([...baseFields]);
+      if (!okName) return;
+      const t =
+        form.getValues("requestedTower")?.trim() ||
+        invitePreview.tower?.trim() ||
+        "";
+      const f =
+        form.getValues("requestedFloor")?.trim() ||
+        invitePreview.floor?.trim() ||
+        "";
+      const u =
+        form.getValues("requestedUnit")?.trim() ||
+        invitePreview.unit?.trim() ||
+        "";
+      if (!t || !f || !u) {
+        setError("Informe torre, andar e unidade (ou peça ao síndico para pré-preencher o convite).");
+        return;
+      }
+      setError(null);
+      setStep(2);
+      return;
+    }
+
+    const ok = await form.trigger([
+      ...baseFields,
+      "requestedTower",
+      "requestedFloor",
+      "requestedUnit",
+    ]);
+    if (ok) {
       setStep(2);
       setError(null);
     }
@@ -89,11 +208,17 @@ export function RegisterPage() {
         role: values.role,
         requestedCondominiumSlug: condoSlug,
         phone: values.phone,
+        requestedTower: values.requestedTower,
+        requestedFloor: values.requestedFloor,
+        requestedUnit: values.requestedUnit,
+        inviteToken: values.inviteToken || inviteParam || undefined,
         consentDataProcessing: values.consentDataProcessing,
         consentWhatsapp: values.consentWhatsapp,
       })) as RegisterResponse;
 
-      if (result.user?.status === "PENDING") {
+      if (result.user?.mustChangePassword) {
+        navigate("/auth/first-access", { replace: true });
+      } else if (result.user?.status === "PENDING") {
         navigate("/pending-approval", { replace: true });
       } else {
         navigate("/", { replace: true });
@@ -160,12 +285,28 @@ export function RegisterPage() {
     );
   }
 
-  if (condoLoading) {
+  if (inviteParam && inviteError) {
+    return (
+      <AuthCard maxWidth="md">
+        <AuthHeader
+          title="Convite inválido"
+          description="Este link de convite não existe, expirou ou já foi utilizado. Peça um novo convite ao síndico."
+        />
+        <AuthFooter>
+          <Link to="/auth/login" className="text-primary hover:underline font-medium">
+            Ir para o login
+          </Link>
+        </AuthFooter>
+      </AuthCard>
+    );
+  }
+
+  if (condoLoading || (inviteParam && inviteLoading)) {
     return (
       <AuthCard maxWidth="xl">
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando condomínio…</p>
+          <p className="text-sm text-muted-foreground">Carregando…</p>
         </div>
       </AuthCard>
     );
@@ -187,7 +328,23 @@ export function RegisterPage() {
     );
   }
 
-  if (!condoPreview.registrationOpen) {
+  if (inviteParam && invitePreview && !invitePreview.registrationOpen) {
+    return (
+      <AuthCard maxWidth="md">
+        <AuthHeader
+          title="Cadastro indisponível"
+          description="Este condomínio não está aceitando novos cadastros no momento."
+        />
+        <AuthFooter>
+          <Link to="/auth/login" className="text-primary hover:underline font-medium">
+            Ir para o login
+          </Link>
+        </AuthFooter>
+      </AuthCard>
+    );
+  }
+
+  if (!condoPreview.registrationOpen && !inviteParam) {
     return (
       <AuthCard maxWidth="md">
         <AuthHeader
@@ -226,6 +383,13 @@ export function RegisterPage() {
             </p>
           </div>
         </div>
+
+        {inviteParam ? (
+          <p className="text-sm text-muted-foreground rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
+            Você está concluindo um <strong>convite do síndico</strong>. Use o mesmo
+            telefone informado no convite.
+          </p>
+        ) : null}
 
         <div className="flex items-center gap-2">
           <div
@@ -273,6 +437,80 @@ export function RegisterPage() {
                   error={form.formState.errors.phone?.message}
                   {...form.register("phone")}
                 />
+              </div>
+
+              <AuthErrorAlert message={error} />
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">
+                  Localização da unidade
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Torre
+                    </label>
+                    <Select
+                      value={towerSelectValue}
+                      onValueChange={(v) =>
+                        form.setValue("requestedTower", v, {
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Torre" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(towerNames.length > 0 ? towerNames : ["A", "B", "C"]).map(
+                          (tower) => (
+                            <SelectItem key={tower} value={tower}>
+                              {formatTowerHeading(tower)}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {form.formState.errors.requestedTower?.message ? (
+                      <p className="text-xs text-destructive">
+                        {form.formState.errors.requestedTower.message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Andar
+                    </label>
+                    <Input
+                      placeholder="Ex: 5"
+                      {...form.register("requestedFloor")}
+                    />
+                    {form.formState.errors.requestedFloor?.message ? (
+                      <p className="text-xs text-destructive">
+                        {form.formState.errors.requestedFloor.message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Unidade
+                    </label>
+                    <Input
+                      placeholder="Ex: 501"
+                      {...form.register("requestedUnit")}
+                    />
+                    {form.formState.errors.requestedUnit?.message ? (
+                      <p className="text-xs text-destructive">
+                        {form.formState.errors.requestedUnit.message}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {inviteParam
+                    ? "Se o síndico já informou a unidade no convite, os campos vêm preenchidos."
+                    : "Obrigatório para solicitar acesso ao condomínio."}
+                </p>
               </div>
 
               <button

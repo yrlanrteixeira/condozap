@@ -4,11 +4,13 @@ import {
   condominiumIdParamSchema,
   createResidentSchema,
   importResidentsSchema,
+  provisionResidentSchema,
   residentFiltersSchema,
   residentIdParamSchema,
   updateConsentSchema,
   updateResidentSchema,
   type CreateResidentRequest,
+  type ProvisionResidentBody,
   type ResidentFilters,
   type UpdateResidentRequest,
 } from "./residents.schema";
@@ -20,6 +22,7 @@ import {
   updateResident,
   updateResidentConsent,
 } from "./residents.service";
+import { provisionResident } from "./residents-provision.service";
 import {
   findResidentByIdForUser,
   findResidentsForUser,
@@ -59,6 +62,23 @@ export async function listResidentsByCondoHandler(
     filters
   );
   return reply.send(residents);
+}
+
+export async function provisionResidentHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const body = provisionResidentSchema.parse(
+    request.body
+  ) as ProvisionResidentBody;
+  const user = request.user as AuthUser;
+  const context = await getAccessContext(prisma, user);
+  if (!isCondominiumAllowed(context, body.condominiumId)) {
+    return reply.status(403).send({ error: "Acesso negado ao condomínio" });
+  }
+
+  const result = await provisionResident(prisma, body, user.id);
+  return reply.status(201).send(result);
 }
 
 export async function createResidentHandler(

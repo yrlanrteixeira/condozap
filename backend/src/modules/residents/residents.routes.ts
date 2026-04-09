@@ -8,6 +8,7 @@ import {
   importResidentsHandler,
   listAllResidentsHandler,
   listResidentsByCondoHandler,
+  provisionResidentHandler,
   updateResidentConsentHandler,
   updateResidentHandler,
 } from "./residents.controller";
@@ -53,6 +54,23 @@ export const residentsRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [requireCondoAccess({ source: "body" })],
     },
     importResidentsHandler
+  );
+
+  fastify.post(
+    "/provision",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireRole([
+          "SUPER_ADMIN",
+          "PROFESSIONAL_SYNDIC",
+          "SYNDIC",
+          "ADMIN",
+        ]),
+      ],
+      preHandler: [requireCondoAccess({ source: "body" })],
+    },
+    provisionResidentHandler
   );
 
   fastify.patch(

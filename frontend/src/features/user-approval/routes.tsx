@@ -1,5 +1,9 @@
 import { lazy, Suspense } from "react";
-import { ProtectedRoute, PermissionGuard } from "@/shared/components/guards";
+import {
+  FirstPasswordGuard,
+  PermissionGuard,
+  ProtectedRoute,
+} from "@/shared/components/guards";
 import { Permissions } from "@/config/permissions";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
@@ -33,9 +37,11 @@ export const pendingApprovalRoute: FeatureRoute = {
   path: "/pending-approval",
   element: (
     <ProtectedRoute>
-      <Suspense fallback={<PageLoader />}>
-        <PendingApprovalPage />
-      </Suspense>
+      <FirstPasswordGuard>
+        <Suspense fallback={<PageLoader />}>
+          <PendingApprovalPage />
+        </Suspense>
+      </FirstPasswordGuard>
     </ProtectedRoute>
   ),
 };

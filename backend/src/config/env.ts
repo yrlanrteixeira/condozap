@@ -27,6 +27,9 @@ const envSchema = z.object({
   // CORS - Pode ser uma string única ou múltiplas separadas por vírgula
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
 
+  /** Base URL do frontend (links em convites WhatsApp). Sem barra no final. */
+  FRONTEND_URL: z.string().url().default("http://localhost:5173"),
+
   // WhatsApp API (Official - Meta)
   WHATSAPP_API_URL: z.string().default("https://graph.facebook.com/v21.0"),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),

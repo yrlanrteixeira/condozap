@@ -12,6 +12,8 @@ export interface AuthUser {
   status: string;
   permissionScope?: PermissionScope | Scope;
   residentId?: string;
+  /** Quando true, o usuário deve definir nova senha (JWT / primeiro acesso). */
+  mustChangePassword?: boolean;
   condominiums?: Array<{
     condominiumId: string;
     role: Role;

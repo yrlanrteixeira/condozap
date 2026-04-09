@@ -8,30 +8,36 @@ import {
   updateProfileSchema,
   changePasswordSchema,
   refreshTokenSchema,
+  completeFirstPasswordSchema,
   type LoginBody,
   type RegisterBody,
   type UpdateProfileBody,
   type ChangePasswordBody,
   type RefreshTokenBody,
+  type CompleteFirstPasswordBody,
 } from "./auth.schemas";
 import type { AuthUser } from "../../types/auth";
 import { config } from "../../config/env";
 import { normalizeCondominiumSlug } from "../../shared/utils/condominium-slug";
+import { buildAccessTokenPayload } from "./auth-jwt-payload";
+import { registerResidentWithInvite } from "./register-invite.service";
+import { userToApi } from "./user-response";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post("/register", async (request, reply) => {
+  fastify.post(
+    "/register",
+    {
+      config: {
+        rateLimit: {
+          max: 15,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request, reply) => {
     const body = registerSchema.parse(request.body) as RegisterBody;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: body.email },
-    });
-
-    if (existingUser) {
-      return reply.status(400).send({ error: "User already exists" });
-    }
-
     const hashedPassword = await bcrypt.hash(body.password, 10);
-
     const userRole = (body.role || "RESIDENT") as string;
 
     let requestedCondominiumId: string | undefined;
@@ -56,6 +62,57 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       requestedCondominiumId = condo.id;
     }
 
+    if (
+      body.inviteToken?.trim() &&
+      userRole === "RESIDENT" &&
+      !requestedCondominiumId
+    ) {
+      return reply.status(400).send({
+        error: "Abra o cadastro pelo link do seu condomínio (slug na URL).",
+      });
+    }
+
+    const userWithInvite =
+      body.inviteToken?.trim() && userRole === "RESIDENT"
+        ? await registerResidentWithInvite({
+            prisma,
+            body,
+            hashedPassword,
+            condominiumIdFromSlug: requestedCondominiumId!,
+          })
+        : null;
+
+    if (userWithInvite) {
+      const tokenPayload = buildAccessTokenPayload({
+        ...userWithInvite,
+        residentId: userWithInvite.resident?.id,
+      });
+      const token = fastify.jwt.sign(tokenPayload, {
+        expiresIn: config.JWT_EXPIRES_IN || "7d",
+      });
+      const refreshToken = fastify.jwt.sign(
+        { id: userWithInvite.id, type: "refresh" },
+        { expiresIn: "30d" }
+      );
+      const u = userToApi(userWithInvite, {
+        residentId: userWithInvite.resident?.id,
+      });
+      return reply.send({
+        user: u,
+        token,
+        refreshToken,
+        isPending: userWithInvite.status === "PENDING",
+      });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: body.email },
+    });
+
+    if (existingUser) {
+      return reply.status(400).send({ error: "User already exists" });
+    }
+
     const user = await prisma.user.create({
       data: {
         email: body.email,
@@ -71,39 +128,26 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         consentWhatsapp: body.consentWhatsapp,
         consentDataProcessing: body.consentDataProcessing,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        status: true,
-        permissionScope: true,
-        requestedTower: true,
-        requestedFloor: true,
-        requestedUnit: true,
-        createdAt: true,
-      },
+      include: { resident: true },
     });
 
-    const token = fastify.jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        name: user.name,
-        permissionScope: user.permissionScope,
-      },
-      { expiresIn: config.JWT_EXPIRES_IN || "7d" }
-    );
+    const tokenPayload = buildAccessTokenPayload({
+      ...user,
+      residentId: user.resident?.id,
+    });
+    const token = fastify.jwt.sign(tokenPayload, {
+      expiresIn: config.JWT_EXPIRES_IN || "7d",
+    });
 
     const refreshToken = fastify.jwt.sign(
       { id: user.id, type: "refresh" },
       { expiresIn: "30d" }
     );
 
+    const u = userToApi(user, { residentId: user.resident?.id });
+
     return reply.send({
-      user,
+      user: u,
       token,
       refreshToken,
       isPending: user.status === "PENDING",
@@ -144,15 +188,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       throw new BadRequestError("Conta suspensa. Entre em contato com o administrador do condomínio.");
     }
 
-    const tokenPayload = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      name: user.name,
-      permissionScope: user.permissionScope,
+    const tokenPayload = buildAccessTokenPayload({
+      ...user,
       residentId: user.resident?.id,
-    };
+      forcePasswordReset: user.forcePasswordReset,
+    });
 
     const token = fastify.jwt.sign(tokenPayload, {
       expiresIn: config.JWT_EXPIRES_IN || "7d",
@@ -175,11 +215,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       name: uc.condominium.name,
     }));
 
+    const u = userToApi(userWithoutPassword as Parameters<typeof userToApi>[0], {
+      residentId: resident?.id,
+    });
+
     return reply.send({
       user: {
-        ...userWithoutPassword,
+        ...u,
         condominiums: userCondominiums,
-        residentId: resident?.id,
       },
       token,
       refreshToken,
@@ -260,10 +303,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      return reply.send({
-        ...userWithoutPassword,
-        condominiums: userCondominiums,
+      const base = userToApi(userWithoutPassword as never, {
         residentId: resident?.id,
+      });
+
+      return reply.send({
+        ...base,
+        condominiums: userCondominiums,
         ...(sectors.length > 0 && { sectors }),
       });
     }
@@ -315,10 +361,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         name: uc.condominium.name,
       }));
 
-      return reply.send({
-        ...userWithoutPassword,
-        condominiums: userCondominiums,
+      const base = userToApi(userWithoutPassword as never, {
         residentId: resident?.id,
+      });
+
+      return reply.send({
+        ...base,
+        condominiums: userCondominiums,
       });
     }
   );
@@ -351,18 +400,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(401).send({ error: "User not found" });
       }
 
-      const token = fastify.jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          status: user.status,
-          name: user.name,
-          permissionScope: user.permissionScope,
-          residentId: user.resident?.id,
-        },
-        { expiresIn: config.JWT_EXPIRES_IN || "7d" }
-      );
+      const tokenPayload = buildAccessTokenPayload({
+        ...user,
+        residentId: user.resident?.id,
+        forcePasswordReset: user.forcePasswordReset,
+      });
+
+      const token = fastify.jwt.sign(tokenPayload, {
+        expiresIn: config.JWT_EXPIRES_IN || "7d",
+      });
 
       const newRefreshToken = fastify.jwt.sign(
         { id: user.id, type: "refresh" },
@@ -411,10 +457,83 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
       await prisma.user.update({
         where: { id: userId },
-        data: { password: hashedPassword },
+        data: { password: hashedPassword, forcePasswordReset: false },
       });
 
       return reply.send({ message: "Senha alterada com sucesso" });
+    }
+  );
+
+  fastify.post(
+    "/complete-first-password",
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      const userId = (request.user as AuthUser).id;
+      const body = completeFirstPasswordSchema.parse(
+        request.body
+      ) as CompleteFirstPasswordBody;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { resident: true, condominiums: { include: { condominium: true } } },
+      });
+
+      if (!user) {
+        return reply.status(404).send({ error: "Usuário não encontrado" });
+      }
+
+      if (!user.forcePasswordReset) {
+        return reply.status(400).send({
+          error: "Esta ação não se aplica à sua conta.",
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword, forcePasswordReset: false },
+        include: {
+          condominiums: {
+            include: {
+              condominium: { select: { id: true, name: true } },
+            },
+          },
+          resident: true,
+        },
+      });
+
+      const tokenPayload = buildAccessTokenPayload({
+        ...updated,
+        residentId: updated.resident?.id,
+        forcePasswordReset: false,
+      });
+
+      const token = fastify.jwt.sign(tokenPayload, {
+        expiresIn: config.JWT_EXPIRES_IN || "7d",
+      });
+
+      const refreshToken = fastify.jwt.sign(
+        { id: updated.id, type: "refresh" },
+        { expiresIn: "30d" }
+      );
+
+      const { password: _, condominiums, resident, ...rest } = updated;
+      const userCondominiums = condominiums.map((uc) => ({
+        id: uc.condominium.id,
+        name: uc.condominium.name,
+      }));
+
+      const u = userToApi(rest as never, { residentId: resident?.id });
+
+      return reply.send({
+        message: "Senha definida com sucesso",
+        user: { ...u, condominiums: userCondominiums },
+        token,
+        refreshToken,
+      });
     }
   );
 };
