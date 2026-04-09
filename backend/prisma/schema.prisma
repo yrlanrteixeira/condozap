@@ -596,6 +596,7 @@ model ComplaintMessage {
   content       String   @db.Text
   attachmentUrl String?  @map("attachment_url")
   source        String   @default("WEB")
+  isInternal    Boolean  @default(false) @map("is_internal")
   createdAt     DateTime @default(now()) @map("created_at")
 
   complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)

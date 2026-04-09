@@ -14,6 +14,8 @@ import type { ChatMessage } from "../hooks/useComplaintChatApi";
 interface ComplaintChatProps {
   complaintId: number;
   currentUserId: string;
+  showInternalToggle?: boolean;
+  defaultShowInternal?: boolean;
 }
 
 const ROLE_BADGE_STYLES: Record<string, string> = {
@@ -64,6 +66,14 @@ function MessageBubble({
           {message.senderName}
         </span>
         <RoleBadge role={message.senderRole} />
+        {message.isInternal && (
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 leading-tight bg-amber-50 text-amber-700 border-amber-200"
+          >
+            Interno
+          </Badge>
+        )}
         {message.source === "WHATSAPP" && (
           <Badge
             variant="outline"
@@ -87,14 +97,18 @@ function MessageBubble({
   );
 }
 
-export function ComplaintChat({ complaintId, currentUserId }: ComplaintChatProps) {
+export function ComplaintChat({ complaintId, currentUserId, showInternalToggle = false, defaultShowInternal = false }: ComplaintChatProps) {
   const [inputValue, setInputValue] = useState("");
+  const [isInternal, setIsInternal] = useState(defaultShowInternal);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useComplaintMessages(complaintId);
   const sendMessage = useSendComplaintMessage();
 
   // Reverse so oldest appears first (API returns newest-first)
-  const messages = data?.messages ? [...data.messages].reverse() : [];
+  const allMessages = data?.messages ? [...data.messages].reverse() : [];
+  const messages = showInternalToggle
+    ? allMessages
+    : allMessages.filter(m => !m.isInternal);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,7 +119,11 @@ export function ComplaintChat({ complaintId, currentUserId }: ComplaintChatProps
     if (!content || sendMessage.isPending) return;
     setInputValue("");
     try {
-      await sendMessage.mutateAsync({ complaintId, content });
+      await sendMessage.mutateAsync({ 
+        complaintId, 
+        content,
+        isInternal: showInternalToggle ? isInternal : false,
+      });
     } catch {
       setInputValue(content);
     }
@@ -121,9 +139,24 @@ export function ComplaintChat({ complaintId, currentUserId }: ComplaintChatProps
   return (
     <div className="rounded-lg border bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30">
-        <MessageCircle className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">Chat</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Chat</span>
+        </div>
+        {showInternalToggle && (
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isInternal}
+              onChange={(e) => setIsInternal(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <span className={isInternal ? "text-amber-600 font-medium" : "text-muted-foreground"}>
+              Interno
+            </span>
+          </label>
+        )}
       </div>
 
       {/* Messages area */}

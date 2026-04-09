@@ -49,6 +49,8 @@ export async function listComplaintMessagesHandler(
   const messages = await prisma.complaintMessage.findMany({
     where: {
       complaintId,
+      // Residents only see non-internal messages
+      ...(user.role === "RESIDENT" ? { isInternal: false } : {}),
       ...(cursorCreatedAt ? { createdAt: { lt: cursorCreatedAt } } : {}),
     },
     orderBy: { createdAt: "desc" },
@@ -68,6 +70,7 @@ export async function listComplaintMessagesHandler(
       content: m.content,
       attachmentUrl: m.attachmentUrl,
       source: m.source,
+      isInternal: m.isInternal,
       createdAt: m.createdAt.toISOString(),
     })),
     nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
@@ -80,19 +83,23 @@ export async function sendComplaintMessageHandler(
 ) {
   const user = request.user as AuthUser;
   const complaintId = Number((request.params as { complaintId: string }).complaintId);
-  const { content, attachmentUrl } = request.body as {
+  const { content, attachmentUrl, isInternal } = request.body as {
     content: string;
     attachmentUrl?: string;
+    isInternal?: boolean;
   };
 
   if (!content?.trim()) {
     return reply.status(400).send({ error: "Conteúdo é obrigatório" });
   }
 
+  // Only non-residents can send internal messages
+  const isInternalMessage = isInternal && user.role !== "RESIDENT";
+
   // Load complaint to verify access and get context for notifications
   const complaint = await prisma.complaint.findUnique({
     where: { id: complaintId },
-    include: { resident: true, assignee: true },
+    include: { resident: true, assignee: true, sector: true },
   });
   if (!complaint) {
     return reply.status(404).send({ error: "Ocorrência não encontrada" });
@@ -118,15 +125,16 @@ export async function sendComplaintMessageHandler(
       content: content.trim(),
       attachmentUrl: attachmentUrl || null,
       source: "WEB",
+      isInternal: isInternalMessage,
     },
     include: { sender: { select: { id: true, name: true } } },
   });
 
   // Notify the other party (fire-and-forget)
+  // Internal messages never notify the resident
   if (user.role === "RESIDENT") {
-    // Notify assignee or syndic
-    const targetId = complaint.assigneeId;
-    if (targetId) {
+    // Notify assignee
+    if (complaint.assigneeId) {
       notify(
         prisma,
         request.log,
@@ -137,9 +145,38 @@ export async function sendComplaintMessageHandler(
           recipientName: complaint.assignee?.name ?? "Equipe",
           authorName: complaint.resident.name,
         },
-        targetId,
+        complaint.assigneeId,
         complaint.condominiumId
       ).catch(() => {});
+    }
+
+    // Notify sector members (excluding assignee who already got notified)
+    if (complaint.sectorId) {
+      const sectorMembers = await prisma.sectorMember.findMany({
+        where: {
+          sectorId: complaint.sectorId,
+          isActive: true,
+        },
+        select: { userId: true },
+      });
+
+      for (const member of sectorMembers) {
+        if (member.userId !== complaint.assigneeId) {
+          notify(
+            prisma,
+            request.log,
+            {
+              type: "complaint_comment",
+              complaintId,
+              recipientPhone: "",
+              recipientName: "Setor",
+              authorName: complaint.resident.name,
+            },
+            member.userId,
+            complaint.condominiumId
+          ).catch(() => {});
+        }
+      }
     }
   } else {
     // Notify resident

@@ -9,6 +9,7 @@ interface ChatMessage {
   content: string;
   attachmentUrl: string | null;
   source: "WEB" | "WHATSAPP";
+  isInternal: boolean;
   createdAt: string;
 }
 
@@ -37,12 +38,15 @@ export function useSendComplaintMessage() {
     mutationFn: async ({
       complaintId,
       content,
+      isInternal,
     }: {
       complaintId: number;
       content: string;
+      isInternal?: boolean;
     }) => {
       const { data } = await api.post(`/complaint-messages/${complaintId}`, {
         content,
+        ...(isInternal && { isInternal }),
       });
       return data;
     },

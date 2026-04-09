@@ -108,6 +108,22 @@ export interface ComplaintStatusHistory {
   createdAt: string;
 }
 
+export interface ComplaintMessage {
+  id: string;
+  complaintId: number;
+  senderId: string;
+  senderRole: string;
+  sender?: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  content: string;
+  attachmentUrl?: string | null;
+  source: string;
+  createdAt: string;
+}
+
 export interface ComplaintStats {
   total: number;
   open: number;
@@ -121,6 +137,7 @@ export interface ComplaintStats {
 /** Complaint with statusHistory and attachments (detail API) */
 export interface ComplaintDetail extends Complaint {
   statusHistory?: ComplaintStatusHistory[];
+  complaintMessages?: ComplaintMessage[];
   attachments?: ComplaintAttachment[];
   csatScore?: number | null;
   csatComment?: string | null;

@@ -512,6 +512,8 @@ function ComplaintDetailContent({
       <ComplaintChat
         complaintId={complaint.id}
         currentUserId={currentUserId}
+        showInternalToggle={true}
+        defaultShowInternal={false}
       />
 
       {/* CSAT */}

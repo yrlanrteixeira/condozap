@@ -102,9 +102,28 @@ const complaintAttachmentSchema = z.object({
   uploadedAt: z.string(),
 });
 
+const complaintMessageSchema = z.object({
+  id: z.string(),
+  complaintId: z.number(),
+  senderId: z.string(),
+  senderRole: z.string(),
+  sender: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      role: z.string(),
+    })
+    .optional(),
+  content: z.string(),
+  attachmentUrl: z.string().nullable().optional(),
+  source: z.string(),
+  createdAt: z.string(),
+});
+
 // Detail response includes statusHistory, attachments, and CSAT fields
 export const ComplaintDetailSchema = ComplaintSchema.extend({
   statusHistory: z.array(complaintStatusHistorySchema).optional().default([]),
+  complaintMessages: z.array(complaintMessageSchema).optional().default([]),
   attachments: z.array(complaintAttachmentSchema).optional().default([]),
   csatScore: z.number().nullable().optional(),
   csatComment: z.string().nullable().optional(),

@@ -1,5 +1,5 @@
 import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer } from "lucide-react";
-import type { ComplaintStatusHistory } from "../types";
+import type { ComplaintStatusHistory, ComplaintMessage } from "../types";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,22 +21,26 @@ interface ComplaintTimelineProps {
   createdAt: string;
   description: string;
   sectorName?: string;
+  complaintMessages?: ComplaintMessage[];
 }
 
 interface TimelineItem {
   id: string;
-  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose";
+  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose" | "chat";
   label: string;
   description?: string;
   date: string;
   completed: boolean;
+  senderName?: string;
+  senderRole?: string;
 }
 
 function buildTimelineItems(
   statusHistory: ComplaintStatusHistory[],
   createdAt: string,
   description: string,
-  sectorName?: string
+  sectorName?: string,
+  complaintMessages?: ComplaintMessage[]
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -50,7 +54,27 @@ function buildTimelineItems(
     completed: true,
   });
 
-  // 2. Status changes, comments, and nudges from history (sorted oldest first)
+  // 2. Chat messages
+  if (complaintMessages && complaintMessages.length > 0) {
+    const sortedMessages = [...complaintMessages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    for (const msg of sortedMessages) {
+      const senderLabel = msg.senderRole === "RESIDENT" ? "Morador" : msg.sender?.name || "Admin";
+      items.push({
+        id: msg.id,
+        type: "chat",
+        label: senderLabel,
+        description: msg.content,
+        date: msg.createdAt,
+        completed: true,
+        senderName: msg.sender?.name,
+        senderRole: msg.senderRole,
+      });
+    }
+  }
+
+  // 3. Status changes, comments, and nudges from history (sorted oldest first)
   const sorted = [...statusHistory].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
@@ -123,6 +147,8 @@ function TimelineIcon({ type, completed }: { type: TimelineItem["type"]; complet
       return <ArrowRight className={cn(size, "text-blue-500")} />;
     case "comment":
       return <MessageSquare className={cn(size, "text-purple-500")} />;
+    case "chat":
+      return <MessageSquare className={cn(size, "text-indigo-500")} />;
     case "nudge":
       return <Bell className={cn(size, "text-amber-500")} />;
     case "return":
