@@ -24,7 +24,17 @@ import { registerResidentWithInvite } from "./register-invite.service";
 import { userToApi } from "./user-response";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post("/register", async (request, reply) => {
+  fastify.post(
+    "/register",
+    {
+      config: {
+        rateLimit: {
+          max: 15,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request, reply) => {
     const body = registerSchema.parse(request.body) as RegisterBody;
 
     const hashedPassword = await bcrypt.hash(body.password, 10);

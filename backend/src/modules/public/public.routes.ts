@@ -42,7 +42,17 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   /** Valida token de convite do síndico (query ?invite= na tela de registro). */
-  fastify.get("/register-invites/:token", async (request, reply) => {
+  fastify.get(
+    "/register-invites/:token",
+    {
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request, reply) => {
     const { token: raw } = request.params as { token: string };
     if (!raw?.trim()) {
       return reply.status(400).send({ error: "Token ausente" });

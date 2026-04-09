@@ -42,6 +42,7 @@ export async function registerResidentWithInvite(params: {
       "O telefone informado deve ser o mesmo do convite enviado pelo síndico."
     );
   }
+  const phoneForStorage = phoneNorm;
 
   const tower =
     body.requestedTower?.trim() || invite.tower?.trim() || "";
@@ -88,7 +89,7 @@ export async function registerResidentWithInvite(params: {
         requestedTower: tower,
         requestedFloor: floor,
         requestedUnit: unit,
-        requestedPhone: body.requestedPhone,
+        requestedPhone: phoneForStorage,
         consentWhatsapp: body.consentWhatsapp,
         consentDataProcessing: body.consentDataProcessing ?? true,
       },
@@ -105,7 +106,7 @@ export async function registerResidentWithInvite(params: {
       userId: user.id,
       name: user.name,
       email: user.email,
-      phone: body.requestedPhone!,
+      phone: phoneForStorage,
       tower,
       floor,
       unit,

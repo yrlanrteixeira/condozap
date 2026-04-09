@@ -39,6 +39,20 @@ export async function provisionResident(
   const phoneNorm = normalizePhoneDigits(data.phone);
 
   if (data.mode === "invite_link") {
+    const activeForPhone = await prisma.residentInvite.findFirst({
+      where: {
+        condominiumId: data.condominiumId,
+        phone: phoneNorm,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    if (activeForPhone) {
+      throw new ConflictError(
+        "Já existe um convite ativo para este telefone neste condomínio. Aguarde o uso ou até expirar o convite anterior."
+      );
+    }
+
     const raw = generateRawInviteToken();
     const tokenHash = hashInviteToken(raw);
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
@@ -95,6 +109,16 @@ export async function provisionResident(
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     throw new ConflictError("Este e-mail já está cadastrado.");
+  }
+
+  const residentEmailTaken = await prisma.resident.findFirst({
+    where: {
+      condominiumId: data.condominiumId,
+      email: { equals: email, mode: "insensitive" },
+    },
+  });
+  if (residentEmailTaken) {
+    throw new ConflictError("Este e-mail já está cadastrado para um morador neste condomínio.");
   }
 
   const unitTaken = await prisma.resident.findFirst({
