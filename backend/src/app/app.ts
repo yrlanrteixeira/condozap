@@ -6,6 +6,7 @@ import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import { config } from "../config/env";
 import authPlugin from "../plugins/auth";
+import ssePlugin from "../plugins/sse";
 import { createErrorHandler } from "../shared/middlewares/errorHandler";
 import { authRoutes } from "../modules/auth";
 import { complaintsRoutes } from "../modules/complaints";
@@ -50,10 +51,14 @@ export const createApp = async (): Promise<FastifyInstance> => {
   });
 
   await fastify.register(cors, {
-    origin: config.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Permite todas as origens em desenvolvimento
+      callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Type"],
     preflight: true,
     strictPreflight: false,
   });
@@ -72,6 +77,9 @@ export const createApp = async (): Promise<FastifyInstance> => {
   });
 
   await fastify.register(authPlugin);
+
+  // SSE para notificações em tempo real
+  await fastify.register(ssePlugin);
 
   await fastify.register(multipart, {
     limits: {

@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Clock, AlertTriangle, CheckCircle, Search, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import { PaginationTable } from "@/shared/components/ui/pagination-table";
 import { ConfirmDialog } from "@/shared/components/ui/confirm-dialog";
-import type { Complaint, ComplaintStatus } from "@/features/complaints/types";
+import type { Complaint, ComplaintStatus, ComplaintPriority } from "@/features/complaints/types";
 import type { Resident } from "@/features/residents/types";
 import { ComplaintStatusBadge } from "../components";
 
@@ -45,19 +46,117 @@ export function AdminComplaintsTablePage({
     newStatus: ComplaintStatus;
   } | null>(null);
 
+  // Filter state
+  const [searchId, setSearchId] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sectorFilter, setSectorFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+
+  const statusLabels: Record<ComplaintStatus, string> = {
+    NEW: "Nova",
+    TRIAGE: "Triagem",
+    IN_PROGRESS: "Em andamento",
+    WAITING_USER: "Aguard. usuario",
+    WAITING_THIRD_PARTY: "Aguard. terceiro",
+    RESOLVED: "Resolvida",
+    CLOSED: "Encerrada",
+    CANCELLED: "Cancelada",
+    RETURNED: "Devolvida",
+    REOPENED: "Reaberta",
+  };
+
+  const priorityLabels: Record<ComplaintPriority, string> = {
+    CRITICAL: "Critica",
+    HIGH: "Alta",
+    MEDIUM: "Media",
+    LOW: "Baixa",
+  };
+
+  const uniqueSectors = useMemo(() => {
+    const sectors = new Set<string>();
+    complaints.forEach((c) => {
+      if (c.sector?.name) sectors.add(c.sector.name);
+    });
+    return Array.from(sectors).sort();
+  }, [complaints]);
+
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set<string>();
+    complaints.forEach((c) => {
+      if (c.category) categories.add(c.category);
+    });
+    return Array.from(categories).sort();
+  }, [complaints]);
+
+  const hasActiveFilters =
+    searchId !== "" ||
+    searchText !== "" ||
+    statusFilter !== "all" ||
+    sectorFilter !== "all" ||
+    categoryFilter !== "all" ||
+    priorityFilter !== "all";
+
+  const clearFilters = useCallback(() => {
+    setSearchId("");
+    setSearchText("");
+    setStatusFilter("all");
+    setSectorFilter("all");
+    setCategoryFilter("all");
+    setPriorityFilter("all");
+    setCurrentPage(1);
+  }, []);
+
+  const filteredComplaints = useMemo(() => {
+    return complaints.filter((complaint) => {
+      if (searchId && !String(complaint.id).includes(searchId)) return false;
+      if (
+        searchText &&
+        !complaint.content.toLowerCase().includes(searchText.toLowerCase())
+      )
+        return false;
+      if (statusFilter !== "all" && complaint.status !== statusFilter)
+        return false;
+      if (
+        sectorFilter !== "all" &&
+        (complaint.sector?.name ?? "") !== sectorFilter
+      )
+        return false;
+      if (categoryFilter !== "all" && complaint.category !== categoryFilter)
+        return false;
+      if (priorityFilter !== "all" && complaint.priority !== priorityFilter)
+        return false;
+      return true;
+    });
+  }, [
+    complaints,
+    searchId,
+    searchText,
+    statusFilter,
+    sectorFilter,
+    categoryFilter,
+    priorityFilter,
+  ]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchId, searchText, statusFilter, sectorFilter, categoryFilter, priorityFilter]);
+
   const paginatedComplaints = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return complaints.slice(startIndex, endIndex);
-  }, [complaints, currentPage]);
+    return filteredComplaints.slice(startIndex, endIndex);
+  }, [filteredComplaints, currentPage]);
 
-  const totalPages = Math.ceil(complaints.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [complaints.length, currentPage, totalPages]);
+  }, [filteredComplaints.length, currentPage, totalPages]);
 
   const residentMap = useMemo(
     () => new Map(residents.map((r) => [r.id, r])),
@@ -96,6 +195,117 @@ export function AdminComplaintsTablePage({
         </p>
       </div>
 
+      {/* Filter Bar */}
+      <div className="mb-4 bg-card rounded-lg border border-border p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          {/* Search by ID */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por ID..."
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              className="pl-8 h-9 text-sm"
+              type="number"
+            />
+          </div>
+
+          {/* Text search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar na descricao..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+
+          {/* Status filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              {(Object.entries(statusLabels) as [ComplaintStatus, string][]).map(
+                ([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+
+          {/* Sector filter */}
+          <Select value={sectorFilter} onValueChange={setSectorFilter}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Setor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os setores</SelectItem>
+              {uniqueSectors.map((sector) => (
+                <SelectItem key={sector} value={sector}>
+                  {sector}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Category filter */}
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {uniqueCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Priority filter */}
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Prioridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as prioridades</SelectItem>
+              {(
+                Object.entries(priorityLabels) as [ComplaintPriority, string][]
+              ).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Active filters info and clear button */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+            <span className="text-xs text-muted-foreground">
+              {filteredComplaints.length} de {complaints.length} ocorrencia(s)
+              encontrada(s)
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Limpar filtros
+            </Button>
+          </div>
+        )}
+      </div>
+
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -111,13 +321,15 @@ export function AdminComplaintsTablePage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {complaints.length === 0 ? (
+              {filteredComplaints.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Nenhuma ocorrência registrada
+                    {hasActiveFilters
+                      ? "Nenhuma ocorrencia encontrada com os filtros aplicados"
+                      : "Nenhuma ocorrencia registrada"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -239,13 +451,13 @@ export function AdminComplaintsTablePage({
             </TableBody>
           </Table>
         </div>
-        {complaints.length > 0 && (
+        {filteredComplaints.length > 0 && (
           <div className="p-4 border-t border-border">
             <PaginationTable
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
-              totalItems={complaints.length}
+              totalItems={filteredComplaints.length}
               showInfo={true}
             />
           </div>

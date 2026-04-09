@@ -9,6 +9,7 @@ import {
   listSectors,
   setSectorMembers,
   updateSector,
+  getSectorCategories,
 } from "./sectors.service";
 import {
   createSectorSchema,
@@ -33,6 +34,17 @@ export const listSectorsHandler = async (
   );
   const sectors = await listSectors(prisma, condominiumId);
   return reply.send(sectors);
+};
+
+export const listSectorCategoriesHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  const { condominiumId } = sectorParamsSchema.pick({ condominiumId: true }).parse(
+    request.params
+  );
+  const categories = await getSectorCategories(prisma, condominiumId);
+  return reply.send(categories);
 };
 
 export const createSectorHandler = async (

@@ -132,5 +132,57 @@ export const deleteFileFromStorage = async ({
   }
 }
 
+/**
+ * Get file from Supabase Storage
+ * 
+ * @param {Object} params - Get parameters
+ * @param {string} params.bucketName - Storage bucket name
+ * @param {string} params.filePath - Path of file to get
+ * @returns {Promise<{data: Buffer, contentType: string}>} File data and content type
+ */
+export const getFileFromStorage = async ({
+  bucketName,
+  filePath,
+}: {
+  bucketName: string
+  filePath: string
+}): Promise<{ data: Buffer; contentType: string }> => {
+  const bucket = getStorageBucket(bucketName)
+
+  const { data, error } = await bucket.download(filePath)
+
+  if (error) {
+    throw new Error(`Failed to download file: ${error.message}`)
+  }
+
+  // Get content type from file extension
+  const ext = filePath.split('.').pop()?.toLowerCase() || ''
+  const contentTypeMap: Record<string, string> = {
+    'webm': 'audio/webm',
+    'mp3': 'audio/mpeg',
+    'mp4': 'audio/mp4',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'webp': 'image/webp',
+    'pdf': 'application/pdf',
+  }
+  const contentType = contentTypeMap[ext] || 'application/octet-stream'
+
+  // Convert ReadableStream to Buffer
+  const chunks: Uint8Array[] = []
+  const reader = data.body.getReader()
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+  }
+  const buffer = Buffer.concat(chunks)
+
+  return { data: buffer, contentType }
+}
+
 
 

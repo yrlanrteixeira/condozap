@@ -10,11 +10,15 @@ import {
   listSectorsHandler,
   setSectorMembersHandler,
   updateSectorHandler,
+  listSectorCategoriesHandler,
 } from "./sectors.controller";
 import {
   getSectorPermissionsHandler,
   updateSectorPermissionsHandler,
   updateMemberPermissionOverridesHandler,
+  updateSectorMemberHandler,
+  getAvailableMembersHandler,
+  addMemberToSectorHandler,
 } from "./sector-permissions.controller";
 
 export const structureRoutes: FastifyPluginAsync = async (fastify) => {
@@ -52,6 +56,21 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     listSectorsHandler
+  );
+
+  fastify.get(
+    "/:condominiumId/sectors/categories",
+    {
+      onRequest: [fastify.authenticate, requireCondoAccess()],
+    },
+    listSectorCategoriesHandler
+  );
+
+  // Público - sem auth, para morador criar ocorrência
+  fastify.get(
+    "/:condominiumId/public/categories",
+    {},
+    listSectorCategoriesHandler
   );
 
   fastify.post(
@@ -141,5 +160,41 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
       ],
     },
     updateMemberPermissionOverridesHandler
+  );
+
+  fastify.patch(
+    "/:condominiumId/sectors/:sectorId/members/:memberId",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
+    },
+    updateSectorMemberHandler
+  );
+
+  fastify.get(
+    "/:condominiumId/sectors/:sectorId/available-members",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:structure"),
+      ],
+    },
+    getAvailableMembersHandler
+  );
+
+  fastify.post(
+    "/:condominiumId/sectors/:sectorId/add-member",
+    {
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
+    },
+    addMemberToSectorHandler
   );
 };

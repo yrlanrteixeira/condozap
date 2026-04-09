@@ -38,12 +38,14 @@ import { useToast } from "@/shared/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
-import { permissionLabel } from "@/config/permissionLabels";
+import { permissionLabel, PERMISSION_CATEGORIES } from "@/config/permissionLabels";
 import {
   useSectors,
   useCreateSector,
   useUpdateSector,
   useDeleteSector,
+  useAvailableMembers,
+  useAddExistingMember,
 } from "../hooks/useSectorsApi";
 import type { SectorMember } from "../types";
 
@@ -64,7 +66,12 @@ function useSectorCatalogPermissionKeys() {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SectorPermissionsData {
-  actions: string[];
+  sectorPermissions: string[];
+  memberOverrides: Array<{
+    memberId: string;
+    memberName: string;
+    overrides: Array<{ action: string; granted: boolean }>;
+  }>;
 }
 
 interface MemberOverride {
@@ -221,21 +228,17 @@ function SectorPermissionsSection({
   const updatePermissions = useUpdateSectorPermissions();
   const ALL_ACTIONS = catalogKeys ?? [];
 
-  const [localActions, setLocalActions] = useState<string[]>([]);
-  const [initialized, setInitialized] = useState(false);
+  // Inicializa localActions imediatamente quando os dados chegarem
+  const [localActions, setLocalActions] = useState<string[]>(() => 
+    data?.sectorPermissions ?? []
+  );
 
+  // Atualiza quando sectorId ou dados mudam
   useEffect(() => {
-    if (data && !initialized) {
-      setLocalActions(data.actions ?? []);
-      setInitialized(true);
+    if (data?.sectorPermissions) {
+      setLocalActions(data.sectorPermissions);
     }
-  }, [data, initialized]);
-
-  // Reset when sector changes
-  useEffect(() => {
-    setInitialized(false);
-    setLocalActions([]);
-  }, [sectorId]);
+  }, [data, sectorId]);
 
   const handleToggle = async (action: string, enabled: boolean) => {
     const next = enabled
@@ -272,21 +275,45 @@ function SectorPermissionsSection({
     );
   }
 
+  const availableCategories = Object.entries(PERMISSION_CATEGORIES).filter(([_, cat]) =>
+    cat.permissions && Object.keys(cat.permissions).some(key => ALL_ACTIONS.includes(key))
+  );
+
   return (
-    <div className="space-y-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
-      {ALL_ACTIONS.map((action) => (
-        <div key={action} className="flex items-center justify-between gap-2">
-          <Label htmlFor={`perm-${action}`} className="text-sm font-normal cursor-pointer">
-            {permissionLabel(action)}
-          </Label>
-          <Switch
-            id={`perm-${action}`}
-            checked={localActions.includes(action)}
-            onCheckedChange={(checked) => handleToggle(action, checked)}
-            disabled={updatePermissions.isPending}
-          />
-        </div>
-      ))}
+    <div className="max-h-[min(420px,50vh)] overflow-y-auto pr-1 space-y-4">
+      {availableCategories.map(([key, category]) => {
+        const categoryPermissions = Object.entries(category.permissions).filter(
+          ([permKey]) => ALL_ACTIONS.includes(permKey)
+        );
+        
+        if (categoryPermissions.length === 0) return null;
+        
+        return (
+          <div key={key}>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {category.label}
+            </h4>
+            <div className="space-y-2">
+              {categoryPermissions.map(([permKey, label]) => (
+                <div key={permKey} className="flex items-center justify-between gap-2">
+                  <Label 
+                    htmlFor={`perm-${permKey}`} 
+                    className="text-sm font-normal cursor-pointer text-foreground"
+                  >
+                    {label}
+                  </Label>
+                  <Switch
+                    id={`perm-${permKey}`}
+                    checked={localActions.includes(permKey)}
+                    onCheckedChange={(checked) => handleToggle(permKey, checked)}
+                    disabled={updatePermissions.isPending}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -387,29 +414,91 @@ function MemberOverridePanel({
     );
   }
 
+  const availableCategories = Object.entries(PERMISSION_CATEGORIES).filter(([_, cat]) =>
+    cat.permissions && Object.keys(cat.permissions).some(key => ALL_ACTIONS.includes(key))
+  );
+
   return (
-    <div className="space-y-2 pl-4 border-l-2 border-border mt-2 max-h-[min(320px,40vh)] overflow-y-auto">
-      {ALL_ACTIONS.map((action) => (
-        <div key={action} className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">{permissionLabel(action)}</span>
-          <Select
-            value={localOverrides[action] ?? "inherit"}
-            onValueChange={(val) =>
-              handleOverrideChange(action, val as OverrideState)
-            }
-            disabled={updateMemberPerms.isPending}
-          >
-            <SelectTrigger className="h-7 w-44 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inherit">Herdar do setor</SelectItem>
-              <SelectItem value="grant">Conceder</SelectItem>
-              <SelectItem value="revoke">Revogar</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="pl-4 border-l-2 border-border mt-2 max-h-[min(320px,40vh)] overflow-y-auto space-y-3">
+      {/* Legenda explicativa */}
+      <div className="bg-muted/30 rounded-md p-2 text-[10px] grid grid-cols-3 gap-2">
+        <div className="flex flex-col">
+          <span className="font-medium text-green-600">Herdar</span>
+          <span className="text-muted-foreground">Segue o setor</span>
         </div>
-      ))}
+        <div className="flex flex-col">
+          <span className="font-medium text-blue-600">Conceder</span>
+          <span className="text-muted-foreground">Permite acesso</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="font-medium text-red-600">Bloquear</span>
+          <span className="text-muted-foreground">Remove acesso</span>
+        </div>
+      </div>
+
+      {availableCategories.map(([key, category]) => {
+        const categoryPermissions = Object.entries(category.permissions).filter(
+          ([permKey]) => ALL_ACTIONS.includes(permKey)
+        );
+        
+        if (categoryPermissions.length === 0) return null;
+        
+        return (
+          <div key={key}>
+            <h5 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              {category.label}
+            </h5>
+            <div className="space-y-1.5">
+              {categoryPermissions.map(([permKey, label]) => {
+                const currentValue = localOverrides[permKey] ?? "inherit";
+                return (
+                  <div key={permKey} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-foreground flex-1">{label}</span>
+                    <div className="flex rounded-md border text-[10px] overflow-hidden shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOverrideChange(permKey, "inherit")}
+                        disabled={updateMemberPerms.isPending}
+                        className={`px-2 py-1 transition-colors ${
+                          currentValue === "inherit"
+                            ? "bg-green-100 text-green-700 font-medium"
+                            : "bg-background hover:bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Herdar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOverrideChange(permKey, "grant")}
+                        disabled={updateMemberPerms.isPending}
+                        className={`px-2 py-1 transition-colors border-l ${
+                          currentValue === "grant"
+                            ? "bg-blue-100 text-blue-700 font-medium"
+                            : "bg-background hover:bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Conceder
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOverrideChange(permKey, "revoke")}
+                        disabled={updateMemberPerms.isPending}
+                        className={`px-2 py-1 transition-colors border-l ${
+                          currentValue === "revoke"
+                            ? "bg-red-100 text-red-700 font-medium"
+                            : "bg-background hover:bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Bloquear
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -436,19 +525,21 @@ function MembersSection({ condominiumId, sectorId, members }: MembersSectionProp
   return (
     <div className="space-y-2">
       {members.map((member) => {
-        const isExpanded = expandedMemberId === member.userId;
+        const isExpanded = expandedMemberId === member.id;
+        const memberName = member.name || member.user?.name || member.userId;
+        const memberEmail = member.email || member.user?.email;
         return (
-          <div key={member.userId} className="rounded-md border border-border p-3">
+          <div key={member.id} className="rounded-md border border-border p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {member.name ?? member.userId}
+                    {memberName}
                   </p>
-                  {member.email && (
+                  {memberEmail && (
                     <p className="text-xs text-muted-foreground truncate">
-                      {member.email}
+                      {memberEmail}
                     </p>
                   )}
                 </div>
@@ -458,7 +549,7 @@ function MembersSection({ condominiumId, sectorId, members }: MembersSectionProp
                 size="sm"
                 className="shrink-0 h-7 gap-1 text-xs"
                 onClick={() =>
-                  setExpandedMemberId(isExpanded ? null : member.userId)
+                  setExpandedMemberId(isExpanded ? null : member.id)
                 }
               >
                 <Shield className="h-3.5 w-3.5" />
@@ -598,6 +689,108 @@ function CreateMemberForm({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface AddExistingMemberFormProps {
+  condominiumId: string;
+  sectorId: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+function AddExistingMemberForm({
+  condominiumId,
+  sectorId,
+  onSuccess,
+  onCancel,
+}: AddExistingMemberFormProps) {
+  const { toast } = useToast();
+  const { data: availableMembers = [], isLoading } = useAvailableMembers(
+    condominiumId,
+    sectorId
+  );
+  const addMember = useAddExistingMember();
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  const handleSubmit = async () => {
+    if (!selectedUserId) {
+      toast({
+        title: "Selecione um membro",
+        description: "Escolha um usuário da lista.",
+        variant: "error",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      await addMember.mutateAsync({
+        condominiumId,
+        sectorId,
+        userId: selectedUserId,
+      });
+      toast({
+        title: "Membro adicionado!",
+        description: "O usuário foi adicionado ao setor.",
+        variant: "success",
+        duration: 3000,
+      });
+      onSuccess();
+    } catch (_error: unknown) {
+      toast({
+        title: "Erro ao adicionar membro",
+        description: getApiErrorMessage(_error),
+        variant: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  return (
+    <Card className="border-dashed border-primary/40">
+      <CardContent className="p-3 space-y-3">
+        <p className="text-sm font-medium">Adicionar membro existente</p>
+        <Select
+          value={selectedUserId}
+          onValueChange={setSelectedUserId}
+          disabled={isLoading || addMember.isPending}
+        >
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Selecione um usuário" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableMembers.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.name}</span>
+                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={addMember.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={addMember.isPending || !selectedUserId}
+          >
+            {addMember.isPending ? "Adicionando..." : "Adicionar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Dialog ──────────────────────────────────────────────────────────────
 
 interface SectorManagementDialogProps {
@@ -606,6 +799,8 @@ interface SectorManagementDialogProps {
   condominiumId: string;
   /** Quando definido, abre já no setor indicado (ex.: hub de acessos). */
   initialSectorId?: string | null;
+  /** Quando true, mostra apenas o setor inicial sem lista de setores */
+  singleSectorMode?: boolean;
 }
 
 export const SectorManagementDialog = ({
@@ -613,6 +808,7 @@ export const SectorManagementDialog = ({
   onOpenChange,
   condominiumId,
   initialSectorId = null,
+  singleSectorMode = false,
 }: SectorManagementDialogProps) => {
   const { toast } = useToast();
   const { data: sectors = [], isLoading } = useSectors(condominiumId);
@@ -630,6 +826,7 @@ export const SectorManagementDialog = ({
   const [showPermissions, setShowPermissions] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
+  const [showAddExistingMember, setShowAddExistingMember] = useState(false);
 
   const isMutating =
     createSector.isPending ||
@@ -652,8 +849,17 @@ export const SectorManagementDialog = ({
       setEditingSectorId(initialSectorId);
       setShowForm(false);
       setShowPermissions(true);
+      setShowMembers(true);
     }
   }, [open, initialSectorId]);
+
+  // Preencher campos do formulário quando editingSectorId mudar e não for modo criação
+  useEffect(() => {
+    if (editingSectorId && !showForm && editingSector) {
+      setSectorName(editingSector.name);
+      setCategories(editingSector.categories ?? []);
+    }
+  }, [editingSectorId, showForm, editingSector]);
 
   const resetForm = () => {
     setShowForm(false);
@@ -790,7 +996,8 @@ export const SectorManagementDialog = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {!showForm && (
+          {/* Modo criação - só mostra o botão quando não está em modo setor único */}
+          {!showForm && !singleSectorMode && (
             <Button
               variant="outline"
               onClick={() => {
@@ -805,7 +1012,8 @@ export const SectorManagementDialog = ({
             </Button>
           )}
 
-          {showForm && (
+          {/* Modo edição - mostra apenas quando NÃO está em modo setor único */}
+          {showForm && !singleSectorMode && (
             <Card className="border-primary/30">
               <CardContent className="p-4 space-y-4">
                 <h4 className="font-semibold text-foreground">
@@ -932,6 +1140,19 @@ export const SectorManagementDialog = ({
                           <UserPlus className="h-3.5 w-3.5" />
                           Criar membro
                         </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-7 gap-1 text-xs shrink-0"
+                          onClick={() => {
+                            setShowAddExistingMember((p) => !p);
+                            if (!showMembers) setShowMembers(true);
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Adicionar existente
+                        </Button>
                       </div>
 
                       {showMembers && (
@@ -948,6 +1169,15 @@ export const SectorManagementDialog = ({
                                 />
                               </CardContent>
                             </Card>
+                          )}
+
+                          {showAddExistingMember && (
+                            <AddExistingMemberForm
+                              condominiumId={condominiumId}
+                              sectorId={editingSectorId}
+                              onSuccess={() => setShowAddExistingMember(false)}
+                              onCancel={() => setShowAddExistingMember(false)}
+                            />
                           )}
 
                           <MembersSection
@@ -990,6 +1220,118 @@ export const SectorManagementDialog = ({
           {isLoading ? (
             <div className="text-center text-muted-foreground py-8">
               Carregando setores...
+            </div>
+          ) : singleSectorMode && editingSectorId ? (
+            // Modo de setor único - UI limpa para gerenciar permissões e membros
+            <div className="space-y-6">
+              {/* Header do Setor */}
+              <div className="bg-muted/30 rounded-lg p-4 border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <FolderKanban className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{editingSector?.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {editingSector?.members?.length ?? 0} membro(s) • Gerencie permissões e membros abaixo
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onOpenChange(false)}
+                    className="shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Permissões do Setor */}
+              <div className="border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between p-4 bg-muted/50 hover:bg-muted transition-colors"
+                  onClick={() => setShowPermissions((p) => !p)}
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    <Shield className="h-4 w-4 text-blue-500" />
+                    Permissões do Setor
+                  </span>
+                  {showPermissions ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {showPermissions && (
+                  <div className="p-4 border-t">
+                    <SectorPermissionsSection
+                      condominiumId={condominiumId}
+                      sectorId={editingSectorId}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Membros */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between p-4 bg-muted/50">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center justify-between text-left"
+                    onClick={() => setShowMembers((p) => !p)}
+                  >
+                    <span className="flex items-center gap-2 font-medium">
+                      <Users className="h-4 w-4 text-green-500" />
+                      Membros
+                      {editingSector?.members?.length
+                        ? ` (${editingSector.members.length})`
+                        : ""}
+                    </span>
+                    {showMembers ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-2 h-8 gap-1.5 text-xs"
+                    onClick={() => {
+                      setShowAddExistingMember((p) => !p);
+                      if (!showMembers) setShowMembers(true);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {showMembers && (
+                  <div className="p-4 border-t space-y-3">
+                    {showAddExistingMember && (
+                      <AddExistingMemberForm
+                        condominiumId={condominiumId}
+                        sectorId={editingSectorId}
+                        onSuccess={() => setShowAddExistingMember(false)}
+                        onCancel={() => setShowAddExistingMember(false)}
+                      />
+                    )}
+
+                    <MembersSection
+                      condominiumId={condominiumId}
+                      sectorId={editingSectorId}
+                      members={editingSector?.members ?? []}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           ) : sectors.length === 0 && !showForm ? (
             <div className="text-center text-muted-foreground py-8">

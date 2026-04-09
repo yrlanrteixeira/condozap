@@ -11,6 +11,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectUserRole,
+  selectToken,
 } from "@/shared/store/slices/authSlice";
 import {
   setCondominiums,
@@ -32,6 +33,7 @@ export const useAuth = () => {
   const user = useAppSelector(selectUser);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const userRole = useAppSelector(selectUserRole);
+  const token = useAppSelector(selectToken);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -146,6 +148,7 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     userRole,
+    token,
     isLoading: auth.isLoading,
     loading: auth.isLoading,
     login,

@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
@@ -28,12 +29,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/shared/components/ui/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/shared/hooks/useAuth";
 import { api } from "@/lib/api";
 
-import { useComplaint, useAddComplaintComment } from "../hooks/useComplaintsApi";
+import { useComplaint } from "../hooks/useComplaintsApi";
+import { useSendComplaintMessage } from "../hooks/useComplaintChatApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintTimeline } from "./ComplaintTimeline";
+import { AudioPlayer } from "@/shared/components/AudioPlayer";
+import { ProxiedImage } from "@/shared/components/ProxiedImage";
 import { formatDateTime } from "@/shared/utils/helpers";
 import { queryKeys } from "../utils/queryKeys";
 import type {
@@ -72,9 +78,10 @@ export function ResidentComplaintDetailSheet({
   const [reopenReason, setReopenReason] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
-  const addComment = useAddComplaintComment();
+  const sendMessage = useSendComplaintMessage();
 
   // Complement mutation — called when status is RETURNED
   const complementMutation = useMutation({
@@ -157,13 +164,13 @@ export function ResidentComplaintDetailSheet({
           message: commentText.trim(),
         });
       } else {
-        await addComment.mutateAsync({
-          id: complaintId,
-          notes: commentText.trim(),
+        await sendMessage.mutateAsync({
+          complaintId,
+          content: commentText.trim(),
         });
         toast({
-          title: "Comentario enviado",
-          description: "A administracao sera notificada.",
+          title: "Mensagem enviada",
+          description: "A administração será notificada.",
           variant: "success",
         });
       }
@@ -172,7 +179,7 @@ export function ResidentComplaintDetailSheet({
       if (complaint?.status !== "RETURNED") {
         toast({
           title: "Erro",
-          description: "Nao foi possivel enviar o comentario. Tente novamente.",
+          description: "Não foi possível enviar a mensagem. Tente novamente.",
           variant: "error",
         });
       }
@@ -186,7 +193,7 @@ export function ResidentComplaintDetailSheet({
     }
   };
 
-  const isSending = addComment.isPending || complementMutation.isPending;
+  const isSending = sendMessage.isPending || complementMutation.isPending;
 
   return (
     <>
@@ -298,7 +305,10 @@ export function ResidentComplaintDetailSheet({
       <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reabrir Ocorrencia</DialogTitle>
+            <DialogTitle>Reabrir Ocorrência</DialogTitle>
+            <DialogDescription>
+              Informe o motivo da reabertura da ocorrência.
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             placeholder="Motivo da reabertura (minimo 10 caracteres)..."
@@ -395,17 +405,18 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
       )}
 
       {/* Timeline / Acompanhamento */}
-      {complaint.statusHistory && complaint.statusHistory.length > 0 && (
+      {(complaint.statusHistory && complaint.statusHistory.length > 0) || (complaint.messages && complaint.messages.length > 0) ? (
         <section className="space-y-2">
           <h4 className="text-sm font-semibold">Acompanhamento</h4>
           <ComplaintTimeline
-            statusHistory={complaint.statusHistory}
+            statusHistory={complaint.statusHistory || []}
             createdAt={complaint.createdAt}
             description={complaint.content}
             sectorName={complaint.sector?.name}
+            complaintMessages={complaint.messages}
           />
         </section>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -416,6 +427,46 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
 
 function AttachmentItem({ attachment }: { attachment: ComplaintAttachment }) {
   const sizeLabel = formatFileSize(attachment.fileSize);
+
+  if (attachment.fileType.startsWith("audio/")) {
+    return (
+      <li>
+        <div
+          className={cn(
+            "flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3",
+            "hover:bg-muted/60 transition-colors"
+          )}
+        >
+          <p className="text-sm font-medium text-foreground truncate">
+            {attachment.fileName}
+          </p>
+          <AudioPlayer src={attachment.fileUrl} className="w-full" />
+          <p className="text-xs text-muted-foreground">
+            {sizeLabel}
+          </p>
+        </div>
+      </li>
+    );
+  }
+
+  if (attachment.fileType.startsWith("image/")) {
+    return (
+      <li>
+        <div
+          className={cn(
+            "flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3",
+            "hover:bg-muted/60 transition-colors"
+          )}
+        >
+          <p className="text-sm font-medium text-foreground truncate">
+            {attachment.fileName}
+          </p>
+          <ProxiedImage src={attachment.fileUrl} className="w-full max-h-48" />
+          <p className="text-xs text-muted-foreground">{sizeLabel}</p>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li>

@@ -42,6 +42,15 @@ const complaintIncludes = {
   statusHistory: {
     orderBy: { createdAt: "desc" },
   },
+  messages: {
+    where: { isInternal: false },
+    orderBy: { createdAt: "asc" },
+    include: {
+      sender: {
+        select: { id: true, name: true, role: true },
+      },
+    },
+  },
   sector: true,
   assignee: {
     select: { id: true, name: true, email: true },

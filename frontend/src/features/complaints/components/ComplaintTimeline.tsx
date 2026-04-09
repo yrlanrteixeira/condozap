@@ -1,6 +1,9 @@
-import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer } from "lucide-react";
-import type { ComplaintStatusHistory } from "../types";
+import { useState, useEffect } from "react";
+import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer, Loader2, ImageIcon } from "lucide-react";
+import type { ComplaintStatusHistory, ComplaintMessage } from "../types";
 import { cn } from "@/lib/utils";
+import { AudioPlayer } from "@/shared/components/AudioPlayer";
+import { api } from "@/lib/api";
 
 const STATUS_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -21,22 +24,27 @@ interface ComplaintTimelineProps {
   createdAt: string;
   description: string;
   sectorName?: string;
+  complaintMessages?: ComplaintMessage[];
 }
 
 interface TimelineItem {
   id: string;
-  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose";
+  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose" | "chat";
   label: string;
   description?: string;
   date: string;
   completed: boolean;
+  senderName?: string;
+  senderRole?: string;
+  attachmentUrl?: string;
 }
 
 function buildTimelineItems(
   statusHistory: ComplaintStatusHistory[],
   createdAt: string,
   description: string,
-  sectorName?: string
+  sectorName?: string,
+  complaintMessages?: ComplaintMessage[]
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -50,7 +58,28 @@ function buildTimelineItems(
     completed: true,
   });
 
-  // 2. Status changes, comments, and nudges from history (sorted oldest first)
+  // 2. Chat messages
+  if (complaintMessages && complaintMessages.length > 0) {
+    const sortedMessages = [...complaintMessages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    for (const msg of sortedMessages) {
+      const senderLabel = msg.senderRole === "RESIDENT" ? "Morador" : msg.sender?.name || "Admin";
+      items.push({
+        id: msg.id,
+        type: "chat",
+        label: senderLabel,
+        description: msg.content,
+        date: msg.createdAt,
+        completed: true,
+        senderName: msg.sender?.name,
+        senderRole: msg.senderRole,
+        attachmentUrl: msg.attachmentUrl || undefined,
+      });
+    }
+  }
+
+  // 3. Status changes, comments, and nudges from history (sorted oldest first)
   const sorted = [...statusHistory].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
@@ -123,6 +152,8 @@ function TimelineIcon({ type, completed }: { type: TimelineItem["type"]; complet
       return <ArrowRight className={cn(size, "text-blue-500")} />;
     case "comment":
       return <MessageSquare className={cn(size, "text-purple-500")} />;
+    case "chat":
+      return <MessageSquare className={cn(size, "text-indigo-500")} />;
     case "nudge":
       return <Bell className={cn(size, "text-amber-500")} />;
     case "return":
@@ -145,6 +176,39 @@ function formatDate(dateStr: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function isImageUrl(url: string): boolean {
+  const imageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+  return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
+}
+
+function TimelineProxiedImage({ src }: { src: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/uploads/media-proxy", { params: { url: src }, responseType: "blob" })
+      .then((res) => {
+        if (cancelled) return;
+        setBlobUrl(URL.createObjectURL(res.data));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) { setError(true); setLoading(false); }
+      });
+    return () => {
+      cancelled = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [src]);
+
+  if (loading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  if (error || !blobUrl) return <ImageIcon className="h-4 w-4 text-muted-foreground" />;
+  return <img src={blobUrl} alt="Anexo" className="rounded max-h-32 object-contain" />;
 }
 
 export function ComplaintTimeline({
@@ -177,6 +241,15 @@ export function ComplaintTimeline({
               <p className="text-sm text-muted-foreground mt-0.5 break-words">
                 {item.description}
               </p>
+            )}
+            {item.attachmentUrl && (
+              <div className="mt-2">
+                {isImageUrl(item.attachmentUrl) ? (
+                  <TimelineProxiedImage src={item.attachmentUrl} />
+                ) : (
+                  <AudioPlayer src={item.attachmentUrl} className="w-full" />
+                )}
+              </div>
             )}
           </div>
         </div>

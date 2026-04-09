@@ -57,9 +57,16 @@ export interface CreateComplaintInput {
   residentId: string;
   category: string;
   content: string;
+  idempotencyKey?: string;
   priority?: ComplaintPriority;
   isAnonymous?: boolean;
   sectorId?: string;
+  attachments?: Array<{
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  }>;
 }
 
 export interface UpdateComplaintInput {
@@ -101,6 +108,23 @@ export interface ComplaintStatusHistory {
   createdAt: string;
 }
 
+export interface ComplaintMessage {
+  id: string;
+  complaintId: number;
+  senderId: string;
+  senderRole: string;
+  sender?: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  content: string;
+  attachmentUrl?: string | null;
+  source: string;
+  isInternal?: boolean;
+  createdAt: string;
+}
+
 export interface ComplaintStats {
   total: number;
   open: number;
@@ -114,6 +138,7 @@ export interface ComplaintStats {
 /** Complaint with statusHistory and attachments (detail API) */
 export interface ComplaintDetail extends Complaint {
   statusHistory?: ComplaintStatusHistory[];
+  messages?: ComplaintMessage[];
   attachments?: ComplaintAttachment[];
   csatScore?: number | null;
   csatComment?: string | null;

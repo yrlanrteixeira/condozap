@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, Users, FolderKanban, Settings2 } from "lucide-react";
+import { Shield, Users, FolderKanban, Settings2, User } from "lucide-react";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
 import { useAppSelector } from "@/shared/hooks/useAppSelector";
@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/shared/components/ui/use-toast";
 import { fetchCurrentUser } from "@/shared/store/slices/authSlice";
 import { useAppDispatch } from "@/shared/hooks/useAppDispatch";
+import { useAuth } from "@/shared/hooks/useAuth";
 
 type PermissionMode = "ROLE_DEFAULT" | "CUSTOM";
 
@@ -34,6 +35,7 @@ export function AccessHubPage() {
   const condominiumId = useAppSelector(selectCurrentCondominiumId) ?? "";
   const { toast } = useToast();
   const dispatch = useAppDispatch();
+  const { user: currentUser } = useAuth();
   const { data: catalog } = useQuery({
     queryKey: ["permissions-catalog"],
     queryFn: async () => {
@@ -67,19 +69,19 @@ export function AccessHubPage() {
   );
 
   return (
-    <div className="container max-w-5xl py-8 space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-          <Shield className="h-4 w-4" />
-          <span>{condominiumId ? "Condomínio ativo" : "Selecione um condomínio"}</span>
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Shield className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Acessos e permissões
-        </h1>
-        <p className="text-muted-foreground mt-1 max-w-2xl">
-          Defina o que cada membro da equipe e cada setor pode fazer neste condomínio.
-          As permissões respeitam o teto do papel de cada usuário.
-        </p>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            Acessos e permissões
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Defina o acesso de cada membro e setor no condomínio ativo.
+          </p>
+        </div>
       </div>
 
       {!condominiumId ? (
@@ -102,7 +104,7 @@ export function AccessHubPage() {
           </TabsList>
 
           <TabsContent value="team" className="space-y-4">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Users className="h-5 w-5 text-muted-foreground" />
@@ -121,20 +123,37 @@ export function AccessHubPage() {
                     Nenhum membro encontrado.
                   </p>
                 )}
-                {team?.map((u) => (
+                {team?.map((u) => {
+                  const isCurrentUser = u.id === currentUser?.id;
+                  return (
                   <div
                     key={u.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors p-4"
                   >
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{u.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{u.name}</p>
+                          {isCurrentUser && (
+                            <Badge variant="outline" className="text-xs">
+                              Você
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
                         {u.email} · {u.role}
-                      </p>
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {u.role === "SYNDIC" || u.role === "PROFESSIONAL_SYNDIC" ? (
+                      {u.role === "SYNDIC" ||
+                      u.role === "PROFESSIONAL_SYNDIC" ? (
                         <Badge variant="secondary">Acesso completo (síndico)</Badge>
+                      ) : isCurrentUser ? (
+                        <Badge variant="outline">Sem autoedição</Badge>
                       ) : (
                         <Button
                           size="sm"
@@ -147,13 +166,14 @@ export function AccessHubPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="sectors" className="space-y-4">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-lg">Setores</CardTitle>
                 <CardDescription>
@@ -207,6 +227,7 @@ export function AccessHubPage() {
           }}
           condominiumId={condominiumId}
           initialSectorId={selectedSectorId}
+          singleSectorMode={!!selectedSectorId}
         />
       )}
 

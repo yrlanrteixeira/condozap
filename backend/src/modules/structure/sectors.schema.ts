@@ -32,5 +32,13 @@ export type CreateSectorBody = z.infer<typeof createSectorSchema>;
 export type UpdateSectorBody = z.infer<typeof updateSectorSchema>;
 export type SetMembersBody = z.infer<typeof setMembersSchema>;
 
+export const addMemberSchema = z.object({
+  userId: z.string().min(1),
+  order: z.number().int().min(0).optional(),
+  workload: z.number().int().min(0).optional(),
+});
+
+export type AddMemberBody = z.infer<typeof addMemberSchema>;
+
 
 

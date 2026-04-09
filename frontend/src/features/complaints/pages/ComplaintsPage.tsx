@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { KanbanCardSkeleton, PageHeaderSkeleton } from "@/shared/components/ui/skeleton";
@@ -26,6 +27,7 @@ import {
 type ViewMode = "kanban" | "table";
 
 export function ComplaintsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
 
   // Default: tabela. No mobile: cards (componente dedicado). No desktop: respeita preferência.
@@ -42,7 +44,19 @@ export function ComplaintsPage() {
     setDetailSheet({ id: complaint.id, open: true });
   }, []);
 
-  const { isResident } = useRole();
+  // Auto-open complaint detail when navigating via ?open=<id>
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (openId) {
+      setDetailSheet({ id: Number(openId), open: true });
+      setSearchParams((prev) => {
+        prev.delete("open");
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const { isResident, isManagementLevel } = useRole();
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
@@ -51,9 +65,11 @@ export function ComplaintsPage() {
     currentCondominiumId || user?.condominiums?.[0]?.id || "";
 
   const condoIdToFetch = effectiveCondominiumId;
+  // Morador e usuários de gestão não acessam `/residents/:condominiumId`; evita 403 desnecessário.
+  const residentsCondoId = (isResident || isManagementLevel) ? "" : condoIdToFetch;
 
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
-    condoIdToFetch,
+    residentsCondoId,
     {}
   );
 
@@ -62,11 +78,17 @@ export function ComplaintsPage() {
 
   const createComplaint = useCreateComplaint();
   const updateComplaintStatus = useUpdateComplaintStatus();
+  const pendingSubmitKeyRef = useRef<string | null>(null);
 
   const handleComplaintSubmit = async (data: {
     category: string;
     content: string;
+    attachments?: Array<{ fileUrl: string; fileName: string; fileType: string; fileSize: number }>;
   }) => {
+    if (createComplaint.isPending) {
+      return;
+    }
+
     if (!effectiveCondominiumId) {
       toast({
         title: "Erro",
@@ -90,14 +112,20 @@ export function ComplaintsPage() {
       return;
     }
 
+    if (!pendingSubmitKeyRef.current) {
+      pendingSubmitKeyRef.current = crypto.randomUUID();
+    }
+
     try {
       await createComplaint.mutateAsync({
         condominiumId: effectiveCondominiumId,
         residentId: residentId,
         category: data.category,
         content: data.content,
+        idempotencyKey: pendingSubmitKeyRef.current,
         priority: "MEDIUM",
         isAnonymous: false,
+        attachments: data.attachments,
       });
 
       toast({
@@ -115,6 +143,8 @@ export function ComplaintsPage() {
         variant: "error",
         duration: 5000,
       });
+    } finally {
+      pendingSubmitKeyRef.current = null;
     }
   };
 

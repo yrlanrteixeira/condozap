@@ -84,6 +84,12 @@ export const putMembershipPermissionsHandler = async (
 
   const body = putBodySchema.parse(request.body);
 
+  if (actor === targetUserId) {
+    return reply.status(400).send({
+      error: "Não é permitido alterar as próprias permissões.",
+    });
+  }
+
   for (const a of body.actions) {
     if (!isCondoAssignableKey(a)) {
       return reply.status(400).send({ error: `Permissão não permitida: ${a}` });
