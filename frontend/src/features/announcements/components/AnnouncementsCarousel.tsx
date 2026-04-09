@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -17,19 +17,33 @@ export function AnnouncementsCarousel({
   const [index, setIndex] = useState(0);
   const total = announcements.length;
 
+  // Lista pode encolher (refetch) mantendo index antigo — evita current undefined.
+  useEffect(() => {
+    if (total === 0) return;
+    setIndex((i) => Math.min(i, total - 1));
+  }, [total]);
+
+  const safeIndex = total > 0 ? Math.min(index, total - 1) : 0;
+
   const goPrev = useCallback(() => {
-    setIndex((i) => (i <= 0 ? total - 1 : i - 1));
+    setIndex((i) => {
+      const iSafe = total > 0 ? Math.min(i, total - 1) : 0;
+      return iSafe <= 0 ? total - 1 : iSafe - 1;
+    });
   }, [total]);
 
   const goNext = useCallback(() => {
-    setIndex((i) => (i >= total - 1 ? 0 : i + 1));
+    setIndex((i) => {
+      const iSafe = total > 0 ? Math.min(i, total - 1) : 0;
+      return iSafe >= total - 1 ? 0 : iSafe + 1;
+    });
   }, [total]);
 
   if (total === 0) {
     return null;
   }
 
-  const current = announcements[index];
+  const current = announcements[safeIndex];
 
   return (
     <section
@@ -58,7 +72,7 @@ export function AnnouncementsCarousel({
         <div className="flex-1 min-w-0">
           <Card className="border-border overflow-hidden">
             <CardContent className="p-4">
-              {current.imageUrl && (
+              {current?.imageUrl && (
                 <div className="mb-3 rounded-lg overflow-hidden bg-muted">
                   <img
                     src={current.imageUrl}
@@ -68,10 +82,10 @@ export function AnnouncementsCarousel({
                 </div>
               )}
               <h3 className="font-semibold text-foreground mb-1">
-                {current.title}
+                {current?.title}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {current.content}
+                {current?.content}
               </p>
             </CardContent>
           </Card>
@@ -96,11 +110,11 @@ export function AnnouncementsCarousel({
               key={i}
               type="button"
               role="tab"
-              aria-selected={i === index}
+              aria-selected={i === safeIndex}
               aria-label={`Novidade ${i + 1}`}
               className={cn(
                 "h-2 rounded-full transition-all",
-                i === index
+                i === safeIndex
                   ? "w-6 bg-primary"
                   : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
               )}
