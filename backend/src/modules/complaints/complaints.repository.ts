@@ -42,7 +42,7 @@ const complaintIncludes = {
   statusHistory: {
     orderBy: { createdAt: "desc" },
   },
-  complaintMessages: {
+  messages: {
     where: { isInternal: false },
     orderBy: { createdAt: "asc" },
     include: {

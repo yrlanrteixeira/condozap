@@ -125,7 +125,7 @@ export function ComplaintDetailSheet({
       const params = new URLSearchParams();
       if (complaint?.condominiumId) params.set("condominiumId", complaint.condominiumId);
       if (complaint?.sectorId) params.set("sectorId", complaint.sectorId);
-      const { data } = await api.get(`/api/canned-responses?${params}`);
+      const { data } = await api.get(`/canned-responses?${params}`);
       return data;
     },
     enabled: !!complaint,

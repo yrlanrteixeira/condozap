@@ -179,8 +179,8 @@ export async function sendComplaintMessageHandler(
       }
     }
   } else {
-    // Notify resident
-    if (complaint.resident.userId) {
+    // Notify resident ONLY for non-internal messages
+    if (!isInternalMessage && complaint.resident.userId) {
       notify(
         prisma,
         request.log,

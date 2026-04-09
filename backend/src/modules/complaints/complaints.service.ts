@@ -616,7 +616,7 @@ export async function getComplaintById(prisma: PrismaClient, id: number) {
       statusHistory: {
         orderBy: { createdAt: "desc" },
       },
-      complaintMessages: {
+      messages: {
         orderBy: { createdAt: "asc" },
         include: {
           sender: {

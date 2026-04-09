@@ -117,13 +117,14 @@ const complaintMessageSchema = z.object({
   content: z.string(),
   attachmentUrl: z.string().nullable().optional(),
   source: z.string(),
+  isInternal: z.boolean().optional().default(false),
   createdAt: z.string(),
 });
 
 // Detail response includes statusHistory, attachments, and CSAT fields
 export const ComplaintDetailSchema = ComplaintSchema.extend({
   statusHistory: z.array(complaintStatusHistorySchema).optional().default([]),
-  complaintMessages: z.array(complaintMessageSchema).optional().default([]),
+  messages: z.array(complaintMessageSchema).optional().default([]),
   attachments: z.array(complaintAttachmentSchema).optional().default([]),
   csatScore: z.number().nullable().optional(),
   csatComment: z.string().nullable().optional(),

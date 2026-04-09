@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, MessageCircle, Loader2 } from "lucide-react";
+import { Send, MessageCircle, Loader2, Lock, LockOpen } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -145,17 +145,28 @@ export function ComplaintChat({ complaintId, currentUserId, showInternalToggle =
           <span className="text-sm font-medium text-foreground">Chat</span>
         </div>
         {showInternalToggle && (
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isInternal}
-              onChange={(e) => setIsInternal(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <span className={isInternal ? "text-amber-600 font-medium" : "text-muted-foreground"}>
-              Interno
-            </span>
-          </label>
+          <button
+            type="button"
+            onClick={() => setIsInternal(!isInternal)}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+              isInternal 
+                ? "bg-amber-100 text-amber-700 border border-amber-300" 
+                : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+            }`}
+            title={isInternal ? "Mensagem interna - não可见 pelo morador" : "Mensagem pública"}
+          >
+            {isInternal ? (
+              <>
+                <Lock className="h-3 w-3" />
+                <span>Interno</span>
+              </>
+            ) : (
+              <>
+                <LockOpen className="h-3 w-3" />
+                <span>Público</span>
+              </>
+            )}
+          </button>
         )}
       </div>
 

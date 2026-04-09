@@ -399,7 +399,7 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
       )}
 
       {/* Timeline / Acompanhamento */}
-      {(complaint.statusHistory && complaint.statusHistory.length > 0) || (complaint.complaintMessages && complaint.complaintMessages.length > 0) ? (
+      {(complaint.statusHistory && complaint.statusHistory.length > 0) || (complaint.messages && complaint.messages.length > 0) ? (
         <section className="space-y-2">
           <h4 className="text-sm font-semibold">Acompanhamento</h4>
           <ComplaintTimeline
@@ -407,7 +407,7 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
             createdAt={complaint.createdAt}
             description={complaint.content}
             sectorName={complaint.sector?.name}
-            complaintMessages={complaint.complaintMessages}
+            complaintMessages={complaint.messages}
           />
         </section>
       ) : null}

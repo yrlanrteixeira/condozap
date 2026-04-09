@@ -121,6 +121,7 @@ export interface ComplaintMessage {
   content: string;
   attachmentUrl?: string | null;
   source: string;
+  isInternal?: boolean;
   createdAt: string;
 }
 
@@ -137,7 +138,7 @@ export interface ComplaintStats {
 /** Complaint with statusHistory and attachments (detail API) */
 export interface ComplaintDetail extends Complaint {
   statusHistory?: ComplaintStatusHistory[];
-  complaintMessages?: ComplaintMessage[];
+  messages?: ComplaintMessage[];
   attachments?: ComplaintAttachment[];
   csatScore?: number | null;
   csatComment?: string | null;
