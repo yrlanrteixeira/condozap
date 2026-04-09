@@ -27,6 +27,7 @@ import { assertValidTransition, SLA_ACTIONS } from "./complaints.transitions";
 import { findSlaConfig, resolveAssignee, addMinutes, runSlaEscalationScan } from "./complaints.sla";
 import { classifyComplaint } from "../automation/automation.engine";
 import { notify } from "../notifier/notifier.service";
+import { sendSSENotification } from "../../plugins/sse";
 
 export { runSlaEscalationScan };
 
@@ -229,6 +230,36 @@ export async function createComplaint(
       residentName: resident.name,
       category: data.category,
     }, resident.userId, data.condominiumId).catch(() => {});
+  }
+
+  // === SEND SSE NOTIFICATION TO USERS ===
+  // Buscar usuários do condomínio para notificar
+  const usersToNotify = await prisma.userCondominium.findMany({
+    where: { condominiumId: data.condominiumId },
+    select: { userId: true },
+  });
+  
+  for (const uc of usersToNotify) {
+    sendSSENotification(uc.userId, "new_complaint", {
+      complaintId: complaint.id,
+      category: data.category,
+      condominiumId: data.condominiumId,
+    });
+  }
+
+  // === CREATE ATTACHMENTS ===
+  if (data.attachments && data.attachments.length > 0) {
+    for (const att of data.attachments) {
+      await prisma.complaintAttachment.create({
+        data: {
+          complaintId: complaint.id,
+          fileUrl: att.fileUrl,
+          fileName: att.fileName,
+          fileType: att.fileType,
+          fileSize: att.fileSize,
+        },
+      });
+    }
   }
 
   logger.info(`Complaint ${complaint.id} created`);

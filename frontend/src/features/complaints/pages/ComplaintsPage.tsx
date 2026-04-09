@@ -42,7 +42,7 @@ export function ComplaintsPage() {
     setDetailSheet({ id: complaint.id, open: true });
   }, []);
 
-  const { isResident } = useRole();
+  const { isResident, isManagementLevel } = useRole();
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
@@ -51,8 +51,8 @@ export function ComplaintsPage() {
     currentCondominiumId || user?.condominiums?.[0]?.id || "";
 
   const condoIdToFetch = effectiveCondominiumId;
-  // Morador não acessa `/residents/:condominiumId`; evita 403 desnecessário.
-  const residentsCondoId = isResident ? "" : condoIdToFetch;
+  // Morador e usuários de gestão não acessam `/residents/:condominiumId`; evita 403 desnecessário.
+  const residentsCondoId = (isResident || isManagementLevel) ? "" : condoIdToFetch;
 
   const { data: residents = [], isLoading: isLoadingResidents } = useResidents(
     residentsCondoId,
@@ -69,6 +69,7 @@ export function ComplaintsPage() {
   const handleComplaintSubmit = async (data: {
     category: string;
     content: string;
+    attachments?: Array<{ fileUrl: string; fileName: string; fileType: string; fileSize: number }>;
   }) => {
     if (createComplaint.isPending) {
       return;
@@ -110,6 +111,7 @@ export function ComplaintsPage() {
         idempotencyKey: pendingSubmitKeyRef.current,
         priority: "MEDIUM",
         isAnonymous: false,
+        attachments: data.attachments,
       });
 
       toast({

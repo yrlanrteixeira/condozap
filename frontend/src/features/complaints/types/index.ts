@@ -61,6 +61,12 @@ export interface CreateComplaintInput {
   priority?: ComplaintPriority;
   isAnonymous?: boolean;
   sectorId?: string;
+  attachments?: Array<{
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  }>;
 }
 
 export interface UpdateComplaintInput {

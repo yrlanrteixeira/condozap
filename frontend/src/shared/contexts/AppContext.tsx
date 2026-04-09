@@ -1,12 +1,13 @@
 import {
   createContext,
-  useContext,
   useCallback,
+  useContext,
   type ReactNode,
 } from "react";
 import type { View, UserRole, User, Condominium } from "@/types";
 import { NOTIFICATION_DURATION_MS } from "@/shared/utils/constants";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
+import { useSSENotifications } from "@/shared/hooks/useSSENotifications";
 import {
   setView as setViewAction,
   setMobileMenuOpen as setMobileMenuOpenAction,

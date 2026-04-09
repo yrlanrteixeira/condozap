@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowRight, Upload, X, FileAudio, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { useToast } from "@/shared/components/ui/use-toast";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import { useSectors, useSectorCategories } from "@/features/structure/hooks/useS
 import { useAppSelector } from "@/shared/hooks";
 import { usePermissions } from "@/shared/hooks/usePermissions";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
+import { useFileUpload } from "@/shared/hooks/useFileUpload";
 import { COMPLAINT_CATEGORIES } from "@/config/constants";
 import {
   buildComplaintContent,
@@ -118,13 +120,18 @@ const complaintFormSchema = z
   });
 
 interface ComplaintFormProps {
-  onSubmit: (data: { category: string; content: string }) => Promise<void>;
+  onSubmit: (data: { 
+    category: string; 
+    content: string;
+    attachments?: Array<{ fileUrl: string; fileName: string; fileType: string; fileSize: number }>;
+  }) => Promise<void>;
 }
 
 export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { can } = usePermissions();
   const { data: sectorCategories } = useSectorCategories(currentCondominiumId ?? undefined);
+  const { toast } = useToast();
 
   const dynamicCategories = useMemo(() => {
     if (sectorCategories?.length) {
@@ -133,6 +140,58 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     const base = [...COMPLAINT_CATEGORIES];
     return base.includes("Outros") ? base : [...base, "Outros"];
   }, [sectorCategories]);
+
+  // Upload de anexos
+  const [attachments, setAttachments] = useState<Array<{
+    file: File;
+    preview?: string;
+    uploading?: boolean;
+    uploadedUrl?: string;
+  }>>([]);
+  const { uploadFile } = useFileUpload({
+    maxSizeMB: 10,
+    allowedTypes: ["image/png", "image/jpeg", "image/webp", "audio/mpeg", "audio/mp4", "audio/webm"],
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + attachments.length > 5) {
+      toast({ title: "Limite excedido", description: "Máximo de 5 arquivos por ocorrência", variant: "error" });
+      return;
+    }
+    const newAttachments = files.map((file) => ({
+      file,
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    e.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => {
+      const att = prev[index];
+      if (att?.preview) URL.revokeObjectURL(att.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadAllAttachments = async () => {
+    const uploaded = [];
+    for (const att of attachments) {
+      if (att.uploadedUrl) {
+        uploaded.push({ fileUrl: att.uploadedUrl, fileName: att.file.name, fileType: att.file.type, fileSize: att.file.size });
+        continue;
+      }
+      try {
+        const result = await uploadFile(att.file, "/storage/upload", {});
+        const url = result.url || result.fileUrl || result.path;
+        uploaded.push({ fileUrl: url, fileName: att.file.name, fileType: att.file.type, fileSize: att.file.size });
+      } catch {
+        throw new Error(`Falha ao enviar: ${att.file.name}`);
+      }
+    }
+    return uploaded;
+  };
 
   const {
     register,
@@ -173,9 +232,19 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
 
   const handleSubmit = async (data: ComplaintFormShape) => {
     try {
-      await onSubmit({ content: buildComplaintContent(data.category, data), category: data.category });
+      // Se houver anexos, faz upload primeiro
+      let attachmentData: Array<{ fileUrl: string; fileName: string; fileType: string; fileSize: number }> = [];
+      if (attachments.length > 0) {
+        attachmentData = await uploadAllAttachments();
+      }
+      await onSubmit({ 
+        content: buildComplaintContent(data.category, data), 
+        category: data.category,
+        attachments: attachmentData,
+      });
       reset({ ...defaultComplaintFormValues });
       prevCategoryRef.current = "";
+      setAttachments([]);
     } catch {
       // Erro já tratado pelo onSubmit
     }
@@ -432,6 +501,46 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
                 {errors.details.message}
               </p>
             )}
+          </div>
+
+          {/* Anexos */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">
+              Anexos (opcional)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((att, i) => (
+                <div key={i} className="relative group rounded-md border overflow-hidden w-20 h-20">
+                  {att.preview ? (
+                    <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <FileAudio className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(i)}
+                    className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  {att.uploading && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {attachments.length < 5 && (
+                <label className="cursor-pointer rounded-md border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 w-20 h-20 flex flex-col items-center justify-center gap-1 transition-colors">
+                  <input type="file" accept="image/*,audio/*" multiple className="hidden" onChange={handleFileChange} />
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Adicionar</span>
+                </label>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Máximo 5 arquivos (imagens ou áudio)</p>
           </div>
 
           <div className="flex justify-end">
