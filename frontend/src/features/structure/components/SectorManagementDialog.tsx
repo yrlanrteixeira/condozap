@@ -38,7 +38,7 @@ import { useToast } from "@/shared/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
-import { permissionLabel } from "@/config/permissionLabels";
+import { permissionLabel, PERMISSION_CATEGORIES } from "@/config/permissionLabels";
 import {
   useSectors,
   useCreateSector,
@@ -274,21 +274,45 @@ function SectorPermissionsSection({
     );
   }
 
+  const availableCategories = Object.entries(PERMISSION_CATEGORIES).filter(([_, cat]) =>
+    cat.permissions && Object.keys(cat.permissions).some(key => ALL_ACTIONS.includes(key))
+  );
+
   return (
-    <div className="space-y-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
-      {ALL_ACTIONS.map((action) => (
-        <div key={action} className="flex items-center justify-between gap-2">
-          <Label htmlFor={`perm-${action}`} className="text-sm font-normal cursor-pointer">
-            {permissionLabel(action)}
-          </Label>
-          <Switch
-            id={`perm-${action}`}
-            checked={localActions.includes(action)}
-            onCheckedChange={(checked) => handleToggle(action, checked)}
-            disabled={updatePermissions.isPending}
-          />
-        </div>
-      ))}
+    <div className="max-h-[min(420px,50vh)] overflow-y-auto pr-1 space-y-4">
+      {availableCategories.map(([key, category]) => {
+        const categoryPermissions = Object.entries(category.permissions).filter(
+          ([permKey]) => ALL_ACTIONS.includes(permKey)
+        );
+        
+        if (categoryPermissions.length === 0) return null;
+        
+        return (
+          <div key={key}>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {category.label}
+            </h4>
+            <div className="space-y-2">
+              {categoryPermissions.map(([permKey, label]) => (
+                <div key={permKey} className="flex items-center justify-between gap-2">
+                  <Label 
+                    htmlFor={`perm-${permKey}`} 
+                    className="text-sm font-normal cursor-pointer text-foreground"
+                  >
+                    {label}
+                  </Label>
+                  <Switch
+                    id={`perm-${permKey}`}
+                    checked={localActions.includes(permKey)}
+                    onCheckedChange={(checked) => handleToggle(permKey, checked)}
+                    disabled={updatePermissions.isPending}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -389,29 +413,50 @@ function MemberOverridePanel({
     );
   }
 
+  const availableCategories = Object.entries(PERMISSION_CATEGORIES).filter(([_, cat]) =>
+    cat.permissions && Object.keys(cat.permissions).some(key => ALL_ACTIONS.includes(key))
+  );
+
   return (
-    <div className="space-y-2 pl-4 border-l-2 border-border mt-2 max-h-[min(320px,40vh)] overflow-y-auto">
-      {ALL_ACTIONS.map((action) => (
-        <div key={action} className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">{permissionLabel(action)}</span>
-          <Select
-            value={localOverrides[action] ?? "inherit"}
-            onValueChange={(val) =>
-              handleOverrideChange(action, val as OverrideState)
-            }
-            disabled={updateMemberPerms.isPending}
-          >
-            <SelectTrigger className="h-7 w-44 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inherit">Herdar do setor</SelectItem>
-              <SelectItem value="grant">Conceder</SelectItem>
-              <SelectItem value="revoke">Revogar</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      ))}
+    <div className="pl-4 border-l-2 border-border mt-2 max-h-[min(320px,40vh)] overflow-y-auto space-y-3">
+      {availableCategories.map(([key, category]) => {
+        const categoryPermissions = Object.entries(category.permissions).filter(
+          ([permKey]) => ALL_ACTIONS.includes(permKey)
+        );
+        
+        if (categoryPermissions.length === 0) return null;
+        
+        return (
+          <div key={key}>
+            <h5 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              {category.label}
+            </h5>
+            <div className="space-y-1.5">
+              {categoryPermissions.map(([permKey, label]) => (
+                <div key={permKey} className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-foreground">{label}</span>
+                  <Select
+                    value={localOverrides[permKey] ?? "inherit"}
+                    onValueChange={(val) =>
+                      handleOverrideChange(permKey, val as OverrideState)
+                    }
+                    disabled={updateMemberPerms.isPending}
+                  >
+                    <SelectTrigger className="h-6 w-36 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inherit">Herdar</SelectItem>
+                      <SelectItem value="grant">Conceder</SelectItem>
+                      <SelectItem value="revoke">Bloquear</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
