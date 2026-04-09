@@ -1,6 +1,9 @@
-import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer, Loader2, ImageIcon } from "lucide-react";
 import type { ComplaintStatusHistory, ComplaintMessage } from "../types";
 import { cn } from "@/lib/utils";
+import { AudioPlayer } from "@/shared/components/AudioPlayer";
+import { api } from "@/lib/api";
 
 const STATUS_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -33,6 +36,7 @@ interface TimelineItem {
   completed: boolean;
   senderName?: string;
   senderRole?: string;
+  attachmentUrl?: string;
 }
 
 function buildTimelineItems(
@@ -70,6 +74,7 @@ function buildTimelineItems(
         completed: true,
         senderName: msg.sender?.name,
         senderRole: msg.senderRole,
+        attachmentUrl: msg.attachmentUrl || undefined,
       });
     }
   }
@@ -173,6 +178,39 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function isImageUrl(url: string): boolean {
+  const imageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+  return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
+}
+
+function TimelineProxiedImage({ src }: { src: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/uploads/media-proxy", { params: { url: src }, responseType: "blob" })
+      .then((res) => {
+        if (cancelled) return;
+        setBlobUrl(URL.createObjectURL(res.data));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) { setError(true); setLoading(false); }
+      });
+    return () => {
+      cancelled = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [src]);
+
+  if (loading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  if (error || !blobUrl) return <ImageIcon className="h-4 w-4 text-muted-foreground" />;
+  return <img src={blobUrl} alt="Anexo" className="rounded max-h-32 object-contain" />;
+}
+
 export function ComplaintTimeline({
   statusHistory,
   createdAt,
@@ -203,6 +241,15 @@ export function ComplaintTimeline({
               <p className="text-sm text-muted-foreground mt-0.5 break-words">
                 {item.description}
               </p>
+            )}
+            {item.attachmentUrl && (
+              <div className="mt-2">
+                {isImageUrl(item.attachmentUrl) ? (
+                  <TimelineProxiedImage src={item.attachmentUrl} />
+                ) : (
+                  <AudioPlayer src={item.attachmentUrl} className="w-full" />
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -5,6 +5,7 @@ import {
   uploadFile,
   deleteFile,
   extractFilePathFromUrl,
+  getFile,
   BUCKETS,
 } from "./upload.service";
 import {
@@ -20,10 +21,46 @@ const ALLOWED_MEDIA_TYPES = [
   "image/jpeg",
   "image/webp",
   "video/mp4",
+  "audio/webm",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
 ];
 const MEDIA_BUCKET = "message-media";
 
 export async function uploadRoutes(app: FastifyInstance) {
+
+  /**
+   * GET /uploads/media-proxy?url=<encoded-url>
+   * Proxy to fetch media files that require authentication
+   */
+  app.get(
+    "/media-proxy",
+    { onRequest: [app.authenticate] },
+    async (request, reply) => {
+      const url = (request.query as { url?: string }).url;
+      if (!url) {
+        throw new BadRequestError("URL é obrigatória");
+      }
+
+      try {
+        // Detect bucket from URL
+        let bucket = MEDIA_BUCKET;
+        if (url.includes("/complaint-attachments/")) bucket = "complaint-attachments";
+        else if (url.includes("/resident-documents/")) bucket = "resident-documents";
+
+        const { data, contentType } = await getFile(app.log, bucket, url);
+
+        reply.header("Content-Type", contentType);
+        reply.header("Cache-Control", "public, max-age=3600");
+
+        return reply.send(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Erro ao baixar arquivo";
+        throw new NotFoundError(message);
+      }
+    }
+  );
 
   /**
    * POST /uploads/media

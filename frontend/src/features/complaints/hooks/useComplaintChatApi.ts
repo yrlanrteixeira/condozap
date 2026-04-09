@@ -39,14 +39,17 @@ export function useSendComplaintMessage() {
       complaintId,
       content,
       isInternal,
+      attachmentUrl,
     }: {
       complaintId: number;
       content: string;
       isInternal?: boolean;
+      attachmentUrl?: string;
     }) => {
       const { data } = await api.post(`/complaint-messages/${complaintId}`, {
         content,
         ...(isInternal && { isInternal }),
+        ...(attachmentUrl && { attachmentUrl }),
       });
       return data;
     },

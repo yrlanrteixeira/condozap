@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -228,6 +229,9 @@ export function ComplaintDetailSheet({
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Devolver Ocorrência</DialogTitle>
+                  <DialogDescription>
+                    Informe o motivo da devolução da ocorrência.
+                  </DialogDescription>
                 </DialogHeader>
                 <Textarea
                   placeholder="Motivo da devolução (mínimo 10 caracteres)..."
@@ -506,6 +510,7 @@ function ComplaintDetailContent({
       <ComplaintAttachmentUpload
         complaintId={complaint.id}
         attachments={attachments}
+        showDelete={false}
       />
 
       {/* Chat */}

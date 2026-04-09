@@ -1,5 +1,5 @@
 import { FastifyBaseLogger } from "fastify";
-import { uploadFileToStorage, deleteFileFromStorage } from "../../shared/db/s3";
+import { uploadFileToStorage, deleteFileFromStorage, getObjectFromStorage } from "../../shared/db/s3";
 import { BadRequestError } from "../../shared/errors";
 import crypto from "crypto";
 import path from "path";
@@ -179,6 +179,23 @@ export async function deleteFile(
   } catch (error) {
     logger.error({ error, filePath, bucketName }, "Failed to delete file");
     throw new Error("Falha ao deletar arquivo");
+  }
+}
+
+/**
+ * Get file from storage by public URL
+ */
+export async function getFile(
+  logger: FastifyBaseLogger,
+  bucketName: string,
+  url: string
+): Promise<{ data: Buffer; contentType: string }> {
+  const filePath = extractFilePathFromUrl(url, bucketName);
+  try {
+    return await getObjectFromStorage({ bucketName, filePath });
+  } catch (error) {
+    logger.error({ error, url, bucketName }, "Failed to get file");
+    throw new Error("Falha ao baixar arquivo");
   }
 }
 

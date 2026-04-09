@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { config } from "../../config/env";
 
@@ -49,6 +50,30 @@ export async function uploadFileToStorage({
 
   const publicUrl = `${config.AWS_S3_ENDPOINT}/${bucket}/${key}`;
   return { publicUrl };
+}
+
+export async function getObjectFromStorage({
+  bucketName,
+  filePath,
+}: {
+  bucketName: string;
+  filePath: string;
+}): Promise<{ data: Buffer; contentType: string }> {
+  const client = getS3Client();
+  const bucket = config.AWS_S3_BUCKET!;
+  const key = `${bucketName}/${filePath}`;
+
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    })
+  );
+
+  const bodyBytes = await response.Body!.transformToByteArray();
+  const contentType = response.ContentType || "application/octet-stream";
+
+  return { data: Buffer.from(bodyBytes), contentType };
 }
 
 export async function deleteFileFromStorage({

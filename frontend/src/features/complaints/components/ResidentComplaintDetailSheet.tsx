@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
@@ -37,6 +38,8 @@ import { useComplaint } from "../hooks/useComplaintsApi";
 import { useSendComplaintMessage } from "../hooks/useComplaintChatApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintTimeline } from "./ComplaintTimeline";
+import { AudioPlayer } from "@/shared/components/AudioPlayer";
+import { ProxiedImage } from "@/shared/components/ProxiedImage";
 import { formatDateTime } from "@/shared/utils/helpers";
 import { queryKeys } from "../utils/queryKeys";
 import type {
@@ -302,7 +305,10 @@ export function ResidentComplaintDetailSheet({
       <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reabrir Ocorrencia</DialogTitle>
+            <DialogTitle>Reabrir Ocorrência</DialogTitle>
+            <DialogDescription>
+              Informe o motivo da reabertura da ocorrência.
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             placeholder="Motivo da reabertura (minimo 10 caracteres)..."
@@ -421,6 +427,46 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
 
 function AttachmentItem({ attachment }: { attachment: ComplaintAttachment }) {
   const sizeLabel = formatFileSize(attachment.fileSize);
+
+  if (attachment.fileType.startsWith("audio/")) {
+    return (
+      <li>
+        <div
+          className={cn(
+            "flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3",
+            "hover:bg-muted/60 transition-colors"
+          )}
+        >
+          <p className="text-sm font-medium text-foreground truncate">
+            {attachment.fileName}
+          </p>
+          <AudioPlayer src={attachment.fileUrl} className="w-full" />
+          <p className="text-xs text-muted-foreground">
+            {sizeLabel}
+          </p>
+        </div>
+      </li>
+    );
+  }
+
+  if (attachment.fileType.startsWith("image/")) {
+    return (
+      <li>
+        <div
+          className={cn(
+            "flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3",
+            "hover:bg-muted/60 transition-colors"
+          )}
+        >
+          <p className="text-sm font-medium text-foreground truncate">
+            {attachment.fileName}
+          </p>
+          <ProxiedImage src={attachment.fileUrl} className="w-full max-h-48" />
+          <p className="text-xs text-muted-foreground">{sizeLabel}</p>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, Upload, X, FileAudio, ImageIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Upload, X, FileAudio, ImageIcon, Mic, MicOff, Play, Pause, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -153,6 +153,83 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
     allowedTypes: ["image/png", "image/jpeg", "image/webp", "audio/mpeg", "audio/mp4", "audio/webm"],
   });
 
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; url: string } | null>(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setRecordedAudio({ blob, url: URL.createObjectURL(blob) });
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error starting recording:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+    if (recordedAudio) {
+      URL.revokeObjectURL(recordedAudio.url);
+      setRecordedAudio(null);
+    }
+  };
+
+  const addRecordedAudio = () => {
+    if (recordedAudio && attachments.length < 5) {
+      const audioFile = new File([recordedAudio.blob], "mensagem-audio.webm", { 
+        type: "audio/webm" 
+      });
+      setAttachments((prev) => [...prev, { 
+        file: audioFile, 
+        preview: recordedAudio.url 
+      }]);
+      URL.revokeObjectURL(recordedAudio.url);
+      setRecordedAudio(null);
+    }
+  };
+
+  const togglePlaybackPreview = () => {
+    if (audioPreviewRef.current) {
+      if (isPlayingPreview) {
+        audioPreviewRef.current.pause();
+      } else {
+        audioPreviewRef.current.play();
+      }
+      setIsPlayingPreview(!isPlayingPreview);
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + attachments.length > 5) {
@@ -183,7 +260,7 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
         continue;
       }
       try {
-        const result = await uploadFile(att.file, "/storage/upload", {});
+        const result = await uploadFile(att.file, "/uploads/media", {});
         const url = result.url || result.fileUrl || result.path;
         uploaded.push({ fileUrl: url, fileName: att.file.name, fileType: att.file.type, fileSize: att.file.size });
       } catch {
@@ -502,6 +579,57 @@ export const ComplaintForm = ({ onSubmit }: ComplaintFormProps) => {
               </p>
             )}
           </div>
+
+          {/* Gravação de áudio */}
+          {(isRecording || recordedAudio) && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
+                Gravação de áudio
+              </label>
+              {isRecording && (
+                <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-sm text-red-700 flex-1">Gravando...</span>
+                  <Button type="button" size="sm" variant="outline" onClick={stopRecording} className="bg-red-500 text-white hover:bg-red-600">
+                    <MicOff className="h-4 w-4 mr-1" />
+                    Parar
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={cancelRecording} className="text-red-500">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {recordedAudio && !isRecording && (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <audio ref={audioPreviewRef} src={recordedAudio.url} onEnded={() => setIsPlayingPreview(false)} />
+                  <Button type="button" size="sm" variant="outline" onClick={togglePlaybackPreview} className="h-9 w-9 p-0">
+                    {isPlayingPreview ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  </Button>
+                  <span className="text-sm text-amber-800 flex-1">Áudio gravado</span>
+                  <Button type="button" size="sm" onClick={addRecordedAudio} className="h-8">
+                    <Upload className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={cancelRecording} className="text-red-500 h-8">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Botão de gravar */}
+          {!isRecording && !recordedAudio && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
+                Ou grave um áudio
+              </label>
+              <Button type="button" variant="outline" onClick={startRecording} className="w-full">
+                <Mic className="h-4 w-4 mr-2" />
+                Gravar áudio
+              </Button>
+            </div>
+          )}
 
           {/* Anexos */}
           <div className="space-y-2">

@@ -4,15 +4,18 @@ import { useComplaintAttachmentUpload } from "@/shared/hooks/useFileUpload";
 import { apiClient } from "@/lib/api-client";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { Button } from "@/shared/components/ui/button";
-import { Image, Music, Trash2, Download } from "lucide-react";
+import { Image, Music, Trash2, Download, Play, Pause } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { formatRelativeTime } from "@/shared/utils/date";
+import { AudioPlayer } from "@/shared/components/AudioPlayer";
+import { ProxiedImage } from "@/shared/components/ProxiedImage";
 
 interface ComplaintAttachment {
   id: string;
@@ -29,6 +32,7 @@ interface ComplaintAttachmentUploadProps {
   attachments?: ComplaintAttachment[];
   onAttachmentAdded?: (attachment: ComplaintAttachment) => void;
   onAttachmentDeleted?: (attachmentId: string) => void;
+  showDelete?: boolean;
 }
 
 export function ComplaintAttachmentUpload({
@@ -36,6 +40,7 @@ export function ComplaintAttachmentUpload({
   attachments = [],
   onAttachmentAdded,
   onAttachmentDeleted,
+  showDelete = true,
 }: ComplaintAttachmentUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -117,34 +122,52 @@ export function ComplaintAttachmentUpload({
                 key={attachment.id}
                 className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors"
               >
-                {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {attachment.fileName}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{formatFileSize(attachment.fileSize)}</span>
-                    <span>•</span>
-                    <span>
-                      {formatRelativeTime(attachment.uploadedAt)}
-                    </span>
+                {attachment.fileType.startsWith("audio/") ? (
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground truncate mb-1">
+                      {attachment.fileName}
+                    </p>
+                    <AudioPlayer src={attachment.fileUrl} className="w-full" />
                   </div>
-                </div>
+                ) : attachment.fileType.startsWith("image/") ? (
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground truncate mb-1">
+                      {attachment.fileName}
+                    </p>
+                    <ProxiedImage src={attachment.fileUrl} className="w-full max-h-48" />
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <span>{formatFileSize(attachment.fileSize)}</span>
+                      <span>•</span>
+                      <span>{formatRelativeTime(attachment.uploadedAt)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {getFileIcon(attachment.fileType)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {attachment.fileName}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatFileSize(attachment.fileSize)}</span>
+                        <span>•</span>
+                        <span>
+                          {formatRelativeTime(attachment.uploadedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(attachment.fileUrl, "_blank")}
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(attachment.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+                  {showDelete && onAttachmentDeleted && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(attachment.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -163,6 +186,9 @@ export function ComplaintAttachmentUpload({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar Anexo</DialogTitle>
+            <DialogDescription>
+              Adicione imagens ou áudio como anexo à ocorrência.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <FileUpload
