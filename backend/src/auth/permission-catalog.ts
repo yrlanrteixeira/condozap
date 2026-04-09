@@ -137,5 +137,14 @@ const SECTOR_ASSIGNABLE_RAW = [
 export const SECTOR_ASSIGNABLE_PERMISSION_KEYS: readonly string[] =
   SECTOR_ASSIGNABLE_RAW.filter((k) => isCondoAssignableKey(k));
 
+const SECTOR_NON_ASSIGNABLE = SECTOR_ASSIGNABLE_RAW.filter(
+  (k) => !isCondoAssignableKey(k)
+);
+if (SECTOR_NON_ASSIGNABLE.length > 0) {
+  throw new Error(
+    `SECTOR_ASSIGNABLE_RAW contém chaves fora do catálogo de condomínio: ${SECTOR_NON_ASSIGNABLE.join(", ")}`
+  );
+}
+
 export const isSectorAssignableKey = (key: string): boolean =>
   SECTOR_ASSIGNABLE_PERMISSION_KEYS.includes(key);
