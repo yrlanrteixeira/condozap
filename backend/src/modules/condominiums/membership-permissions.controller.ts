@@ -4,9 +4,12 @@ import { CondominiumPermissionMode, Prisma } from "@prisma/client";
 import { prisma } from "../../shared/db/prisma";
 import {
   CONDO_ASSIGNABLE_PERMISSION_KEYS,
+  SECTOR_ASSIGNABLE_PERMISSION_KEYS,
   isCondoAssignableKey,
 } from "../../auth/permission-catalog";
 import { getEffectivePermissionsForCondominiumMembership } from "../../auth/effective-permissions";
+import type { AuthUser } from "../../types/auth";
+import { writeAuditLog } from "../../shared/audit/write-audit-log";
 
 const paramsSchema = z.object({
   id: z.string().min(1),
@@ -24,6 +27,7 @@ export const getPermissionsCatalogHandler = async (
 ) => {
   return reply.send({
     keys: [...CONDO_ASSIGNABLE_PERMISSION_KEYS],
+    sectorKeys: [...SECTOR_ASSIGNABLE_PERMISSION_KEYS],
   });
 };
 
@@ -71,6 +75,9 @@ export const putMembershipPermissionsHandler = async (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
+  const actor = (request.user as AuthUser).id;
+  const ip = request.ip ?? "0.0.0.0";
+
   const { id: condominiumId, userId: targetUserId } = paramsSchema.parse(
     request.params
   );
@@ -134,6 +141,17 @@ export const putMembershipPermissionsHandler = async (
     }
     await prisma.$transaction(ops);
   }
+
+  await writeAuditLog(prisma, {
+    actorUserId: actor,
+    action: "membership_permissions.update",
+    resource: `condominium:${condominiumId}:member:${targetUserId}`,
+    metadata: {
+      permissionMode: body.permissionMode,
+      actions: body.actions,
+    },
+    ipAddress: ip,
+  });
 
   const effectivePermissions =
     await getEffectivePermissionsForCondominiumMembership(

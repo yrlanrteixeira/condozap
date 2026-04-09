@@ -1,7 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../shared/db/prisma";
-import { isCondoAssignableKey } from "../../auth/permission-catalog";
+import { isSectorAssignableKey } from "../../auth/permission-catalog";
+import type { AuthUser } from "../../types/auth";
+import { writeAuditLog } from "../../shared/audit/write-audit-log";
 
 const sectorPermissionsParamsSchema = z.object({
   condominiumId: z.string().min(1),
@@ -14,7 +16,7 @@ const memberPermissionsParamsSchema = z.object({
   memberId: z.string().min(1),
 });
 
-const permissionKey = z.string().refine(isCondoAssignableKey, "Permissão inválida");
+const permissionKey = z.string().refine(isSectorAssignableKey, "Permissão inválida");
 
 const updateSectorPermissionsBodySchema = z.object({
   actions: z.array(permissionKey),
@@ -79,6 +81,9 @@ export const updateSectorPermissionsHandler = async (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
+  const actor = (request.user as AuthUser).id;
+  const ip = request.ip ?? "0.0.0.0";
+
   const { condominiumId, sectorId } = sectorPermissionsParamsSchema.parse(
     request.params
   );
@@ -101,6 +106,14 @@ export const updateSectorPermissionsHandler = async (
     }),
   ]);
 
+  await writeAuditLog(prisma, {
+    actorUserId: actor,
+    action: "sector_permissions.update",
+    resource: `condominium:${condominiumId}:sector:${sectorId}`,
+    metadata: { actions },
+    ipAddress: ip,
+  });
+
   return reply.send({ sectorId, actions });
 };
 
@@ -108,6 +121,9 @@ export const updateMemberPermissionOverridesHandler = async (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
+  const actor = (request.user as AuthUser).id;
+  const ip = request.ip ?? "0.0.0.0";
+
   const { condominiumId, sectorId, memberId } =
     memberPermissionsParamsSchema.parse(request.params);
 
@@ -136,6 +152,14 @@ export const updateMemberPermissionOverridesHandler = async (
       })),
     }),
   ]);
+
+  await writeAuditLog(prisma, {
+    actorUserId: actor,
+    action: "sector_member_overrides.update",
+    resource: `condominium:${condominiumId}:sector:${sectorId}:member:${memberId}`,
+    metadata: { overrides },
+    ipAddress: ip,
+  });
 
   return reply.send({ memberId, overrides });
 };
