@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../shared/db/prisma";
-import { SECTOR_ACTIONS } from "../../auth/sector-permissions";
+import { isCondoAssignableKey } from "../../auth/permission-catalog";
 
 const sectorPermissionsParamsSchema = z.object({
   condominiumId: z.string().min(1),
@@ -14,14 +14,16 @@ const memberPermissionsParamsSchema = z.object({
   memberId: z.string().min(1),
 });
 
+const permissionKey = z.string().refine(isCondoAssignableKey, "Permissão inválida");
+
 const updateSectorPermissionsBodySchema = z.object({
-  actions: z.array(z.enum(SECTOR_ACTIONS)),
+  actions: z.array(permissionKey),
 });
 
 const updateMemberOverridesBodySchema = z.object({
   overrides: z.array(
     z.object({
-      action: z.enum(SECTOR_ACTIONS),
+      action: permissionKey,
       granted: z.boolean(),
     })
   ),

@@ -38,6 +38,7 @@ import { useToast } from "@/shared/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/shared/utils/errorMessages";
+import { permissionLabel } from "@/config/permissionLabels";
 import {
   useSectors,
   useCreateSector,
@@ -46,18 +47,19 @@ import {
 } from "../hooks/useSectorsApi";
 import type { SectorMember } from "../types";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Catálogo de permissões (API) ─────────────────────────────────────────────
 
-const ACTION_LABELS: Record<string, string> = {
-  VIEW_COMPLAINTS: "Ver ocorrências",
-  COMMENT: "Comentar",
-  CHANGE_STATUS: "Alterar status",
-  RESOLVE: "Resolver",
-  RETURN: "Devolver ao morador",
-  REASSIGN: "Reatribuir",
-};
-
-const ALL_ACTIONS = Object.keys(ACTION_LABELS);
+function useCatalogPermissionKeys() {
+  return useQuery({
+    queryKey: ["permissions-catalog"],
+    queryFn: async () => {
+      const { data } = await api.get<{ keys: string[] }>(
+        "/condominiums/permissions-catalog"
+      );
+      return data.keys;
+    },
+  });
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -214,7 +216,10 @@ function SectorPermissionsSection({
 }: SectorPermissionsSectionProps) {
   const { toast } = useToast();
   const { data, isLoading } = useSectorPermissions(condominiumId, sectorId);
+  const { data: catalogKeys, isLoading: catalogLoading } =
+    useCatalogPermissionKeys();
   const updatePermissions = useUpdateSectorPermissions();
+  const ALL_ACTIONS = catalogKeys ?? [];
 
   const [localActions, setLocalActions] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
@@ -243,7 +248,7 @@ function SectorPermissionsSection({
       await updatePermissions.mutateAsync({ condominiumId, sectorId, actions: next });
       toast({
         title: "Permissão atualizada",
-        description: `"${ACTION_LABELS[action]}" foi ${enabled ? "habilitada" : "desabilitada"}.`,
+        description: `"${permissionLabel(action)}" foi ${enabled ? "habilitada" : "desabilitada"}.`,
         variant: "success",
         duration: 2000,
       });
@@ -259,7 +264,7 @@ function SectorPermissionsSection({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || catalogLoading || !catalogKeys?.length) {
     return (
       <div className="text-sm text-muted-foreground py-2">
         Carregando permissões...
@@ -268,11 +273,11 @@ function SectorPermissionsSection({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
       {ALL_ACTIONS.map((action) => (
         <div key={action} className="flex items-center justify-between gap-2">
           <Label htmlFor={`perm-${action}`} className="text-sm font-normal cursor-pointer">
-            {ACTION_LABELS[action]}
+            {permissionLabel(action)}
           </Label>
           <Switch
             id={`perm-${action}`}
@@ -300,10 +305,13 @@ function MemberOverridePanel({
   member,
 }: MemberOverridePanelProps) {
   const { toast } = useToast();
+  const { data: catalogKeys, isLoading: catalogLoading } =
+    useCatalogPermissionKeys();
+  const ALL_ACTIONS = catalogKeys ?? [];
   const { data, isLoading } = useMemberPermissions(
     condominiumId,
     sectorId,
-    member.userId
+    member.id
   );
   const updateMemberPerms = useUpdateMemberPermissions();
 
@@ -333,7 +341,7 @@ function MemberOverridePanel({
   useEffect(() => {
     setInitialized(false);
     setLocalOverrides({});
-  }, [member.userId, sectorId]);
+  }, [member.id, sectorId]);
 
   const handleOverrideChange = async (action: string, value: OverrideState) => {
     const prev = { ...localOverrides };
@@ -352,7 +360,7 @@ function MemberOverridePanel({
       await updateMemberPerms.mutateAsync({
         condominiumId,
         sectorId,
-        memberId: member.userId,
+        memberId: member.id,
         overrides: overridesPayload,
       });
       toast({
@@ -371,7 +379,7 @@ function MemberOverridePanel({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || catalogLoading || !catalogKeys?.length) {
     return (
       <div className="text-sm text-muted-foreground py-1">
         Carregando...
@@ -380,10 +388,10 @@ function MemberOverridePanel({
   }
 
   return (
-    <div className="space-y-2 pl-4 border-l-2 border-border mt-2">
+    <div className="space-y-2 pl-4 border-l-2 border-border mt-2 max-h-[min(320px,40vh)] overflow-y-auto">
       {ALL_ACTIONS.map((action) => (
         <div key={action} className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">{ACTION_LABELS[action]}</span>
+          <span className="text-xs text-muted-foreground">{permissionLabel(action)}</span>
           <Select
             value={localOverrides[action] ?? "inherit"}
             onValueChange={(val) =>
@@ -596,12 +604,15 @@ interface SectorManagementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   condominiumId: string;
+  /** Quando definido, abre já no setor indicado (ex.: hub de acessos). */
+  initialSectorId?: string | null;
 }
 
 export const SectorManagementDialog = ({
   open,
   onOpenChange,
   condominiumId,
+  initialSectorId = null,
 }: SectorManagementDialogProps) => {
   const { toast } = useToast();
   const { data: sectors = [], isLoading } = useSectors(condominiumId);
@@ -635,6 +646,14 @@ export const SectorManagementDialog = ({
       resetForm();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && initialSectorId) {
+      setEditingSectorId(initialSectorId);
+      setShowForm(false);
+      setShowPermissions(true);
+    }
+  }, [open, initialSectorId]);
 
   const resetForm = () => {
     setShowForm(false);

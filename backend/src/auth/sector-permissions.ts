@@ -1,36 +1,39 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { PrismaClient } from "@prisma/client";
 import { prisma } from "../shared/db/prisma";
+import { getEffectivePermissionsForCondominiumMembership } from "./effective-permissions";
 
-export const SECTOR_ACTIONS = [
-  "VIEW_COMPLAINTS",
-  "COMMENT",
-  "CHANGE_STATUS",
-  "RESOLVE",
-  "RETURN",
-  "REASSIGN",
+/** Chaves canônicas para permissões de setor em ocorrências (alinhadas ao frontend). */
+export const SECTOR_COMPLAINT_PERMISSIONS = [
+  "view:complaints",
+  "comment:complaint",
+  "update:complaint_status",
+  "resolve:complaint",
+  "return:complaint",
+  "reassign:complaint",
 ] as const;
 
-export type SectorAction = (typeof SECTOR_ACTIONS)[number];
+export type SectorComplaintPermission =
+  (typeof SECTOR_COMPLAINT_PERMISSIONS)[number];
 
-export const DEFAULT_SECTOR_PERMISSIONS: SectorAction[] = [
-  "VIEW_COMPLAINTS",
-  "COMMENT",
-  "CHANGE_STATUS",
+export const DEFAULT_SECTOR_PERMISSIONS: SectorComplaintPermission[] = [
+  "view:complaints",
+  "comment:complaint",
+  "update:complaint_status",
 ];
 
 export async function resolveSectorMemberPermissions(
-  prisma: PrismaClient,
+  prismaClient: PrismaClient,
   sectorMemberId: string,
   sectorId: string
 ): Promise<Set<string>> {
-  const sectorPerms = await prisma.sectorPermission.findMany({
+  const sectorPerms = await prismaClient.sectorPermission.findMany({
     where: { sectorId },
     select: { action: true },
   });
   const allowed = new Set(sectorPerms.map((p) => p.action));
 
-  const overrides = await prisma.sectorMemberPermissionOverride.findMany({
+  const overrides = await prismaClient.sectorMemberPermissionOverride.findMany({
     where: { sectorMemberId },
     select: { action: true, granted: true },
   });
@@ -42,41 +45,65 @@ export async function resolveSectorMemberPermissions(
   return allowed;
 }
 
-const STATUS_ACTION_MAP: Record<string, SectorAction> = {
-  RESOLVED: "RESOLVE",
-  RETURNED: "RETURN",
-};
+const STATUS_TO_EXTRA: Record<string, "resolve:complaint" | "return:complaint"> =
+  {
+    RESOLVED: "resolve:complaint",
+    RETURNED: "return:complaint",
+  };
 
-export const requireSectorAction = (action: SectorAction) => {
+/**
+ * Para rotas de ocorrência: valida permissão granular no conjunto efetivo (SETOR_MEMBER).
+ * Outros papéis não são bloqueados aqui (fluxo existente em requireTicketModify).
+ */
+export const requireSectorComplaintPermission = (
+  primaryKey: SectorComplaintPermission
+) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = request.user as any;
-    // Skip for non-SETOR_MEMBER roles (they have full access)
+    const user = request.user as { id: string; role: string } | undefined;
     if (!user || user.role !== "SETOR_MEMBER") return;
 
-    const complaintId = Number((request.params as any).id);
-    if (isNaN(complaintId)) return reply.status(400).send({ error: "ID inválido" });
-
-    const complaint = await prisma.complaint.findUnique({ where: { id: complaintId } });
-    if (!complaint?.sectorId) return reply.status(403).send({ error: "Ocorrência sem setor" });
-
-    const membership = await prisma.sectorMember.findFirst({
-      where: { userId: user.id, sectorId: complaint.sectorId, isActive: true },
-    });
-    if (!membership) return reply.status(403).send({ error: "Você não pertence a este setor" });
-
-    const permissions = await resolveSectorMemberPermissions(prisma, membership.id, complaint.sectorId);
-
-    if (!permissions.has(action)) {
-      return reply.status(403).send({ error: `Sem permissão para: ${action}` });
+    const complaintId = Number((request.params as { id?: string }).id);
+    if (Number.isNaN(complaintId)) {
+      return reply.status(400).send({ error: "ID inválido" });
     }
 
-    // For CHANGE_STATUS, check granular status-specific actions from body
-    if (action === "CHANGE_STATUS") {
-      const body = request.body as any;
-      const targetStatus = body?.status as string;
-      const requiredAction = STATUS_ACTION_MAP[targetStatus];
-      if (requiredAction && !permissions.has(requiredAction)) {
-        return reply.status(403).send({ error: `Sem permissão para: ${requiredAction}` });
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+      select: { condominiumId: true, sectorId: true },
+    });
+    if (!complaint?.sectorId) {
+      return reply.status(403).send({ error: "Ocorrência sem setor" });
+    }
+
+    const membership = await prisma.sectorMember.findFirst({
+      where: {
+        userId: user.id,
+        sectorId: complaint.sectorId,
+        isActive: true,
+      },
+    });
+    if (!membership) {
+      return reply.status(403).send({ error: "Você não pertence a este setor" });
+    }
+
+    const perms = await getEffectivePermissionsForCondominiumMembership(
+      prisma,
+      user.id,
+      complaint.condominiumId
+    );
+
+    if (!perms.includes(primaryKey)) {
+      return reply
+        .status(403)
+        .send({ error: `Sem permissão para: ${primaryKey}` });
+    }
+
+    if (primaryKey === "update:complaint_status") {
+      const body = request.body as { status?: string } | undefined;
+      const targetStatus = body?.status;
+      const extra = targetStatus ? STATUS_TO_EXTRA[targetStatus] : undefined;
+      if (extra && !perms.includes(extra)) {
+        return reply.status(403).send({ error: `Sem permissão para: ${extra}` });
       }
     }
   };

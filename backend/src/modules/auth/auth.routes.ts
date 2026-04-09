@@ -22,6 +22,7 @@ import { normalizeCondominiumSlug } from "../../shared/utils/condominium-slug";
 import { buildAccessTokenPayload } from "./auth-jwt-payload";
 import { registerResidentWithInvite } from "./register-invite.service";
 import { userToApi } from "./user-response";
+import { getEffectivePermissionsForCondominiumMembership } from "../../auth/effective-permissions";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -266,13 +267,22 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         ...userWithoutPassword
       } = user;
 
-      const userCondominiums = condominiums.map((uc) => ({
-        id: uc.condominium.id,
-        name: uc.condominium.name,
-        role: uc.role,
-        councilPosition: uc.councilPosition,
-        assignedTower: uc.assignedTower,
-      }));
+      const userCondominiums = await Promise.all(
+        condominiums.map(async (uc) => ({
+          id: uc.condominium.id,
+          name: uc.condominium.name,
+          role: uc.role,
+          councilPosition: uc.councilPosition,
+          assignedTower: uc.assignedTower,
+          permissionMode: uc.permissionMode,
+          effectivePermissions:
+            await getEffectivePermissionsForCondominiumMembership(
+              prisma,
+              userId,
+              uc.condominiumId
+            ),
+        }))
+      );
 
       // Resolve sector data for SETOR_MEMBER/SETOR_MANAGER
       let sectors: any[] = [];
@@ -356,10 +366,22 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         ...userWithoutPassword
       } = user;
 
-      const userCondominiums = condominiums.map((uc) => ({
-        id: uc.condominium.id,
-        name: uc.condominium.name,
-      }));
+      const userCondominiums = await Promise.all(
+        condominiums.map(async (uc) => ({
+          id: uc.condominium.id,
+          name: uc.condominium.name,
+          role: uc.role,
+          councilPosition: uc.councilPosition,
+          assignedTower: uc.assignedTower,
+          permissionMode: uc.permissionMode,
+          effectivePermissions:
+            await getEffectivePermissionsForCondominiumMembership(
+              prisma,
+              userId,
+              uc.condominiumId
+            ),
+        }))
+      );
 
       const base = userToApi(userWithoutPassword as never, {
         residentId: resident?.id,

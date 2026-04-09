@@ -24,6 +24,7 @@ import {
   Globe,
   CreditCard,
   DollarSign,
+  Shield,
 } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -113,6 +114,12 @@ export const Sidebar = ({
       title: "Membros ativos",
       href: "/team",
       icon: UsersRound,
+      permission: Permissions.MANAGE_TEAM,
+    },
+    {
+      title: "Acessos e permissões",
+      href: "/access",
+      icon: Shield,
       permission: Permissions.MANAGE_TEAM,
     },
     {

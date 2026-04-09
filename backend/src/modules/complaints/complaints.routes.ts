@@ -4,12 +4,14 @@ import {
   requireAttachmentUpload,
   requireComplaintOwnerAction,
   requireCondoAccess,
+  requireCondoPermissionAny,
+  requireCondoPermissionFromComplaint,
   requirePauseOrResume,
   requireTicketAssign,
   requireTicketModify,
   requireTicketView,
 } from "../../auth/authorize";
-import { requireSectorAction } from "../../auth/sector-permissions";
+import { requireSectorComplaintPermission } from "../../auth/sector-permissions";
 import { nudgeComplaintHandler } from "./complaints-nudge.controller";
 import { returnComplaintHandler } from "./complaints-return.controller";
 import { complementComplaintHandler } from "./complaints-complement.controller";
@@ -61,7 +63,14 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermissionAny([
+          "view:complaints",
+          "view:own_complaints",
+        ]),
+      ],
     },
     getComplaintsByCondominiumHandler
   );
@@ -78,7 +87,11 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     "/:id",
     {
-      onRequest: [fastify.authenticate, requireTicketModify()],
+      onRequest: [
+        fastify.authenticate,
+        requireTicketModify(),
+        requireCondoPermissionFromComplaint("edit:complaint"),
+      ],
     },
     updateComplaintHandler
   );
@@ -86,7 +99,12 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:id/status",
     {
-      onRequest: [fastify.authenticate, requireTicketModify(), requireSectorAction("CHANGE_STATUS")],
+      onRequest: [
+        fastify.authenticate,
+        requireTicketModify(),
+        requireCondoPermissionFromComplaint("update:complaint_status"),
+        requireSectorComplaintPermission("update:complaint_status"),
+      ],
     },
     updateComplaintStatusHandler
   );
@@ -94,7 +112,11 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:id/priority",
     {
-      onRequest: [fastify.authenticate, requireTicketModify()],
+      onRequest: [
+        fastify.authenticate,
+        requireTicketModify(),
+        requireCondoPermissionFromComplaint("update:complaint_priority"),
+      ],
     },
     updateComplaintPriorityHandler
   );
@@ -102,7 +124,12 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:id/comment",
     {
-      onRequest: [fastify.authenticate, requireTicketModify(), requireSectorAction("COMMENT")],
+      onRequest: [
+        fastify.authenticate,
+        requireTicketModify(),
+        requireCondoPermissionFromComplaint("comment:complaint"),
+        requireSectorComplaintPermission("comment:complaint"),
+      ],
     },
     addComplaintCommentHandler
   );
@@ -170,9 +197,10 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [
         fastify.authenticate,
-        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN"]),
+        requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "ADMIN", "SETOR_MEMBER"]),
         requireTicketModify(),
-        requireSectorAction("RETURN"),
+        requireCondoPermissionFromComplaint("return:complaint"),
+        requireSectorComplaintPermission("return:complaint"),
       ],
     },
     returnComplaintHandler

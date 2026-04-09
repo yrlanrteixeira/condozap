@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { requireSuperAdmin, requireAdmin, requireSyndicStrict, requireRole } from "../../shared/middlewares";
-import { requireCondoAccess } from "../../auth/authorize";
+import { requireCondoAccess, requireCondoPermission } from "../../auth/authorize";
 import {
   createAdminHandler,
   createSyndicHandler,
@@ -25,7 +25,10 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.authenticate,
         requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC", "SUPER_ADMIN"]),
       ],
-      preHandler: [requireCondoAccess({ source: "body" })],
+      preHandler: [
+        requireCondoAccess({ source: "body" }),
+        requireCondoPermission("manage:team", { source: "body" }),
+      ],
     },
     createAdminHandler
   );
@@ -49,7 +52,12 @@ export const userManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/users/condominium/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireAdmin()],
+      onRequest: [
+        fastify.authenticate,
+        requireAdmin(),
+        requireCondoAccess(),
+        requireCondoPermission("manage:team"),
+      ],
     },
     listUsersByCondoHandler
   );

@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { requireCondoAccess, requireRole } from "../../auth/authorize";
+import { requireCondoAccess, requireCondoPermission, requireRole } from "../../auth/authorize";
 import {
   getStructureHandler,
   updateStructureHandler,
@@ -21,7 +21,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:structure"),
+      ],
     },
     getStructureHandler
   );
@@ -29,7 +33,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:condominiumId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
     },
     updateStructureHandler
   );
@@ -37,7 +45,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId/sectors",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:structure"),
+      ],
     },
     listSectorsHandler
   );
@@ -51,6 +63,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
           superAdminForbiddenMessage:
             "O usuário Super Admin não pode criar um setor para um condomínio",
         }),
+        requireCondoPermission("manage:structure"),
       ],
     },
     createSectorHandler
@@ -59,7 +72,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     "/:condominiumId/sectors/:sectorId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
     },
     updateSectorHandler
   );
@@ -67,7 +84,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/:condominiumId/sectors/:sectorId/members",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
     },
     setSectorMembersHandler
   );
@@ -75,7 +96,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     "/:condominiumId/sectors/:sectorId",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
+      ],
     },
     deleteSectorHandler
   );
@@ -83,7 +108,11 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/:condominiumId/sectors/:sectorId/permissions",
     {
-      onRequest: [fastify.authenticate, requireCondoAccess()],
+      onRequest: [
+        fastify.authenticate,
+        requireCondoAccess(),
+        requireCondoPermission("view:structure"),
+      ],
     },
     getSectorPermissionsHandler
   );
@@ -95,6 +124,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.authenticate,
         requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
         requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
       ],
     },
     updateSectorPermissionsHandler
@@ -107,6 +137,7 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.authenticate,
         requireRole(["SYNDIC", "PROFESSIONAL_SYNDIC"]),
         requireCondoAccess(),
+        requireCondoPermission("manage:structure"),
       ],
     },
     updateMemberPermissionOverridesHandler
