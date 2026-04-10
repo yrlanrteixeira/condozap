@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import { whatsappService } from "../whatsapp/whatsapp.service";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 import {
   buildComplaintCreatedMessage,
   buildComplaintStatusMessage,
@@ -238,7 +239,7 @@ export async function createComplaint(
       complaint.priority
     );
     whatsappService
-      .sendTextMessage(resident.phone, message)
+      .sendTextMessage(toWhatsAppDigits(resident.phone), message)
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
@@ -368,7 +369,7 @@ export async function updateComplaintStatus(
       data.notes
     );
     whatsappService
-      .sendTextMessage(complaint.resident.phone, message)
+      .sendTextMessage(toWhatsAppDigits(complaint.resident.phone), message)
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
@@ -426,7 +427,7 @@ export async function updateComplaintPriority(
       data.priority
     );
     whatsappService
-      .sendTextMessage(complaint.resident.phone, message)
+      .sendTextMessage(toWhatsAppDigits(complaint.resident.phone), message)
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
@@ -477,7 +478,7 @@ export async function addComplaintComment(
       data.notes
     );
     whatsappService
-      .sendTextMessage(complaint.resident.phone, message)
+      .sendTextMessage(toWhatsAppDigits(complaint.resident.phone), message)
       .catch((error: unknown) => {
         logger.error({ error }, "Failed to send WhatsApp notification");
       });

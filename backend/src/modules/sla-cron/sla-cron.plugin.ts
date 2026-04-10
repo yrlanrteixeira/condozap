@@ -7,6 +7,7 @@ import { notify } from "../notifier/notifier.service";
 import { runSlaEscalationScan } from "../complaints/complaints.sla";
 import { ComplaintStatus } from "@prisma/client";
 import { whatsappService } from "../whatsapp/whatsapp.service";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 
 const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
   if (process.env.NODE_ENV === "test") {
@@ -67,7 +68,7 @@ const slaCronPlugin: FastifyPluginAsync = async (fastify) => {
                 });
                 if (complaint?.resident.consentWhatsapp) {
                   whatsappService.sendTextMessage(
-                    complaint.resident.phone,
+                    toWhatsAppDigits(complaint.resident.phone),
                     `Sua ocorrência #${action.complaintId} foi encerrada automaticamente. Caso necessário, você pode reabri-la em até ${complaint.condominium.reopenDeadlineDays} dias.`
                   ).catch(() => {});
                 }

@@ -148,11 +148,20 @@ class MessagingService {
   async sendBulk(input: SendBulkInput): Promise<BulkSendResult> {
     const { recipients, message, type = "text", mediaUrl, caption } = input;
 
+    console.log(`[MessagingService] sendBulk provider: ${this.provider}, recipients: ${recipients.length}`);
+
     if (this.provider === "evolution") {
-      const normalizedRecipients = recipients.map(r => ({
-        ...r,
-        phone: toWhatsAppDigits(r.phone)
-      }));
+      const normalizedRecipients = recipients.map(r => {
+        const normalized = toWhatsAppDigits(r.phone);
+        console.log(`[MessagingService] Normalized ${r.phone} -> ${normalized}`);
+        return {
+          ...r,
+          phone: normalized
+        };
+      });
+      
+      console.log(`[MessagingService] Sending batch with numbers:`, normalizedRecipients.map(r => r.phone));
+      
       const result = await evolutionService.sendBatch({
         numbers: normalizedRecipients.map((resident) => resident.phone),
         text: message,
@@ -161,6 +170,8 @@ class MessagingService {
         caption: caption,
         delay: 2000,
       });
+
+      console.log(`[MessagingService] Batch result:`, JSON.stringify(result).slice(0, 500));
 
       return {
         total: result.total,
@@ -175,8 +186,12 @@ class MessagingService {
       };
     }
 
+    const normalizedRecipientsForWhatsapp = recipients.map(r => ({
+      ...r,
+      phone: toWhatsAppDigits(r.phone)
+    }));
     return whatsappService.sendBulkMessages({
-      recipients,
+      recipients: normalizedRecipientsForWhatsapp,
       message,
     });
   }
