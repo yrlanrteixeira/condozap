@@ -64,23 +64,33 @@ type ProvisionResult = ProvisionInviteResult | ProvisionTempResult;
 // Formata telefone para o padrão brasileiro esperado pelo backend (55DXXXXXXXXX ou 55DDXXXXXXXXX)
 function formatPhoneForApi(phone: string): string {
   // Remove todos os caracteres não numéricos
-  let digits = phone.replace(/\D/g, "");
+  const digits = phone.replace(/\D/g, "");
 
   if (!digits) return "";
 
-  // Remove TODOS os 55 do início (para evitar duplicação)
-  // Ex: 555521999999999 -> 21999999999
-  while (digits.startsWith("55")) {
-    digits = digits.substring(2);
+  // Se já tem 12 ou 13 dígitos e começa com 55, está no formato correto
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+    return digits;
   }
 
-  // Agora digits deve ter 10 ou 11 dígitos (DDD + número)
+  // Se tem 10 ou 11 dígitos (DDD + número), adicionar 55
   if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
   }
 
-  // Se ficou vazio ou com comprimento inválido, retorna o original limpo
-  return digits || phone.replace(/\D/g, "");
+  // Se tem mais que 13 dígitos, pode ter 55 duplicado - remove até ficar com formato válido
+  if (digits.length > 13 && digits.startsWith("55")) {
+    let cleaned = digits;
+    while (cleaned.length > 13 && cleaned.startsWith("55")) {
+      cleaned = cleaned.substring(2);
+    }
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      return `55${cleaned}`;
+    }
+  }
+
+  // Fallback: retorna o que sobrou
+  return digits;
 }
 
 function isoToDateInputValue(iso?: string | null): string {

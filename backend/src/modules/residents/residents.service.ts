@@ -14,6 +14,28 @@ function normalizeEmailForComparison(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function normalizePhoneForStorage(phone: string): string {
+  if (!phone) return phone;
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return phone;
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+    return digits;
+  }
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+  if (digits.length > 13 && digits.startsWith("55")) {
+    let cleaned = digits;
+    while (cleaned.length > 13 && cleaned.startsWith("55")) {
+      cleaned = cleaned.substring(2);
+    }
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      return `55${cleaned}`;
+    }
+  }
+  return digits;
+}
+
 export async function createResident(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
@@ -41,12 +63,16 @@ export async function createResident(
     throw new ConflictError("Esta unidade já está ocupada");
   }
 
+  const normalizedData = data.phone
+    ? { ...data, phone: normalizePhoneForStorage(data.phone) }
+    : data;
+
   const resident = await prisma.resident.create({
     data: {
-      ...data,
-      type: (data.type as ResidentType) || "OWNER",
-      consentWhatsapp: data.consentWhatsapp ?? true,
-      consentDataProcessing: data.consentDataProcessing ?? true,
+      ...normalizedData,
+      type: (normalizedData.type as ResidentType) || "OWNER",
+      consentWhatsapp: normalizedData.consentWhatsapp ?? true,
+      consentDataProcessing: normalizedData.consentDataProcessing ?? true,
     },
   });
 
@@ -69,9 +95,6 @@ export async function updateResident(
     throw new NotFoundError("Morador");
   }
 
-  // Só valida duplicidade se o e-mail mudou. Vários moradores podem compartilhar o
-  // placeholder padrão (pendente@talkzap.com); sem isso, qualquer PATCH recorrente
-  // encontraria "outro" morador com o mesmo e-mail e retornaria 409.
   if (
     data.email &&
     normalizeEmailForComparison(data.email) !==
@@ -104,9 +127,13 @@ export async function updateResident(
     }
   }
 
+  const normalizedData = data.phone
+    ? { ...data, phone: normalizePhoneForStorage(data.phone) }
+    : data;
+
   const resident = await prisma.resident.update({
     where: { id },
-    data,
+    data: normalizedData,
   });
 
   logger.info(`Resident ${id} updated`);
