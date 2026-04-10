@@ -36,6 +36,7 @@ const SECURITY_TYPE_LABELS = [
 ] as const;
 
 const NOISE_PERIOD_LABELS = [
+  "Agora",
   "Durante o dia",
   "À noite",
   "Madrugada",
