@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { BadRequestError, ConflictError } from "../../shared/errors";
 import { hashInviteToken } from "../../shared/utils/invite-token";
-import { normalizePhoneDigits } from "../../shared/utils/phone";
+import { normalizePhoneDigits, toWhatsAppDigits } from "../../shared/utils/phone";
 import * as repo from "../user-approval/user-approval.repository";
 import type { RegisterBody } from "./auth.schemas";
 
@@ -42,7 +42,8 @@ export async function registerResidentWithInvite(params: {
       "O telefone informado deve ser o mesmo do convite enviado pelo síndico."
     );
   }
-  const phoneForStorage = phoneNorm;
+  // Usa toWhatsAppDigits para garantir formato correto (com 55)
+  const phoneForStorage = toWhatsAppDigits(phoneNorm);
 
   const tower =
     body.requestedTower?.trim() || invite.tower?.trim() || "";
