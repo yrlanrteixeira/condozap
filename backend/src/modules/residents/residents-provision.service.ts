@@ -4,11 +4,10 @@ import bcrypt from "bcryptjs";
 import { config } from "../../config/env";
 import { BadRequestError, ConflictError } from "../../shared/errors";
 import { hashInviteToken, generateRawInviteToken } from "../../shared/utils/invite-token";
-import { normalizePhoneDigits } from "../../shared/utils/phone";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 import { WhatsAppService } from "../whatsapp/whatsapp.service";
 import * as repo from "../user-approval/user-approval.repository";
 import type { ProvisionResidentBody } from "./residents.schema";
-import { toWhatsAppDigits } from "../../shared/utils/phone";
 
 const whatsapp = new WhatsAppService();
 
