@@ -14,7 +14,7 @@ function normalizeEmailForComparison(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function normalizePhoneForStorage(phone: string): string {
+export function normalizePhoneForStorage(phone: string): string {
   if (!phone) return phone;
   const digits = phone.replace(/\D/g, "");
   if (!digits) return phone;
