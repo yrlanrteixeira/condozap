@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer, Loader2, ImageIcon } from "lucide-react";
+import { CheckCircle2, Circle, MessageSquare, ArrowRight, Bell, Clock, Undo2, RotateCcw, Timer, Loader2, ImageIcon, XCircle } from "lucide-react";
 import type { ComplaintStatusHistory, ComplaintMessage } from "../types";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
@@ -29,7 +29,7 @@ interface ComplaintTimelineProps {
 
 interface TimelineItem {
   id: string;
-  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose" | "chat";
+  type: "created" | "status" | "comment" | "nudge" | "return" | "reopen" | "autoclose" | "chat" | "notification";
   label: string;
   description?: string;
   date: string;
@@ -37,6 +37,56 @@ interface TimelineItem {
   senderName?: string;
   senderRole?: string;
   attachmentUrl?: string;
+  isError?: boolean;
+  errorMessage?: string;
+}
+
+interface ActivityLog {
+  id: string;
+  type: string;
+  description: string;
+  createdAt: string;
+  status: string;
+  errorMessage: string | null;
+}
+
+export function addActivityLogsToTimeline(
+  items: TimelineItem[],
+  activityLogs: ActivityLog[]
+): TimelineItem[] {
+  const notificationItems: TimelineItem[] = activityLogs
+    .filter(log => 
+      log.type === "MESSAGE_SENT" || 
+      log.type === "MESSAGE_FAILED" || 
+      log.type === "COMPLAINT_STATUS_CHANGED"
+    )
+    .map(log => {
+      const isError = log.type === "MESSAGE_FAILED" || log.status === "failed";
+      return {
+        id: log.id,
+        type: "notification" as const,
+        label: log.type === "MESSAGE_SENT" 
+          ? "Notificação WhatsApp" 
+          : log.type === "MESSAGE_FAILED"
+          ? "Notificação falhou"
+          : log.type === "COMPLAINT_STATUS_CHANGED"
+          ? "Status alterado (notificação)"
+          : "Notificação",
+        description: log.description,
+        date: log.createdAt,
+        completed: !isError,
+        isError,
+        errorMessage: log.errorMessage || undefined,
+      };
+    });
+
+  if (notificationItems.length === 0) return items;
+
+  const allItems = [...items, ...notificationItems].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  return allItems;
 }
 
 function buildTimelineItems(
@@ -141,7 +191,7 @@ function buildTimelineItems(
   return items;
 }
 
-function TimelineIcon({ type, completed }: { type: TimelineItem["type"]; completed: boolean }) {
+function TimelineIcon({ type, completed, isError }: { type: TimelineItem["type"]; completed: boolean; isError?: boolean }) {
   const size = "h-4 w-4";
   if (!completed) return <Circle className={cn(size, "text-muted-foreground")} />;
 
@@ -162,6 +212,9 @@ function TimelineIcon({ type, completed }: { type: TimelineItem["type"]; complet
       return <RotateCcw className={cn(size, "text-blue-500")} />;
     case "autoclose":
       return <Timer className={cn(size, "text-gray-500")} />;
+    case "notification":
+      if (isError) return <XCircle className={cn(size, "text-destructive")} />;
+      return <CheckCircle2 className={cn(size, "text-success")} />;
     default:
       return <Clock className={cn(size, "text-muted-foreground")} />;
   }
@@ -211,13 +264,28 @@ function TimelineProxiedImage({ src }: { src: string }) {
   return <img src={blobUrl} alt="Anexo" className="rounded max-h-32 object-contain" />;
 }
 
+interface ComplaintTimelineProps {
+  statusHistory: ComplaintStatusHistory[];
+  createdAt: string;
+  description: string;
+  sectorName?: string;
+  complaintMessages?: ComplaintMessage[];
+  activityLogs?: ActivityLog[];
+}
+
 export function ComplaintTimeline({
   statusHistory,
   createdAt,
   description,
   sectorName,
+  complaintMessages,
+  activityLogs,
 }: ComplaintTimelineProps) {
-  const items = buildTimelineItems(statusHistory, createdAt, description, sectorName);
+  let items = buildTimelineItems(statusHistory, createdAt, description, sectorName, complaintMessages);
+  
+  if (activityLogs && activityLogs.length > 0) {
+    items = addActivityLogsToTimeline(items, activityLogs);
+  }
 
   return (
     <div className="relative pl-6 space-y-4">
@@ -228,18 +296,23 @@ export function ComplaintTimeline({
         <div key={item.id} className="relative flex gap-3">
           {/* Icon dot */}
           <div className="absolute -left-6 mt-0.5 bg-background p-0.5">
-            <TimelineIcon type={item.type} completed={item.completed} />
+            <TimelineIcon type={item.type} completed={item.completed} isError={item.isError} />
           </div>
 
           {/* Content */}
           <div className={cn("flex-1 min-w-0", !item.completed && "opacity-50")}>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-sm">{item.label}</span>
+              <span className={cn("font-medium text-sm", item.isError && "text-destructive")}>{item.label}</span>
               <span className="text-xs text-muted-foreground">{formatDate(item.date)}</span>
             </div>
             {item.description && (
               <p className="text-sm text-muted-foreground mt-0.5 break-words">
                 {item.description}
+              </p>
+            )}
+            {item.errorMessage && (
+              <p className="text-xs text-destructive mt-1 bg-destructive/10 p-2 rounded">
+                Erro: {item.errorMessage}
               </p>
             )}
             {item.attachmentUrl && (

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon } from "lucide-react";
+import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon, Circle, CircleCheck } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -119,6 +119,32 @@ function ProxiedImage({ src, className }: { src: string; className?: string }) {
   );
 }
 
+function WhatsAppStatusIndicator({ status }: { status?: string | null }) {
+  if (!status) return null;
+
+  const label = {
+    SENT: "Enviada",
+    DELIVERED: "Entregue",
+    READ: "Entregue",
+    FAILED: "Falhou",
+  }[status] || status;
+
+  return (
+    <span className={`text-[10px] flex items-center gap-1 ${
+      status === "FAILED" ? "text-destructive" : "text-muted-foreground"
+    }`}>
+      {status === "FAILED" ? (
+        <X className="h-3 w-3" />
+      ) : status === "SENT" ? (
+        <Circle className="h-3 w-3" />
+      ) : (
+        <CircleCheck className="h-3 w-3" />
+      )}
+      {label}
+    </span>
+  );
+}
+
 function MessageBubble({
   message,
   isOwn,
@@ -185,7 +211,12 @@ function MessageBubble({
           </div>
         )}
       </div>
-      <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
+      <div className={`flex items-center gap-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+        <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
+        {isOwn && message.source === "WHATSAPP" && (
+          <WhatsAppStatusIndicator status={message.whatsappStatus} />
+        )}
+      </div>
     </div>
   );
 }

@@ -597,6 +597,8 @@ model ComplaintMessage {
   attachmentUrl String?  @map("attachment_url")
   source        String   @default("WEB")
   isInternal    Boolean  @default(false) @map("is_internal")
+  whatsappStatus String? @map("whatsapp_status")
+  whatsappMessageId String? @map("whatsapp_message_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
   complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
