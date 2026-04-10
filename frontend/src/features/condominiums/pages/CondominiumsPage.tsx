@@ -199,7 +199,7 @@ export function CondominiumsPage() {
         open={!!deletingCondominium}
         onOpenChange={(open) => !open && setDeletingCondominium(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95%] sm:max-w-lg max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Condomínio</AlertDialogTitle>
             <AlertDialogDescription>

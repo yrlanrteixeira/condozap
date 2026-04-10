@@ -273,7 +273,7 @@ function EditDialog({ response, sectors, onClose }: EditDialogProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="w-[95%] sm:max-w-lg max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Editar modelo de resposta</DialogTitle>
           <DialogDescription>
@@ -367,7 +367,7 @@ function DeleteDialog({ response, onClose }: DeleteDialogProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="w-[95%] sm:max-w-lg max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Excluir modelo de resposta</DialogTitle>
           <DialogDescription>

@@ -111,7 +111,7 @@ export function CondominiumForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[95%] sm:max-w-[500px] max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar Condomínio" : "Novo Condomínio"}

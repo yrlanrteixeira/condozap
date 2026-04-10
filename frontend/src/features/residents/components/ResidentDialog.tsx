@@ -411,7 +411,7 @@ export const ResidentDialog = ({
         if (!next) handleClose();
       }}
     >
-      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95%] sm:max-w-[640px] max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
           <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
             {resident ? "Editar Morador" : "Adicionar Novo Morador"}

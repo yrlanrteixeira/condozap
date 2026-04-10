@@ -46,7 +46,7 @@ export function MainLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
       {/* Link de Acessibilidade - Pular para conteúdo */}
       <a
         href="#main-content"
@@ -56,7 +56,7 @@ export function MainLayout() {
       </a>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <Sidebar
           openComplaintsCount={openComplaintsCount}
           collapsed={sidebarCollapsed}
@@ -65,17 +65,25 @@ export function MainLayout() {
 
       {/* Mobile Sidebar (Sheet) */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-64 p-0">
-          <Sidebar
-            openComplaintsCount={openComplaintsCount}
-            collapsed={false}
-            onNavigate={() => setMobileMenuOpen(false)}
-          />
+        <SheetContent 
+          side="left" 
+          className="w-[85dvw] sm:w-80 p-0 bg-card h-[100dvh] sm:h-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMobileMenuOpen(false);
+          }}
+        >
+          <div className="h-full overflow-y-auto">
+            <Sidebar
+              openComplaintsCount={openComplaintsCount}
+              collapsed={false}
+              onNavigate={() => setMobileMenuOpen(false)}
+            />
+          </div>
         </SheetContent>
       </Sheet>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
         <Header
           onMenuClick={() => setMobileMenuOpen(true)}

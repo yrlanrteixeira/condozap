@@ -165,7 +165,7 @@ export function WhatsAppConnectionStatus() {
                   Conectar WhatsApp
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="w-[95%] sm:max-w-md max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Conectar WhatsApp</DialogTitle>
                   <DialogDescription>
