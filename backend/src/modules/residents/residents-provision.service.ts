@@ -4,11 +4,10 @@ import bcrypt from "bcryptjs";
 import { config } from "../../config/env";
 import { BadRequestError, ConflictError } from "../../shared/errors";
 import { hashInviteToken, generateRawInviteToken } from "../../shared/utils/invite-token";
-import { normalizePhoneDigits } from "../../shared/utils/phone";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 import { WhatsAppService } from "../whatsapp/whatsapp.service";
 import * as repo from "../user-approval/user-approval.repository";
 import type { ProvisionResidentBody } from "./residents.schema";
-import { toWhatsAppDigits } from "../../shared/utils/phone";
 
 const whatsapp = new WhatsAppService();
 
@@ -30,7 +29,7 @@ export async function provisionResident(
     throw new BadRequestError("Condomínio não encontrado");
   }
 
-  const phoneNorm = normalizePhoneDigits(data.phone);
+  const phoneNorm = toWhatsAppDigits(data.phone);
 
   if (data.mode === "invite_link") {
     const activeForPhone = await prisma.residentInvite.findFirst({
@@ -146,7 +145,7 @@ export async function provisionResident(
         requestedTower: tower,
         requestedFloor: floor,
         requestedUnit: unit,
-        requestedPhone: data.phone,
+        requestedPhone: phoneNorm,
         consentWhatsapp: data.consentWhatsapp ?? true,
         consentDataProcessing: data.consentDataProcessing ?? true,
       },
@@ -159,7 +158,7 @@ export async function provisionResident(
       userId: u.id,
       name: u.name,
       email: u.email,
-      phone: data.phone,
+      phone: phoneNorm,
       tower,
       floor,
       unit,
@@ -176,7 +175,7 @@ export async function provisionResident(
   let whatsappSent = false;
   let whatsappError: string | undefined;
   try {
-    await whatsapp.sendTextMessage(toWhatsAppDigits(data.phone), message);
+    await whatsapp.sendTextMessage(phoneNorm, message);
     whatsappSent = true;
   } catch (e: unknown) {
     whatsappError = e instanceof Error ? e.message : "Falha ao enviar WhatsApp";

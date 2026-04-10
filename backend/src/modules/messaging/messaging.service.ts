@@ -2,6 +2,7 @@ import { config } from "../../config/env";
 import { BadRequestError } from "../../shared/errors";
 import { evolutionService } from "../evolution/evolution.service";
 import { whatsappService } from "../whatsapp/whatsapp.service";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 import type {
   BulkSendResult,
   SendBulkInput,
@@ -28,10 +29,11 @@ class MessagingService {
   }
 
   async sendText(phone: string, message: string): Promise<SendResult> {
+    const normalizedPhone = toWhatsAppDigits(phone);
     try {
       if (this.provider === "evolution") {
         const response = await evolutionService.sendText({
-          number: phone,
+          number: normalizedPhone,
           text: message,
         });
         return {
@@ -39,7 +41,7 @@ class MessagingService {
           messageId: response.key.id,
         };
       }
-      const response = await whatsappService.sendTextMessage(phone, message);
+      const response = await whatsappService.sendTextMessage(normalizedPhone, message);
       return {
         success: true,
         messageId: response.messageId,
