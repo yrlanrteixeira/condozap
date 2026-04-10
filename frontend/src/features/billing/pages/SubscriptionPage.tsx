@@ -110,11 +110,11 @@ export function SubscriptionPage() {
 
   if (!subscription) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Card>
           <CardContent className="p-8 text-center">
-            <h2 className="mb-2 text-xl font-semibold">Sem assinatura</h2>
-            <p className="text-gray-600">
+            <h2 className="text-xl font-semibold text-foreground mb-2">Sem assinatura</h2>
+            <p className="text-muted-foreground">
               Sua conta não tem uma assinatura ativa. Entre em contato com o
               suporte para configurar seu acesso.
             </p>
@@ -127,10 +127,10 @@ export function SubscriptionPage() {
   const pending = bills?.find((b) => b.status === "PENDING") ?? null;
 
   return (
-    <div className="mx-auto max-w-4xl p-6 space-y-6">
+    <div className="mx-auto max-w-4xl p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Assinatura</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Assinatura</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Gerencie seu plano, pagamentos e histórico de cobranças.
         </p>
       </div>
@@ -148,8 +148,8 @@ export function SubscriptionPage() {
         <CardContent className="space-y-3">
           {subscription.currentPlan && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Plano atual:</span>
-              <span className="font-medium">
+              <span className="text-muted-foreground">Plano atual:</span>
+              <span className="font-medium text-foreground">
                 {subscription.currentPlan.displayName} ·{" "}
                 {formatCents(subscription.currentPlan.pricePerCondoCents)}/condomínio
               </span>
@@ -157,20 +157,20 @@ export function SubscriptionPage() {
           )}
           {subscription.trialEndsAt && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Trial termina em:</span>
-              <span className="font-medium">{formatDate(subscription.trialEndsAt)}</span>
+              <span className="text-muted-foreground">Trial termina em:</span>
+              <span className="font-medium text-foreground">{formatDate(subscription.trialEndsAt)}</span>
             </div>
           )}
           {subscription.currentPeriodEnd && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Próximo vencimento:</span>
-              <span className="font-medium">
+              <span className="text-muted-foreground">Próximo vencimento:</span>
+              <span className="font-medium text-foreground">
                 {formatDate(subscription.currentPeriodEnd)}
               </span>
             </div>
           )}
           {!subscription.setupPaid && (
-            <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-900">
+            <div className="rounded-md bg-info/10 p-3 text-sm text-foreground">
               <strong>Setup de R$ 2.000,00</strong> será cobrado junto do primeiro pagamento.
             </div>
           )}
@@ -224,7 +224,7 @@ export function SubscriptionPage() {
             <CardTitle>Tabela de preços</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-sm text-gray-600">
+            <p className="mb-4 text-sm text-muted-foreground">
               Você paga por condomínio ativo. Quanto mais condomínios, menor o custo
               unitário. O valor da próxima cobrança é calculado automaticamente
               com base na quantidade de condomínios que você gerencia.
@@ -233,15 +233,15 @@ export function SubscriptionPage() {
               {plans.map((p) => (
                 <div
                   key={p.id}
-                  className="rounded-md border bg-white p-4"
+                  className="rounded-md border bg-card p-4"
                 >
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-sm font-semibold text-foreground">
                     {p.displayName}
                   </div>
-                  <div className="mt-1 text-2xl font-bold">
+                  <div className="mt-1 text-2xl font-bold text-foreground">
                     {formatCents(p.pricePerCondoCents)}
                   </div>
-                  <div className="text-xs text-gray-500">por condomínio/mês</div>
+                  <div className="text-xs text-muted-foreground">por condomínio/mês</div>
                 </div>
               ))}
             </div>
@@ -259,7 +259,7 @@ export function SubscriptionPage() {
         </CardHeader>
         <CardContent>
           {!bills || bills.length === 0 ? (
-            <p className="py-6 text-center text-sm text-gray-500">
+            <p className="py-6 text-center text-sm text-muted-foreground">
               Nenhuma cobrança encontrada.
             </p>
           ) : (

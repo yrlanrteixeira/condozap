@@ -267,7 +267,7 @@ export function MessagingPage() {
   );
 
   return (
-    <div className="flex-1 flex items-start justify-center p-3 sm:p-4 md:p-6 lg:p-8">
+    <div className="flex-1 flex items-start justify-center p-4 sm:p-6">
       <div className="w-full max-w-3xl">
         <MessageHeader />
 

@@ -78,8 +78,8 @@ export function UnifiedDashboardPage() {
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard Unificado</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard Unificado</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Visão consolidada de todos os {totalCondos} condomínios sob sua gestão
         </p>
       </div>
@@ -87,21 +87,21 @@ export function UnifiedDashboardPage() {
       {/* Métricas Globais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Condomínios</p>
                 <p className="text-3xl font-bold text-foreground">{totalCondos}</p>
               </div>
-              <div className="p-3 bg-info/10 rounded-full">
-                <Building2 className="h-6 w-6 text-info" />
+              <div className="p-3 bg-primary/10 rounded-full">
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Ocorrências Abertas</p>
@@ -115,7 +115,7 @@ export function UnifiedDashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Críticas (Urgente)</p>
@@ -129,7 +129,7 @@ export function UnifiedDashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Em Andamento</p>
