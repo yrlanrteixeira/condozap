@@ -5,6 +5,7 @@ import {
   getAllHistoryHandler,
   getHistoryByCondominiumHandler,
   getHistoryLogByIdHandler,
+  getActivityLogsHandler,
 } from "./history.controller";
 
 export const historyRoutes: FastifyPluginAsync = async (fastify) => {
@@ -22,6 +23,14 @@ export const historyRoutes: FastifyPluginAsync = async (fastify) => {
       onRequest: [fastify.authenticate],
     },
     getHistoryLogByIdHandler
+  );
+
+  fastify.get(
+    "/activity/:condominiumId",
+    {
+      onRequest: [fastify.authenticate, requireCondoAccess()],
+    },
+    getActivityLogsHandler
   );
 
   fastify.get(

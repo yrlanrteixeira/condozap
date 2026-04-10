@@ -24,6 +24,47 @@ import type { Complaint, ComplaintStatus, ComplaintPriority } from "@/features/c
 import type { Resident } from "@/features/residents/types";
 import { ComplaintStatusBadge } from "../components";
 
+interface SlaIndicatorProps {
+  dueAt: string;
+  status: ComplaintStatus;
+}
+
+const SLA_STATUSES = ["RESOLVED", "CLOSED"];
+
+function SlaIndicator({ dueAt, status }: SlaIndicatorProps) {
+  const isFinalStatus = SLA_STATUSES.includes(status);
+  
+  if (isFinalStatus) {
+    return <span className="text-xs text-muted-foreground">Concluído</span>;
+  }
+
+  const now = new Date();
+  const due = new Date(dueAt);
+  const hoursLeft = Math.floor((due.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+  if (hoursLeft < 0) {
+    return (
+      <span className="text-xs font-medium text-destructive">
+        Atrasado ({Math.abs(hoursLeft)}h)
+      </span>
+    );
+  }
+
+  if (hoursLeft <= 4) {
+    return (
+      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+        {hoursLeft}h restantes
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xs text-muted-foreground">
+      {hoursLeft}h restantes
+    </span>
+  );
+}
+
 interface AdminComplaintsTablePageProps {
   complaints: Complaint[];
   residents: Resident[];
@@ -311,7 +352,9 @@ export function AdminComplaintsTablePage({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
+                <TableHead className="font-bold">Nº</TableHead>
                 <TableHead className="font-bold">Status</TableHead>
+                <TableHead className="font-bold">SLA</TableHead>
                 <TableHead className="font-bold">Categoria</TableHead>
                 <TableHead className="font-bold hidden sm:table-cell">Setor</TableHead>
                 <TableHead className="font-bold">Descrição</TableHead>
@@ -324,7 +367,7 @@ export function AdminComplaintsTablePage({
               {filteredComplaints.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={9}
                     className="text-center py-8 text-muted-foreground"
                   >
                     {hasActiveFilters
@@ -336,10 +379,25 @@ export function AdminComplaintsTablePage({
                 paginatedComplaints.map((complaint) => (
                   <TableRow key={complaint.id} className="hover:bg-muted/30">
                     <TableCell>
+                      <span className="text-sm font-mono text-foreground">
+                        #{complaint.id}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <ComplaintStatusBadge
                         status={complaint.status}
                         size="md"
                       />
+                    </TableCell>
+                    <TableCell>
+                      {complaint.resolutionDueAt ? (
+                        <SlaIndicator
+                          dueAt={complaint.resolutionDueAt}
+                          status={complaint.status}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="text-xs">
