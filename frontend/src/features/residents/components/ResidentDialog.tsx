@@ -63,18 +63,33 @@ type ProvisionResult = ProvisionInviteResult | ProvisionTempResult;
 
 // Formata telefone para o padrão brasileiro esperado pelo backend (55DXXXXXXXXX ou 55DDXXXXXXXXX)
 function formatPhoneForApi(phone: string): string {
+  // Remove todos os caracteres não numéricos
   const digits = phone.replace(/\D/g, "");
 
   if (!digits) return "";
 
-  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+  // Se já tem 12 ou 13 dígitos e começa com 55, está no formato correto
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
     return digits;
   }
 
+  // Se tem 10 ou 11 dígitos (DDD + número), adicionar 55
   if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
   }
 
+  // Se tem mais que 13 dígitos, pode ter 55 duplicado - remove até ficar com formato válido
+  if (digits.length > 13 && digits.startsWith("55")) {
+    let cleaned = digits;
+    while (cleaned.length > 13 && cleaned.startsWith("55")) {
+      cleaned = cleaned.substring(2);
+    }
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      return `55${cleaned}`;
+    }
+  }
+
+  // Fallback: retorna o que sobrou
   return digits;
 }
 
