@@ -71,6 +71,8 @@ export async function listComplaintMessagesHandler(
       attachmentUrl: m.attachmentUrl,
       source: m.source,
       isInternal: m.isInternal,
+      whatsappStatus: m.whatsappStatus,
+      whatsappMessageId: m.whatsappMessageId,
       createdAt: m.createdAt.toISOString(),
     })),
     nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,

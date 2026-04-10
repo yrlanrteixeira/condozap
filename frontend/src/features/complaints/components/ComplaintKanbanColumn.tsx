@@ -96,7 +96,7 @@ export const ComplaintKanbanColumn = ({
   // Desktop: horizontal kanban column with drag-and-drop
   return (
     <div
-      className="flex-1 w-full md:min-w-[280px] md:max-w-[320px] bg-muted/50 rounded-xl flex flex-col max-h-full"
+      className="w-[85vw] sm:w-[320px] shrink-0 bg-muted/30 border border-border/60 shadow-sm rounded-xl flex flex-col max-h-full"
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, id as Complaint['status'])}
     >

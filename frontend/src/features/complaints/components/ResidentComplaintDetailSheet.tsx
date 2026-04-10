@@ -36,6 +36,7 @@ import { api } from "@/lib/api";
 
 import { useComplaint } from "../hooks/useComplaintsApi";
 import { useSendComplaintMessage } from "../hooks/useComplaintChatApi";
+import { useComplaintActivityLogs } from "@/features/history/hooks/useHistoryApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintTimeline } from "./ComplaintTimeline";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
@@ -82,6 +83,7 @@ export function ResidentComplaintDetailSheet({
 
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const sendMessage = useSendComplaintMessage();
+  const activityLogs = useComplaintActivityLogs(complaintId ?? 0);
 
   // Complement mutation — called when status is RETURNED
   const complementMutation = useMutation({
@@ -414,6 +416,7 @@ function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
             description={complaint.content}
             sectorName={complaint.sector?.name}
             complaintMessages={complaint.messages}
+            activityLogs={activityLogs}
           />
         </section>
       ) : null}

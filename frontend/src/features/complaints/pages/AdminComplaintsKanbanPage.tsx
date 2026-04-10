@@ -99,17 +99,12 @@ export const AdminComplaintsKanbanPage = memo(function AdminComplaintsKanbanPage
 
   return (
     <div className="p-4 sm:p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            Gestão de Ocorrências (Kanban)
-          </h2>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            {isMobile
-              ? 'Toque em "Detalhes" para gerenciar. O morador será notificado automaticamente.'
-              : 'Arraste os cartões para atualizar o status. O morador será notificado automaticamente.'}
-          </p>
-        </div>
+      <div className="mb-3 sm:mb-4">
+        <p className="text-muted-foreground text-xs sm:text-sm">
+          {isMobile
+            ? 'Toque em "Detalhes" para gerenciar. O morador será notificado automaticamente.'
+            : 'Arraste os cartões para atualizar o status. O morador será notificado automaticamente.'}
+        </p>
       </div>
 
       {isMobile ? (

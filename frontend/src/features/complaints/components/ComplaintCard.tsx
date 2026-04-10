@@ -30,46 +30,48 @@ export const ComplaintCard = ({
       onDragStart={(e) => onDragStart?.(e, complaint)}
       className={`${
         draggable ? 'cursor-grab active:cursor-grabbing' : ''
-      } hover:shadow-md transition group touch-manipulation`}
+      } hover:shadow-md transition-all group touch-manipulation border-border/50 bg-card`}
       role="button"
       tabIndex={0}
       aria-label={`Ocorrência: ${complaint.content}${
         draggable ? '. Arraste para alterar status.' : ''
       }`}
     >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex gap-2">
-            <Badge className="text-xs bg-muted text-muted-foreground">
+      <CardContent className="p-3 sm:p-3.5">
+        <div className="flex justify-between items-start mb-3 gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            <Badge className="text-[10px] sm:text-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground font-medium border-transparent">
               {complaint.category}
             </Badge>
             {complaint.sector && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[10px] sm:text-xs bg-background">
                 {complaint.sector.name}
               </Badge>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap pt-0.5">
             {formatDate(dateField)}
           </span>
         </div>
-        <p className="text-foreground text-sm mb-3 font-medium">{complaint.content}</p>
-        <div className="text-xs text-muted-foreground">
+        <p className="text-foreground text-xs sm:text-sm mb-3 font-medium line-clamp-3 whitespace-pre-wrap leading-relaxed">
+          {complaint.content}
+        </p>
+        <div className="text-[11px] sm:text-xs text-muted-foreground bg-muted/40 px-2 py-1 rounded inline-flex items-center">
           {resident ? `Unid. ${resident.unit} (${resident.tower})` : 'Anônimo'}
         </div>
 
         {(complaint.responseDueAt || complaint.resolutionDueAt) && (
-          <div className="mt-2 text-[11px] text-muted-foreground space-y-1">
+          <div className="mt-3 bg-muted/30 rounded-md p-2 text-[10px] sm:text-[11px] text-muted-foreground space-y-1.5 border border-border/50">
             {complaint.responseDueAt && (
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-foreground">SLA resposta</span>
-                <span>{formatDateTime(complaint.responseDueAt)}</span>
+                <span className="font-medium">SLA resposta</span>
+                <span className="text-foreground font-medium">{formatDateTime(complaint.responseDueAt)}</span>
               </div>
             )}
             {complaint.resolutionDueAt && (
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-foreground">SLA resolução</span>
-                <span>{formatDateTime(complaint.resolutionDueAt)}</span>
+                <span className="font-medium">SLA resolução</span>
+                <span className="text-foreground font-medium">{formatDateTime(complaint.resolutionDueAt)}</span>
               </div>
             )}
           </div>

@@ -1,8 +1,10 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PrismaClient, ActivityType } from "@prisma/client";
 import type { FastifyBaseLogger } from "fastify";
 import type { NotificationEvent, NotifyResult } from "./notifier.types";
 import { buildTemplate } from "./notifier.templates";
 import { sendAndRecordMessage } from "../whatsapp/whatsapp.service";
+import { createActivityLog } from "../history/activity-log.service";
 
 function getPhoneFromEvent(event: NotificationEvent): string | null {
   switch (event.type) {
@@ -23,6 +25,13 @@ function getPhoneFromEvent(event: NotificationEvent): string | null {
     case "approval_pending":
       return event.syndicPhone;
   }
+}
+
+function getComplaintIdFromEvent(event: NotificationEvent): number | undefined {
+  if ("complaintId" in event) {
+    return getComplaintIdFromEvent(event);
+  }
+  return undefined;
 }
 
 export async function notify(
@@ -67,10 +76,42 @@ export async function notify(
         );
         whatsapp.sent = true;
         whatsapp.messageId = result.messageId;
+
+        await createActivityLog(prisma, {
+          condominiumId,
+          userId: "system",
+          userName: "Sistema",
+          type: ActivityType.MESSAGE_SENT,
+          description: `Notificação automática: ${template.inAppTitle}`,
+          metadata: {
+            eventType: event.type,
+            complaintId: getComplaintIdFromEvent(event),
+            recipientPhone: phone,
+          },
+          targetType: getComplaintIdFromEvent(event) ? "Complaint" : undefined,
+          targetId: getComplaintIdFromEvent(event) ? String(getComplaintIdFromEvent(event)) : undefined,
+        });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err, event }, `notifier: failed to send WhatsApp message — ${message}`);
         whatsapp.error = message;
+
+        await createActivityLog(prisma, {
+          condominiumId,
+          userId: "system",
+          userName: "Sistema",
+          type: ActivityType.MESSAGE_FAILED,
+          description: `Falha ao enviar notificação: ${template.inAppTitle}`,
+          metadata: {
+            eventType: event.type,
+            complaintId: getComplaintIdFromEvent(event),
+            recipientPhone: phone,
+          },
+          targetType: getComplaintIdFromEvent(event) ? "Complaint" : undefined,
+          targetId: getComplaintIdFromEvent(event) ? String(getComplaintIdFromEvent(event)) : undefined,
+          status: "failed",
+          errorMessage: message,
+        }).catch(() => {});
       }
     }
   }

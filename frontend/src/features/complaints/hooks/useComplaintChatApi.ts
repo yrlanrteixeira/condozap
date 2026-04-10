@@ -10,6 +10,8 @@ interface ChatMessage {
   attachmentUrl: string | null;
   source: "WEB" | "WHATSAPP";
   isInternal: boolean;
+  whatsappStatus?: string | null;
+  whatsappMessageId?: string | null;
   createdAt: string;
 }
 
