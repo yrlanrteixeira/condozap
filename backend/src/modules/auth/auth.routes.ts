@@ -23,6 +23,7 @@ import { buildAccessTokenPayload } from "./auth-jwt-payload";
 import { registerResidentWithInvite } from "./register-invite.service";
 import { userToApi } from "./user-response";
 import { getEffectivePermissionsForCondominiums } from "../../auth/effective-permissions";
+import { normalizePhoneForStorage } from "../residents/residents.service";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
@@ -348,11 +349,27 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const userId = (request.user as AuthUser).id;
       const body = updateProfileSchema.parse(request.body) as UpdateProfileBody;
 
+      // Buscar usuário atual para verificar se tem resident vinculado
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { resident: true },
+      });
+
       const updateData: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(body)) {
         if (value !== undefined) {
           updateData[key] = value;
         }
+      }
+
+      // Se o usuário é um morador (tem resident vinculado) e está alterando o telefone,
+      // atualizar também o telefone na tabela resident
+      if (currentUser?.resident && body.contactPhone) {
+        const normalizedPhone = normalizePhoneForStorage(body.contactPhone);
+        await prisma.resident.update({
+          where: { id: currentUser.resident.id },
+          data: { phone: normalizedPhone },
+        });
       }
 
       const user = await prisma.user.update({

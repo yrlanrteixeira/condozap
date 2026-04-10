@@ -195,7 +195,12 @@ export const ResidentDialog = ({
   const hasChanges = !resident
     ? true
     : !originalData ||
-      JSON.stringify(formData) !== JSON.stringify(originalData) ||
+      formData.name !== originalData.name ||
+      formData.email !== originalData.email ||
+      formatPhoneForApi(formData.phone) !== formatPhoneForApi(originalData.phone) ||
+      formData.tower !== originalData.tower ||
+      formData.floor !== originalData.floor ||
+      formData.unit !== originalData.unit ||
       expirationChanged;
 
   const handleSave = async () => {

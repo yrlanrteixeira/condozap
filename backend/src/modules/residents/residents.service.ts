@@ -63,17 +63,24 @@ export async function createResident(
     throw new ConflictError("Esta unidade já está ocupada");
   }
 
-  const normalizedData = data.phone
-    ? { ...data, phone: normalizePhoneForStorage(data.phone) }
-    : data;
+  // Normaliza o telefone APENAS se foi alterado
+  // Compara os dígitos normalizados, não o valor bruto
+  let normalizedData = data;
+  if (data.phone) {
+    const normalizedInput = normalizePhoneForStorage(data.phone);
+    const normalizedExisting = normalizePhoneForStorage(existing.phone || "");
+    
+    if (normalizedInput !== normalizedExisting) {
+      normalizedData = {
+        ...data,
+        phone: normalizedInput,
+      };
+    }
+  }
 
-  const resident = await prisma.resident.create({
-    data: {
-      ...normalizedData,
-      type: (normalizedData.type as ResidentType) || "OWNER",
-      consentWhatsapp: normalizedData.consentWhatsapp ?? true,
-      consentDataProcessing: normalizedData.consentDataProcessing ?? true,
-    },
+  const resident = await prisma.resident.update({
+    where: { id },
+    data: normalizedData,
   });
 
   logger.info(`Resident ${resident.id} created`);
@@ -127,9 +134,14 @@ export async function updateResident(
     }
   }
 
-  const normalizedData = data.phone
-    ? { ...data, phone: normalizePhoneForStorage(data.phone) }
-    : data;
+  // Normaliza o telefone sempre - garante que será enviado ao banco
+  let normalizedData = data;
+  if (data.phone) {
+    normalizedData = {
+      ...data,
+      phone: normalizePhoneForStorage(data.phone),
+    };
+  }
 
   const resident = await prisma.resident.update({
     where: { id },
