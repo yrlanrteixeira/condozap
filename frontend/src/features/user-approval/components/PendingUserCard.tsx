@@ -280,7 +280,7 @@ export function PendingUserCard({
 
       {/* Approve Dialog */}
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95%] sm:max-w-[500px] max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Aprovar Cadastro</DialogTitle>
             <DialogDescription>
@@ -454,7 +454,7 @@ export function PendingUserCard({
 
       {/* Reject Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95%] sm:max-w-[500px] max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Rejeitar Cadastro</DialogTitle>
             <DialogDescription>

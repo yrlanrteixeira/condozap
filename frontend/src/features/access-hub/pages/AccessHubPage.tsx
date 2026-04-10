@@ -335,7 +335,7 @@ function MembershipPermissionsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+      <SheetContent className="w-[100dvw] sm:max-w-lg flex flex-col h-[100dvh] sm:h-auto p-4 sm:p-6">
         <SheetHeader>
           <SheetTitle>Permissões do membro</SheetTitle>
           <SheetDescription>

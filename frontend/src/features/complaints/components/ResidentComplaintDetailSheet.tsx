@@ -200,7 +200,7 @@ export function ResidentComplaintDetailSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-lg flex flex-col p-0"
+          className="w-[100dvw] sm:max-w-lg flex flex-col p-0 h-[100dvh] sm:h-auto"
         >
           {/* Header */}
           <SheetHeader className="p-4 border-b shrink-0">
@@ -303,7 +303,7 @@ export function ResidentComplaintDetailSheet({
 
       {/* Reopen Confirmation Dialog */}
       <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[95%] sm:max-w-lg max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Reabrir Ocorrência</DialogTitle>
             <DialogDescription>

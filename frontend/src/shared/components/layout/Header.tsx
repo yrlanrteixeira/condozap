@@ -54,16 +54,16 @@ export const Header = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-40 flex h-14 sm:h-16 items-center gap-2 sm:gap-4 border-b bg-background px-3 sm:px-4 md:px-6">
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="lg:hidden -ml-1 sm:ml-0"
         onClick={onMenuClick}
         aria-label="Abrir menu"
       >
-        <Menu className="h-6 w-6" />
+        <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
 
       {/* Desktop Sidebar Toggle Button */}
@@ -71,7 +71,7 @@ export const Header = ({
         <Button
           variant="ghost"
           size="icon"
-          className="hidden md:flex"
+          className="hidden lg:flex"
           onClick={onToggleSidebar}
           aria-label={sidebarCollapsed ? "Expandir menu" : "Minimizar menu"}
           title={sidebarCollapsed ? "Expandir menu" : "Minimizar menu"}
@@ -86,14 +86,14 @@ export const Header = ({
 
       {/* Condominium Selector for SUPER_ADMIN */}
       {showCondominiumSelector && (
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Building2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
           <Select
             value={currentCondominiumId || undefined}
             onValueChange={handleCondominiumChange}
           >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selecione um condomínio" />
+            <SelectTrigger className="w-[140px] sm:w-[200px] text-sm">
+              <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
               {condominiumsToShow.map((condo) => (
@@ -107,12 +107,12 @@ export const Header = ({
       )}
 
       {/* Page Title - Empty for now */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         {/* Pode adicionar breadcrumbs ou título da página aqui */}
       </div>
 
       {/* Right Side Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <NotificationBell />
         <ModeToggle />
       </div>

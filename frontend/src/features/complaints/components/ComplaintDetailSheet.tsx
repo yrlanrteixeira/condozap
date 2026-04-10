@@ -191,7 +191,7 @@ export function ComplaintDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col p-0">
+      <SheetContent side="right" className="w-[100dvw] sm:max-w-lg flex flex-col p-0 h-[100dvh] sm:h-auto">
         <SheetHeader className="p-4 border-b shrink-0">
           <SheetTitle className="text-left">
             {complaintId ? `Ocorrência #${complaintId}` : "Detalhe"}
@@ -226,7 +226,7 @@ export function ComplaintDetailSheet({
 
             {/* Return dialog */}
             <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
-              <DialogContent>
+              <DialogContent className="w-[95%] sm:max-w-lg max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Devolver Ocorrência</DialogTitle>
                   <DialogDescription>
