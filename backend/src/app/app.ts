@@ -51,10 +51,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   });
 
   await fastify.register(cors, {
-    origin: (origin, callback) => {
-      // Permite todas as origens em desenvolvimento
-      callback(null, true);
-    },
+    origin: true, // Permite todas as origens
     credentials: true,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

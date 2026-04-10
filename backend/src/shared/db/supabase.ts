@@ -171,9 +171,10 @@ export const getFileFromStorage = async ({
   }
   const contentType = contentTypeMap[ext] || 'application/octet-stream'
 
-  // Convert ReadableStream to Buffer
+  // Convert ReadableStream to Buffer - Supabase returns data as a Blob with body property
+  const blob = data as unknown as { body: { getReader: () => ReadableStreamDefaultReader<Uint8Array> } };
   const chunks: Uint8Array[] = []
-  const reader = data.body.getReader()
+  const reader = blob.body.getReader()
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
