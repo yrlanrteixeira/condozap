@@ -4,6 +4,7 @@ import { prisma } from "../../shared/db/prisma";
 import { NotFoundError } from "../../shared/errors";
 import { ComplaintStatus } from "@prisma/client";
 import { whatsappService } from "../whatsapp/whatsapp.service";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 import { assertValidTransition } from "./complaints.transitions";
 
 const returnSchema = z.object({
@@ -47,7 +48,7 @@ export async function returnComplaintHandler(
   if (complaint.resident.consentWhatsapp) {
     whatsappService
       .sendTextMessage(
-        complaint.resident.phone,
+        toWhatsAppDigits(complaint.resident.phone),
         `Sua ocorrência #${complaintId} foi devolvida: ${body.reason}. Acesse o sistema para complementar.`
       )
       .catch(() => {});
