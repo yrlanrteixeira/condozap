@@ -156,8 +156,10 @@ export function SettingsProfileCard() {
       <BasicProfileCard
         name={name}
         email={user?.email ?? ''}
+        phone={contactPhone}
         saving={savingPublic}
         onNameChange={setName}
+        onPhoneChange={setContactPhone}
         onSubmit={handleSavePublic}
       />
     );
@@ -364,16 +366,20 @@ export function SettingsProfileCard() {
 interface BasicProfileCardProps {
   name: string;
   email: string;
+  phone: string;
   saving: boolean;
   onNameChange: (value: string) => void;
+  onPhoneChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
 function BasicProfileCard({
   name,
   email,
+  phone,
   saving,
   onNameChange,
+  onPhoneChange,
   onSubmit,
 }: BasicProfileCardProps) {
   return (
@@ -397,6 +403,19 @@ function BasicProfileCard({
               minLength={3}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="profile-phone">Telefone</Label>
+            <Input
+              id="profile-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => onPhoneChange(e.target.value)}
+              placeholder="(11) 99999-9999"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este é o número usado para receber notificações via WhatsApp.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="profile-email">E-mail</Label>
