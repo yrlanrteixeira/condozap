@@ -191,9 +191,12 @@ export function ComplaintDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[100dvw] sm:max-w-lg flex flex-col p-0 h-[100dvh] sm:h-auto">
+      <SheetContent 
+        side="right" 
+        className="w-[100dvw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex flex-col p-0 h-[100dvh] sm:h-[85vh] sm:mt-[7.5vh]"
+      >
         <SheetHeader className="p-4 border-b shrink-0">
-          <SheetTitle className="text-left">
+          <SheetTitle className="text-left text-lg sm:text-xl">
             {complaintId ? `Ocorrência #${complaintId}` : "Detalhe"}
           </SheetTitle>
         </SheetHeader>
