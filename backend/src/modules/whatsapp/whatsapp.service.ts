@@ -5,6 +5,7 @@ import { config } from "../../config/env";
 import { evolutionService } from "../evolution/evolution.service";
 import type { WhatsAppWebhookBody } from "./whatsapp.schema";
 import { updateMessageStatus } from "./whatsapp.repository";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 
 export interface WhatsAppMessage {
   to: string;
@@ -43,10 +44,12 @@ export class WhatsAppService {
     to: string,
     message: string
   ): Promise<{ messageId: string }> {
+    const normalizedTo = toWhatsAppDigits(to);
+    
     if (this.provider === "evolution") {
       try {
         const response = await evolutionService.sendText({
-          number: to,
+          number: normalizedTo,
           text: message,
         });
 
@@ -63,7 +66,7 @@ export class WhatsAppService {
     const payload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
-      to: to.replace(/\D/g, ""),
+      to: normalizedTo,
       type: "text",
       text: {
         preview_url: false,

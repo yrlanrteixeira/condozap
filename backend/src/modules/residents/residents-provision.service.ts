@@ -8,15 +8,9 @@ import { normalizePhoneDigits } from "../../shared/utils/phone";
 import { WhatsAppService } from "../whatsapp/whatsapp.service";
 import * as repo from "../user-approval/user-approval.repository";
 import type { ProvisionResidentBody } from "./residents.schema";
+import { toWhatsAppDigits } from "../../shared/utils/phone";
 
 const whatsapp = new WhatsAppService();
-
-function toWhatsAppDigits(phone: string): string {
-  const d = normalizePhoneDigits(phone);
-  if (d.startsWith("55") && d.length >= 12) return d;
-  if (d.length >= 10 && d.length <= 11) return `55${d}`;
-  return d;
-}
 
 function buildFrontendRegisterUrl(condoSlug: string, inviteRaw: string): string {
   const base = config.FRONTEND_URL.replace(/\/$/, "");
