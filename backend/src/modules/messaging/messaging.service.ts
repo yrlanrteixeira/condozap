@@ -59,10 +59,11 @@ class MessagingService {
     imageUrl: string,
     caption?: string
   ): Promise<SendResult> {
+    const normalizedPhone = toWhatsAppDigits(phone);
     try {
       if (this.provider === "evolution") {
         const response = await evolutionService.sendImage(
-          phone,
+          normalizedPhone,
           imageUrl,
           caption
         );
@@ -86,10 +87,11 @@ class MessagingService {
     fileName: string,
     caption?: string
   ): Promise<SendResult> {
+    const normalizedPhone = toWhatsAppDigits(phone);
     try {
       if (this.provider === "evolution") {
         const response = await evolutionService.sendDocument(
-          phone,
+          normalizedPhone,
           documentUrl,
           fileName,
           caption
@@ -118,26 +120,28 @@ class MessagingService {
       fileName,
     } = input;
 
+    const normalizedPhone = toWhatsAppDigits(phone);
+
     switch (type) {
       case "image":
         if (!mediaUrl) {
           throw new BadRequestError("mediaUrl required for image");
         }
-        return this.sendImage(phone, mediaUrl, caption || message);
+        return this.sendImage(normalizedPhone, mediaUrl, caption || message);
       case "document":
         if (!mediaUrl || !fileName) {
           throw new BadRequestError("mediaUrl and fileName required for document");
         }
-        return this.sendDocument(phone, mediaUrl, fileName, caption || message);
+        return this.sendDocument(normalizedPhone, mediaUrl, fileName, caption || message);
       case "audio":
         if (this.provider === "evolution" && mediaUrl) {
-          const response = await evolutionService.sendAudio(phone, mediaUrl);
+          const response = await evolutionService.sendAudio(normalizedPhone, mediaUrl);
           return { success: true, messageId: response.key.id };
         }
         throw new BadRequestError("Audio sending requires Evolution API and mediaUrl");
       case "text":
       default:
-        return this.sendText(phone, message);
+        return this.sendText(normalizedPhone, message);
     }
   }
 
@@ -145,8 +149,12 @@ class MessagingService {
     const { recipients, message, type = "text", mediaUrl, caption } = input;
 
     if (this.provider === "evolution") {
+      const normalizedRecipients = recipients.map(r => ({
+        ...r,
+        phone: toWhatsAppDigits(r.phone)
+      }));
       const result = await evolutionService.sendBatch({
-        numbers: recipients.map((resident) => resident.phone),
+        numbers: normalizedRecipients.map((resident) => resident.phone),
         text: message,
         mediaUrl: type !== "text" ? mediaUrl : undefined,
         mediaType: type !== "text" ? (type as "image" | "document") : undefined,

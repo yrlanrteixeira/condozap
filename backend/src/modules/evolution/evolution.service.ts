@@ -58,6 +58,7 @@ class EvolutionService {
     }
 
     if (!response.ok) {
+      console.error("[Evolution API] Error response:", response.status, raw);
       if (typeof data === "object" && data !== null) {
         const error = data as EvolutionError;
         throw new Error(
@@ -70,6 +71,8 @@ class EvolutionService {
         `Evolution API error (${response.status}): ${String(data || "empty response")}`
       );
     }
+
+    console.log("[Evolution API] Success response:", JSON.stringify(data).slice(0, 500));
 
     return data as T;
   }
@@ -126,6 +129,8 @@ class EvolutionService {
   async sendText(input: SendTextInput): Promise<SendMessageResponse> {
     await this.ensureConnected();
     const formattedNumber = this.formatPhoneNumber(input.number);
+    
+    console.log(`[Evolution API] Sending to ${formattedNumber}:`, input.text.slice(0, 100));
 
     const response = await this.request<SendMessageResponse>(
       `/message/sendText/${this.instanceName}`,
