@@ -8,7 +8,6 @@ import type {
   QRCodeResponse,
   BatchMessageInput,
   BatchMessageResult,
-  EvolutionError,
 } from "./evolution.schema";
 
 class EvolutionService {
@@ -59,12 +58,12 @@ class EvolutionService {
 
     if (!response.ok) {
       if (typeof data === "object" && data !== null) {
-        const error = data as EvolutionError;
-        throw new Error(
-          Array.isArray(error.message)
-            ? error.message.join(", ")
-            : error.message || "Evolution API error"
-        );
+        const error = data as any;
+        const msg = error.message || error.response?.message;
+        const errMsg = Array.isArray(msg)
+          ? msg.map((m: any) => typeof m === "object" ? JSON.stringify(m) : m).join(", ")
+          : String(msg || error.error || "Evolution API error");
+        throw new Error(`Evolution API error: ${errMsg}`);
       }
       throw new Error(
         `Evolution API error (${response.status}): ${String(data || "empty response")}`
