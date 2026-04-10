@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
 import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
 import type { AuthUser } from "../../types/auth";
+import type { ActivityType } from "@prisma/client";
 import {
   historyLogIdParamSchema,
   historyParamsSchema,
@@ -11,6 +12,12 @@ import {
   type HistoryQueryAll,
 } from "./history.schema";
 import { getAllHistory, getHistoryByCondominium, getHistoryLogById } from "./history.service";
+import { getActivityLogs } from "./activity-log.service";
+
+interface ActivityQueryParams {
+  type?: ActivityType;
+  limit?: string;
+}
 
 export async function getAllHistoryHandler(
   request: FastifyRequest,
@@ -65,4 +72,23 @@ export async function getHistoryByCondominiumHandler(
   const history = await getHistoryByCondominium(prisma, condominiumId);
 
   return reply.send(history);
+}
+
+export async function getActivityLogsHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { condominiumId } = historyParamsSchema.parse(
+    request.params
+  ) as HistoryParams;
+
+  const query = request.query as ActivityQueryParams;
+  const limit = query.limit ? parseInt(query.limit, 10) : 100;
+
+  const logs = await getActivityLogs(prisma, condominiumId, {
+    type: query.type as ActivityType | undefined,
+    limit,
+  });
+
+  return reply.send(logs);
 }

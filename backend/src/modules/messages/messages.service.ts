@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ActivityType } from "@prisma/client";
 import { messagingService } from "../messaging";
 import type { SendMessageBody } from "./messages.schema";
 import {
@@ -13,6 +13,7 @@ import {
 } from "./messages.repository";
 import type { AccessContext } from "../../auth/context";
 import { BadRequestError } from "../../shared/errors";
+import { createActivityLog } from "../history/activity-log.service";
 
 export async function listMessages(
   prisma: PrismaClient,
@@ -111,5 +112,48 @@ export async function sendMessage(
     whatsappStatus: result.sent > 0 ? "SENT" : "FAILED",
   });
 
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const activityType = result.failed === result.total ? ActivityType.MESSAGE_FAILED : ActivityType.MESSAGE_SENT;
+  
+  const targetLabel = getTargetLabel(body.target);
+  
+  await createActivityLog(prisma, {
+    condominiumId: body.condominiumId,
+    userId,
+    userName: user?.name || undefined,
+    type: activityType,
+    description: `${result.sent}/${result.total} mensagens enviadas para ${targetLabel}`,
+    metadata: {
+      messageId: message.id,
+      recipients: result.total,
+      sent: result.sent,
+      failed: result.failed,
+      results: result.results?.map(r => ({
+        phone: r.phone,
+        success: r.success,
+        error: r.error,
+      })),
+    },
+    targetId: message.id,
+    targetType: "Message",
+    status: result.failed === result.total ? "failed" : "partial",
+    errorMessage: result.failed > 0 ? `${result.failed} mensagens falharam` : undefined,
+  });
+
   return { status: 200, payload: { message, sendResult: result } };
+}
+
+function getTargetLabel(target: SendMessageBody["target"]): string {
+  switch (target.scope) {
+    case "ALL":
+      return "todos os moradores";
+    case "TOWER":
+      return `torre ${target.tower}`;
+    case "FLOOR":
+      return `andar ${target.floor}`;
+    case "UNIT":
+      return `unidade ${target.unit}`;
+    default:
+      return "destinatários";
+  }
 }

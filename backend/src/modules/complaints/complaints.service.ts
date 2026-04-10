@@ -3,6 +3,7 @@ import {
   PrismaClient,
   ComplaintStatus,
   ComplaintPriority,
+  ActivityType,
 } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import { whatsappService } from "../whatsapp/whatsapp.service";
@@ -29,6 +30,7 @@ import { findSlaConfig, resolveAssignee, addMinutes, runSlaEscalationScan } from
 import { classifyComplaint } from "../automation/automation.engine";
 import { notify } from "../notifier/notifier.service";
 import { sendSSENotification } from "../../plugins/sse";
+import { createActivityLog } from "../history/activity-log.service";
 
 export { runSlaEscalationScan };
 
@@ -374,6 +376,23 @@ export async function updateComplaintStatus(
         logger.error({ error }, "Failed to send WhatsApp notification");
       });
   }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  await createActivityLog(prisma, {
+    condominiumId: complaint.condominiumId,
+    userId,
+    userName: user?.name || undefined,
+    type: ActivityType.COMPLAINT_STATUS_CHANGED,
+    description: `Ocorrência #${id} alterada de ${complaint.status} para ${data.status}`,
+    metadata: {
+      complaintId: id,
+      fromStatus: complaint.status,
+      toStatus: data.status,
+      notes: data.notes,
+    },
+    targetId: String(id),
+    targetType: "Complaint",
+  });
 
   // === IN-APP NOTIFICATION for status change ===
   if (complaint.resident.userId) {

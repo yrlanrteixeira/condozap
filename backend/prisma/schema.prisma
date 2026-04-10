@@ -743,3 +743,32 @@ model WebhookEvent {
   @@index([externalId])
   @@map("webhook_events")
 }
+
+enum ActivityType {
+  MESSAGE_SENT
+  MESSAGE_FAILED
+  COMPLAINT_STATUS_CHANGED
+  COMPLAINT_CREATED
+  RESIDENT_CREATED
+  RESIDENT_UPDATED
+}
+
+model ActivityLog {
+  id              String       @id @default(cuid())
+  condominiumId   String       @map("condominium_id")
+  userId          String       @map("user_id")
+  userName        String?      @map("user_name")
+  type            ActivityType
+  description     String       @db.Text
+  metadata        Json?        @db.JsonB
+  targetId        String?      @map("target_id")
+  targetType      String?      @map("target_type")
+  status          String       @default("success")
+  errorMessage    String?      @map("error_message")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@index([condominiumId, createdAt])
+  @@index([type])
+  @@index([userId])
+  @@map("activity_logs")
+}

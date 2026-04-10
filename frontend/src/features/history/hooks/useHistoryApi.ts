@@ -16,10 +16,11 @@ const historyQueryKeys = {
   list: (condominiumId: string, filters?: HistoryFilters) => 
     [...historyQueryKeys.lists(), condominiumId, filters] as const,
   detail: (id: string) => [...historyQueryKeys.all, 'detail', id] as const,
+  activity: (condominiumId: string) => [...historyQueryKeys.all, 'activity', condominiumId] as const,
 };
 
 // =====================================================
-// Query: Fetch History Logs
+// Query: Fetch History Logs (legacy - complaint status)
 // =====================================================
 
 export function useHistory(condominiumId: string, filters?: HistoryFilters) {
@@ -35,7 +36,48 @@ export function useHistory(condominiumId: string, filters?: HistoryFilters) {
       return data as HistoryLog[];
     },
     enabled: !!condominiumId,
-    staleTime: 1000 * 30, // 30 seconds - history should be relatively fresh
+    staleTime: 1000 * 30,
+  });
+}
+
+// =====================================================
+// Query: Fetch Activity Logs (new - messages, complaints, residents)
+// =====================================================
+
+export interface ActivityLog {
+  id: string;
+  condominiumId: string;
+  userId: string;
+  userName: string | null;
+  type: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  targetId: string | null;
+  targetType: string | null;
+  status: string;
+  errorMessage: string | null;
+  createdAt: string;
+}
+
+export function useActivityLogs(condominiumId: string, options?: {
+  type?: string;
+  limit?: number;
+}) {
+  const endpoint = `/history/activity/${condominiumId}`;
+
+  return useQuery({
+    queryKey: historyQueryKeys.activity(condominiumId),
+    queryFn: async () => {
+      const { data } = await api.get(endpoint, {
+        params: {
+          ...(options?.type && { type: options.type }),
+          ...(options?.limit && { limit: options.limit }),
+        },
+      });
+      return data as ActivityLog[];
+    },
+    enabled: !!condominiumId && condominiumId !== 'all',
+    staleTime: 1000 * 30,
   });
 }
 

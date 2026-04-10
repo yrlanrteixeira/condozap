@@ -1,27 +1,84 @@
-import { History, FileText } from 'lucide-react';
+import { History, FileText, Send, AlertTriangle, UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
 import { PageHeaderSkeleton, ListItemSkeleton } from '@/shared/components/ui/skeleton';
-import { HistoryHeader, HistoryLogList } from '../components';
-import { useHistory } from '../hooks/useHistoryApi';
+import { useActivityLogs, type ActivityLog } from '../hooks/useHistoryApi';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentCondominiumId } from '@/shared/store/slices/condominiumSlice';
+import { formatDateTime } from '@/shared/utils/helpers';
+
+const activityTypeLabels: Record<string, string> = {
+  MESSAGE_SENT: 'Mensagem enviada',
+  MESSAGE_FAILED: 'Mensagem falhou',
+  COMPLAINT_STATUS_CHANGED: 'Status alterado',
+  COMPLAINT_CREATED: 'Ocorrência criada',
+  RESIDENT_CREATED: 'Morador criado',
+  RESIDENT_UPDATED: 'Morador atualizado',
+};
+
+const activityTypeIcons: Record<string, React.ReactNode> = {
+  MESSAGE_SENT: <Send className="h-4 w-4 text-success" />,
+  MESSAGE_FAILED: <XCircle className="h-4 w-4 text-destructive" />,
+  COMPLAINT_STATUS_CHANGED: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+  COMPLAINT_CREATED: <AlertTriangle className="h-4 w-4 text-primary" />,
+  RESIDENT_CREATED: <UserPlus className="h-4 w-4 text-info" />,
+  RESIDENT_UPDATED: <UserPlus className="h-4 w-4 text-info" />,
+};
+
+function ActivityLogItem({ log }: { log: ActivityLog }) {
+  const icon = activityTypeIcons[log.type] || <History className="h-4 w-4 text-muted-foreground" />;
+  const label = activityTypeLabels[log.type] || log.type;
+  const isFailed = log.status === 'failed' || log.type === 'MESSAGE_FAILED';
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 hover:bg-muted/30 transition-colors">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="text-sm font-medium text-foreground">
+            {label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{formatDateTime(log.createdAt)}</span>
+          {isFailed && (
+            <Badge variant="destructive" className="text-xs">Falhou</Badge>
+          )}
+        </div>
+      </div>
+      
+      <div className="text-sm text-muted-foreground mb-2">
+        {log.description}
+      </div>
+      
+      {log.userName && (
+        <div className="text-xs text-muted-foreground">
+          Por: <span className="text-foreground">{log.userName}</span>
+        </div>
+      )}
+      
+      {log.errorMessage && (
+        <div className="mt-2 text-xs text-destructive bg-destructive/10 rounded p-2">
+          Erro: {log.errorMessage}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function HistoryPage() {
   const { user } = useAuth();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
 
-  // SUPER_ADMIN vê histórico global, outros veem apenas do condomínio selecionado
   const condoIdToFetch = user?.role === 'SUPER_ADMIN' ? 'all' : (currentCondominiumId || '');
 
-  // Fetch history logs from API
   const {
     data: logs = [],
     isLoading,
     isError
-  } = useHistory(condoIdToFetch);
+  } = useActivityLogs(currentCondominiumId || '');
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="p-4 sm:p-6 space-y-6">
@@ -39,8 +96,7 @@ export function HistoryPage() {
     );
   }
 
-  // Error or no condominium selected (except for SUPER_ADMIN)
-  if (isError || (!currentCondominiumId && user?.role !== 'SUPER_ADMIN')) {
+  if (isError || !currentCondominiumId) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="border-border">
@@ -58,7 +114,6 @@ export function HistoryPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-primary/10">
           <History className="h-6 w-6 text-primary" />
@@ -72,7 +127,15 @@ export function HistoryPage() {
       </div>
 
       {logs.length > 0 ? (
-        <HistoryLogList logs={logs} />
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-4">
+              {logs.map((log) => (
+                <ActivityLogItem key={log.id} log={log} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center p-12">

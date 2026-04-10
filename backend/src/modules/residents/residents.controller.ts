@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../shared/db/prisma";
+import { ActivityType } from "@prisma/client";
 import {
   condominiumIdParamSchema,
   createResidentSchema,
@@ -28,6 +29,7 @@ import {
   findResidentsForUser,
   getAccessContext,
 } from "./residents.repository";
+import { createActivityLog } from "../history/activity-log.service";
 import { AuthUser } from "../../types/auth";
 import { isCondominiumAllowed } from "../../auth/context";
 
@@ -95,6 +97,22 @@ export async function createResidentHandler(
   }
 
   const resident = await createResident(prisma, request.log, body);
+
+  await createActivityLog(prisma, {
+    condominiumId: body.condominiumId,
+    userId: user.id,
+    userName: user.name,
+    type: ActivityType.RESIDENT_CREATED,
+    description: `Morador ${resident.name} criado (Unidade ${resident.unit}, Torre ${resident.tower})`,
+    metadata: {
+      residentId: resident.id,
+      unit: resident.unit,
+      tower: resident.tower,
+    },
+    targetId: resident.id,
+    targetType: "Resident",
+  });
+
   return reply.status(201).send(resident);
 }
 
