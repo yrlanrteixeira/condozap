@@ -81,8 +81,8 @@ export function useActivityLogs(condominiumId: string, options?: {
   });
 }
 
-export function useComplaintActivityLogs(complaintId: number) {
-  const { data: logs = [] } = useActivityLogs("", { limit: 200 });
+export function useComplaintActivityLogs(condominiumId: string, complaintId: number) {
+  const { data: logs = [] } = useActivityLogs(condominiumId, { limit: 200 });
   return logs.filter(log => 
     (log.targetType === "Complaint" && log.targetId === String(complaintId)) ||
     (log.metadata?.complaintId === complaintId)

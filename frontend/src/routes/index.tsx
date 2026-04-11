@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import {
   ApprovalGuard,
   FirstPasswordGuard,
@@ -29,6 +29,7 @@ import { platformBillingRoutes } from "@/features/platform-billing";
 import { accessHubRoutes } from "@/features/access-hub/routes";
 import type { FeatureRoute } from "@/routes/types";
 import { PageLoader } from "@/shared/components/ui/page-loader";
+import { AnimatePresence, motion } from "framer-motion";
 
 const AccessDeniedPage = lazy(() =>
   import("@/pages/AccessDenied").then((m) => ({ default: m.AccessDeniedPage }))
@@ -37,6 +38,20 @@ const AccessDeniedPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
 );
+
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="h-full"
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export function AppRoutes() {
   const protectedRoutes: FeatureRoute[] = [
@@ -59,69 +74,71 @@ export function AppRoutes() {
   ];
 
   return (
-    <Routes>
-      {authRoutes.map((route) => (
-        <Route key={route.path} path={route.path} element={route.element} />
-      ))}
-
-      <Route
-        path={pendingApprovalRoute.path}
-        element={pendingApprovalRoute.element}
-      />
-
-      <Route
-        path="/access-denied"
-        element={
-          <Suspense fallback={<PageLoader />}>
-            <AccessDeniedPage />
-          </Suspense>
-        }
-      />
-
-      <Route
-        path="/auth/first-access"
-        element={
-          <ProtectedRoute>
-            <FirstAccessPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute>
-            <FirstPasswordGuard>
-              <ApprovalGuard>
-                <MainLayout />
-              </ApprovalGuard>
-            </FirstPasswordGuard>
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<InitialRedirect />} />
-
-        {protectedRoutes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={route.element}
-          />
+    <AnimatePresence mode="wait">
+      <Routes>
+        {authRoutes.map((route) => (
+          <Route key={route.path} path={route.path} element={route.element} />
         ))}
 
         <Route
-          path="settings"
+          path={pendingApprovalRoute.path}
+          element={pendingApprovalRoute.element}
+        />
+
+        <Route
+          path="/access-denied"
           element={
-            <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
-              <Suspense fallback={<PageLoader />}>
-                <SettingsPage />
-              </Suspense>
-            </PermissionGuard>
+            <Suspense fallback={<PageLoader />}>
+              <AccessDeniedPage />
+            </Suspense>
           }
         />
 
-        <Route path="*" element={<InitialRedirect />} />
-      </Route>
-    </Routes>
+        <Route
+          path="/auth/first-access"
+          element={
+            <ProtectedRoute>
+              <FirstAccessPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <FirstPasswordGuard>
+                <ApprovalGuard>
+                  <MainLayout />
+                </ApprovalGuard>
+              </FirstPasswordGuard>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<InitialRedirect />} />
+
+          {protectedRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={<PageWrapper>{route.element}</PageWrapper>}
+            />
+          ))}
+
+          <Route
+            path="settings"
+            element={
+              <PermissionGuard permission={Permissions.VIEW_SETTINGS}>
+                <Suspense fallback={<PageLoader />}>
+                  <SettingsPage />
+                </Suspense>
+              </PermissionGuard>
+            }
+          />
+
+          <Route path="*" element={<InitialRedirect />} />
+        </Route>
+      </Routes>
+    </AnimatePresence>
   );
 }

@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { AppProvider } from "@/shared/contexts";
 import { ThemeProvider } from "@/shared/components/theme-provider";
 import { Toaster } from "@/shared/components/ui/toaster";
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { store, persistor } from "@/shared/store";
 import { setReduxStore } from "@/lib/api-client";
 import { setApiStore } from "@/lib/api";
@@ -31,15 +32,17 @@ export default function App() {
       <PersistGate loading={<LoadingFallback />} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider defaultTheme="system" storageKey="talkzap-ui-theme">
-            <BrowserRouter>
-              <AppProvider>
-                <AppRoutes />
-                <Toaster />
-              </AppProvider>
-            </BrowserRouter>
-            {import.meta.env.DEV && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
+            <TooltipProvider delayDuration={300}>
+              <BrowserRouter>
+                <AppProvider>
+                  <AppRoutes />
+                  <Toaster />
+                </AppProvider>
+              </BrowserRouter>
+              {import.meta.env.DEV && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+            </TooltipProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </PersistGate>
