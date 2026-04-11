@@ -74,7 +74,7 @@ export function useActivityLogs(condominiumId: string, options?: {
           ...(options?.limit && { limit: options.limit }),
         },
       });
-      return data as ActivityLog[];
+      return (data || []) as ActivityLog[];
     },
     enabled: !!condominiumId && condominiumId !== 'all',
     staleTime: 1000 * 30,
@@ -89,7 +89,7 @@ export function useComplaintActivityLogs(condominiumId: string, complaintId: num
   
   const { data: logs = [], isLoading, isError } = useActivityLogs(condominiumId, { limit: 200 });
   
-  const filteredLogs = logs.filter(log => 
+  const filteredLogs = (logs || []).filter(log => 
     (log.targetType === "Complaint" && log.targetId === String(complaintId)) ||
     (log.metadata?.complaintId === complaintId)
   );
