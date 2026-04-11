@@ -346,6 +346,12 @@ export function ComplaintChat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  useEffect(() => {
+    if (isInternal) {
+      setNotifyWhatsapp(false);
+    }
+  }, [isInternal]);
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -406,7 +412,7 @@ export function ComplaintChat({
         content: "🎤 Mensagem de áudio",
         attachmentUrl: response.data.url,
         isInternal: showInternalToggle ? isInternal : false,
-        notifyWhatsapp,
+        notifyWhatsapp: showInternalToggle && isInternal ? false : notifyWhatsapp,
       });
       cancelRecording();
     } catch (err) {
@@ -469,7 +475,7 @@ export function ComplaintChat({
         content: isImage ? "📎 Anexo" : "📎 Anexo",
         attachmentUrl: response.data.url,
         isInternal: showInternalToggle ? isInternal : false,
-        notifyWhatsapp,
+        notifyWhatsapp: showInternalToggle && isInternal ? false : notifyWhatsapp,
       });
       cancelPendingFile();
     } catch (err) {
@@ -503,7 +509,7 @@ export function ComplaintChat({
             complaintId,
             content,
             isInternal: showInternalToggle ? isInternal : false,
-            notifyWhatsapp,
+            notifyWhatsapp: showInternalToggle && isInternal ? false : notifyWhatsapp,
           });
         }
       }
@@ -736,9 +742,58 @@ export function ComplaintChat({
         onChange={handleFileSelect}
       />
 
-      {/* Input (only show when not recording and no audio/file preview) */}
+      {/* Control Bar (Admin only) */}
+      {showInternalToggle && !isRecording && !audioUrl && !pendingFile && (
+        <div className="flex items-center gap-1.5 px-3 py-2 border-t border-border bg-muted/20">
+          <button
+            type="button"
+            onClick={() => setActionType(actionType === "progress" ? "message" : "progress")}
+            className={`flex flex-1 justify-center items-center gap-1.5 px-2 py-2 rounded-md text-xs transition-all border ${
+              actionType === "progress"
+                ? "bg-primary text-primary-foreground font-medium shadow border-primary"
+                : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground border-border"
+            }`}
+            title="Registrar andamento / histórico"
+          >
+            <NotebookPen className="h-3.5 w-3.5" />
+            <span className="truncate">Andamento</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsInternal(!isInternal)}
+            className={`flex flex-1 justify-center items-center gap-1.5 px-2 py-2 rounded-md text-xs transition-all border ${
+              isInternal
+                ? "bg-amber-100 text-amber-800 font-medium shadow border-amber-200"
+                : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground border-border"
+            }`}
+            title={isInternal ? "Mensagem interna (oculta do morador)" : "Mensagem pública (visível)"}
+          >
+            {isInternal ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+            <span className="truncate">{isInternal ? "Interno" : "Público"}</span>
+          </button>
+
+          {!isInternal && (
+            <button
+              type="button"
+              onClick={() => setNotifyWhatsapp(!notifyWhatsapp)}
+              className={`flex flex-1 justify-center items-center gap-1.5 px-2 py-2 rounded-md text-xs transition-all border ${
+                notifyWhatsapp
+                  ? "bg-green-100 text-green-800 font-medium shadow border-green-200"
+                  : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground border-border"
+              }`}
+              title="Notificar usuário também no WhatsApp"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="truncate">WhatsApp</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Input Layout */}
       {!isRecording && !audioUrl && !pendingFile && (
-        <div className="flex items-center gap-2 p-3 border-t bg-muted/10">
+        <div className={`flex items-center gap-2 p-3 ${!showInternalToggle ? "border-t border-border" : ""} bg-muted/10`}>
           {/* Templates button - only for admin variant */}
           {showInternalToggle && (
             <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
@@ -753,7 +808,7 @@ export function ComplaintChat({
                   <FileText className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-2" align="start">
+              <PopoverContent className="w-[calc(100vw-24px)] sm:w-80 p-2" align="start">
                 <Input
                   placeholder="Buscar template..."
                   value={templateSearch}
@@ -764,7 +819,7 @@ export function ComplaintChat({
                   {filteredTemplates.map((t: CannedResponse) => (
                     <button
                       key={t.id}
-                      className="w-full text-left p-2 rounded hover:bg-muted text-sm"
+                      className="w-full text-left p-2 rounded hover:bg-muted text-sm border border-transparent hover:border-border"
                       onClick={() => {
                         setInputValue(t.content);
                         setTemplateOpen(false);
@@ -786,6 +841,7 @@ export function ComplaintChat({
               </PopoverContent>
             </Popover>
           )}
+          
           <Button
             type="button"
             size="sm"
@@ -796,6 +852,7 @@ export function ComplaintChat({
           >
             <Paperclip className="h-4 w-4" />
           </Button>
+          
           <Button
             type="button"
             size="sm"
@@ -806,60 +863,7 @@ export function ComplaintChat({
           >
             <Mic className="h-4 w-4" />
           </Button>
-          {/* Action type selector - only for admin */}
-          {showInternalToggle && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActionType(actionType === "progress" ? "message" : "progress")}
-                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                    actionType === "progress"
-                      ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                      : "text-muted-foreground hover:bg-muted border border-transparent"
-                  }`}
-                  title={actionType === "progress" ? "Modo: Registrar Andamento Formal" : "Modo: Enviar Mensagem"}
-                >
-                  <NotebookPen className="h-3 w-3" />
-                  <span>Andamento</span>
-                </button>
-              </div>
 
-              <div className="w-[1px] h-4 bg-border hidden sm:block" />
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsInternal(!isInternal)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                    isInternal
-                      ? "bg-amber-100 text-amber-700 border border-amber-200 font-medium"
-                      : "text-muted-foreground hover:bg-muted border border-transparent"
-                  }`}
-                  title={isInternal ? "Mensagem interna" : "Mensagem pública"}
-                >
-                  {isInternal ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
-                  <span>{isInternal ? "Interno" : "Público"}</span>
-                </button>
-
-                {!isInternal && (
-                  <button
-                    type="button"
-                    onClick={() => setNotifyWhatsapp(!notifyWhatsapp)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                      notifyWhatsapp
-                        ? "bg-green-100 text-green-700 border border-green-200 font-medium"
-                        : "text-muted-foreground hover:bg-muted border border-transparent"
-                    }`}
-                    title={notifyWhatsapp ? "Vai notificar no WhatsApp" : "Não notificar no WhatsApp (apenas sistema)"}
-                  >
-                    <MessageCircle className="h-3 w-3" />
-                    <span>WhatsApp</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
           <Input
             placeholder={placeholder}
             value={inputValue}
@@ -868,6 +872,7 @@ export function ComplaintChat({
             disabled={sendMessage.isPending}
             className="flex-1 h-9 text-sm"
           />
+          
           <Button
             size="sm"
             onClick={handleSend}

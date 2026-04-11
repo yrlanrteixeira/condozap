@@ -40,6 +40,7 @@ export const createSector = async (
     condominiumId,
     name: body.name,
     categories: body.categories ?? [],
+    allowedForwardingIds: body.allowedForwardingIds ?? [],
   });
   await prisma.sectorPermission.createMany({
     data: DEFAULT_SECTOR_PERMISSIONS.map((action) => ({
@@ -74,6 +75,7 @@ export const updateSector = async (
   return repoUpdateSector(prisma, sectorId, {
     ...(body.name && { name: body.name }),
     ...(body.categories && { categories: body.categories }),
+    ...(body.allowedForwardingIds && { allowedForwardingIds: body.allowedForwardingIds }),
   });
 };
 

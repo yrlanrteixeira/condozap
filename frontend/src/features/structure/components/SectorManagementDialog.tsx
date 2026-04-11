@@ -821,6 +821,7 @@ export const SectorManagementDialog = ({
   const [sectorName, setSectorName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryInput, setCategoryInput] = useState("");
+  const [allowedForwardingIds, setAllowedForwardingIds] = useState<string[]>([]);
 
   // Expanded sections state for the edit form
   const [showPermissions, setShowPermissions] = useState(false);
@@ -858,6 +859,7 @@ export const SectorManagementDialog = ({
     if (editingSectorId && !showForm && editingSector) {
       setSectorName(editingSector.name);
       setCategories(editingSector.categories ?? []);
+      setAllowedForwardingIds(editingSector.allowedForwardingIds ?? []);
     }
   }, [editingSectorId, showForm, editingSector]);
 
@@ -867,6 +869,7 @@ export const SectorManagementDialog = ({
     setSectorName("");
     setCategories([]);
     setCategoryInput("");
+    setAllowedForwardingIds([]);
     setShowPermissions(false);
     setShowMembers(false);
     setShowCreateMember(false);
@@ -903,11 +906,13 @@ export const SectorManagementDialog = ({
     id: string;
     name: string;
     categories: string[];
+    allowedForwardingIds?: string[];
   }) => {
     setEditingSectorId(sector.id);
     setSectorName(sector.name);
     setCategories([...sector.categories]);
     setCategoryInput("");
+    setAllowedForwardingIds([...(sector.allowedForwardingIds ?? [])]);
     setShowPermissions(false);
     setShowMembers(false);
     setShowCreateMember(false);
@@ -951,6 +956,7 @@ export const SectorManagementDialog = ({
           sectorId: editingSectorId,
           name: sectorName.trim(),
           categories,
+          allowedForwardingIds,
         });
         toast({
           title: "Setor atualizado!",
@@ -963,6 +969,7 @@ export const SectorManagementDialog = ({
           condominiumId,
           name: sectorName.trim(),
           categories,
+          allowedForwardingIds,
         });
         toast({
           title: "Setor criado!",
@@ -1074,6 +1081,41 @@ export const SectorManagementDialog = ({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* ── Routing / Encaminhamentos ──────────────────────── */}
+                <div className="space-y-2">
+                  <Label>Regras de Encaminhamento</Label>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    Selecione quais setores este setor pode encaminhar as ocorrências. (Apenas Administração já está liberado por padrão para todos).
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 bg-muted/20 p-3 rounded-md border border-border">
+                    {sectors.filter(s => s.id !== editingSectorId).length === 0 ? (
+                      <span className="text-xs text-muted-foreground">Nenhum outro setor disponível.</span>
+                    ) : (
+                      sectors.filter(s => s.id !== editingSectorId).map(sector => (
+                      <div key={sector.id} className="flex items-center gap-2">
+                         <Switch
+                           id={`forward-${sector.id}`}
+                           checked={allowedForwardingIds.includes(sector.id)}
+                           onCheckedChange={(checked) => {
+                             if (checked) {
+                               setAllowedForwardingIds([...allowedForwardingIds, sector.id]);
+                             } else {
+                               setAllowedForwardingIds(allowedForwardingIds.filter(id => id !== sector.id));
+                             }
+                           }}
+                         />
+                         <Label 
+                           htmlFor={`forward-${sector.id}`} 
+                           className="text-sm cursor-pointer font-medium hover:text-primary transition-colors"
+                         >
+                           {sector.name}
+                         </Label>
+                      </div>
+                      ))
+                    )}
+                  </div>
                 </div>
 
                 {/* ── Permissions (only when editing) ───────────────── */}

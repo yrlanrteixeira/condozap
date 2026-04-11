@@ -8,11 +8,13 @@ export const sectorParamsSchema = z.object({
 export const createSectorSchema = z.object({
   name: z.string().min(2),
   categories: z.array(z.string().min(1)).default([]),
+  allowedForwardingIds: z.array(z.string()).default([]),
 });
 
 export const updateSectorSchema = z.object({
   name: z.string().min(2).optional(),
   categories: z.array(z.string().min(1)).optional(),
+  allowedForwardingIds: z.array(z.string()).optional(),
 });
 
 export const setMembersSchema = z.object({

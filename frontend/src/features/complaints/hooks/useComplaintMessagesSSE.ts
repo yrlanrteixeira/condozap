@@ -15,7 +15,7 @@ export function useComplaintMessagesSSE({
   enabled = true,
 }: UseComplaintMessagesSSEOptions) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const eventSourceRef = useRef<EventSource | null>(null);
   const onMessageRef = useRef<((message: ChatMessage) => void) | null>(null);
 
@@ -24,7 +24,7 @@ export function useComplaintMessagesSSE({
   }, []);
 
   useEffect(() => {
-    if (!enabled || !complaintId || complaintId <= 0 || !user?.id) {
+    if (!enabled || !complaintId || complaintId <= 0 || !user?.id || !token) {
       return;
     }
 
@@ -33,7 +33,6 @@ export function useComplaintMessagesSSE({
       eventSourceRef.current.close();
     }
 
-    const token = localStorage.getItem("auth_token");
     const eventSource = new EventSource(
       `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`,
       {
@@ -90,7 +89,7 @@ export function useComplaintMessagesSSE({
       eventSource.close();
       eventSourceRef.current = null;
     };
-  }, [complaintId, enabled, user?.id, queryClient]);
+  }, [complaintId, enabled, user?.id, token, queryClient]);
 
   return {
     setOnMessage,

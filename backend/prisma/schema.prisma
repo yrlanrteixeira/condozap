@@ -429,6 +429,7 @@ model Sector {
   complaintAssignments ComplaintAssignment[]
   cannedResponses      CannedResponse[]
   permissions          SectorPermission[]
+  allowedForwardingIds String[]              @default([]) @map("allowed_forwarding_ids")
 
   @@unique([condominiumId, name])
   @@index([condominiumId])
