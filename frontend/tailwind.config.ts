@@ -77,6 +77,10 @@ export default {
           "sans-serif",
         ],
       },
+      boxShadow: {
+        focus: "0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring))",
+        "focus-sm": "0 0 0 1px hsl(var(--background)), 0 0 0 2px hsl(var(--ring))",
+      },
       keyframes: {
         "accordion-down": {
           from: {

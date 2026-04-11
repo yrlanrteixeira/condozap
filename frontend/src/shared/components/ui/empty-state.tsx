@@ -1,9 +1,9 @@
+import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type LucideIcon } from "lucide-react";
 import { Button } from "./button";
 
 interface EmptyStateProps {
-  icon?: LucideIcon;
+  icon: LucideIcon;
   title: string;
   description?: string;
   action?: {
@@ -27,19 +27,17 @@ export function EmptyState({
         className
       )}
     >
-      {Icon && (
-        <div className="mb-4 rounded-full bg-muted p-4">
-          <Icon className="h-8 w-8 text-muted-foreground" />
-        </div>
-      )}
-      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <div className="rounded-full bg-muted p-4 mb-4">
+        <Icon className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
           {description}
         </p>
       )}
       {action && (
-        <Button onClick={action.onClick} className="mt-4" size="sm">
+        <Button onClick={action.onClick}>
           {action.label}
         </Button>
       )}
