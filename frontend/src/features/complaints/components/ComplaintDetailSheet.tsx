@@ -27,11 +27,6 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/components/ui/popover";
-import {
   MessageSquare,
   User,
   Loader2,
@@ -39,13 +34,11 @@ import {
   Clock,
   CheckCircle,
   Bell,
-  FileText,
   Undo2,
 } from "lucide-react";
 import { useToast } from "@/shared/components/ui/use-toast";
 import {
   useComplaint,
-  useAddComplaintComment,
   useUpdateComplaintStatus,
   useNudgeComplaint,
 } from "../hooks/useComplaintsApi";
@@ -55,7 +48,7 @@ import { ComplaintChat } from "./ComplaintChat";
 import { CsatDisplay } from "./CsatDisplay";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { api } from "@/lib/api";
-import type { ComplaintDetail, ComplaintStatus, CannedResponse } from "../types";
+import type { ComplaintDetail, ComplaintStatus } from "../types";
 import { formatDateTime } from "@/shared/utils/helpers";
 
 const ACTION_COMMENT = "COMMENT";
@@ -81,16 +74,12 @@ export function ComplaintDetailSheet({
   open,
   onOpenChange,
 }: ComplaintDetailSheetProps) {
-  const [commentText, setCommentText] = useState("");
-  const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateSearch, setTemplateSearch] = useState("");
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [returnReason, setReturnReason] = useState("");
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
-  const addComment = useAddComplaintComment();
   const updateStatus = useUpdateComplaintStatus();
   const nudgeMutation = useNudgeComplaint();
 
@@ -114,28 +103,10 @@ export function ComplaintDetailSheet({
       ?.find((s) => s.sectorId === complaint?.sectorId)
       ?.permissions ?? [];
 
-  const canComment = !isSectorMember || sectorPermissions.includes("COMMENT");
   const canChangeStatus = !isSectorMember || sectorPermissions.includes("CHANGE_STATUS");
   const canResolve = !isSectorMember || sectorPermissions.includes("RESOLVE");
   const canReturn = !isSectorMember || sectorPermissions.includes("RETURN");
   const canReassign = !isSectorMember || sectorPermissions.includes("REASSIGN");
-
-  const { data: cannedResponses = [] } = useQuery({
-    queryKey: ["canned-responses", complaint?.condominiumId, complaint?.sectorId],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (complaint?.condominiumId) params.set("condominiumId", complaint.condominiumId);
-      if (complaint?.sectorId) params.set("sectorId", complaint.sectorId);
-      const { data } = await api.get(`/canned-responses?${params}`);
-      return data;
-    },
-    enabled: !!complaint,
-  });
-
-  const filteredTemplates = cannedResponses.filter((t: CannedResponse) =>
-    t.title.toLowerCase().includes(templateSearch.toLowerCase()) ||
-    t.content.toLowerCase().includes(templateSearch.toLowerCase())
-  );
 
   const handleNudge = async () => {
     if (!complaintId) return;
@@ -154,17 +125,6 @@ export function ComplaintDetailSheet({
         variant: "error",
         duration: 3000,
       });
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!complaintId || !commentText.trim()) return;
-    try {
-      await addComment.mutateAsync({ id: complaintId, notes: commentText.trim() });
-      setCommentText("");
-      toast({ title: "Comentário adicionado", description: "O morador será notificado.", variant: "success" });
-    } catch {
-      toast({ title: "Erro", description: "Não foi possível adicionar o comentário.", variant: "destructive" });
     }
   };
 
@@ -254,73 +214,6 @@ export function ComplaintDetailSheet({
               </DialogContent>
             </Dialog>
 
-            {/* Form: Adicionar comentário — only for users with COMMENT permission */}
-            {canComment && (
-              <div className="p-4 border-t bg-muted/30 shrink-0">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-foreground">Registrar andamento</label>
-                  <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Templates
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-2" align="end">
-                      <Input
-                        placeholder="Buscar template..."
-                        value={templateSearch}
-                        onChange={(e) => setTemplateSearch(e.target.value)}
-                        className="mb-2"
-                      />
-                      <div className="max-h-60 overflow-y-auto space-y-1">
-                        {filteredTemplates.map((t: CannedResponse) => (
-                          <button
-                            key={t.id}
-                            className="w-full text-left p-2 rounded hover:bg-muted text-sm"
-                            onClick={() => {
-                              setCommentText(t.content);
-                              setTemplateOpen(false);
-                              setTemplateSearch("");
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{t.title}</p>
-                              {t.sector?.name && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t.sector.name}</span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">{t.content}</p>
-                          </button>
-                        ))}
-                        {filteredTemplates.length === 0 && (
-                          <p className="text-sm text-muted-foreground p-2 text-center">Nenhum template encontrado</p>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <Textarea
-                  placeholder="Descreva o que está sendo feito..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  className="min-h-[80px] mb-2"
-                  disabled={addComment.isPending}
-                />
-                <Button
-                  onClick={handleAddComment}
-                  disabled={!commentText.trim() || addComment.isPending}
-                  className="w-full"
-                >
-                  {addComment.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                  )}
-                  Adicionar comentário
-                </Button>
-              </div>
-            )}
           </>
         )}
       </SheetContent>

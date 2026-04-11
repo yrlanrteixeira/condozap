@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
 import type { ChatMessage } from "./useComplaintChatApi";
 import { queryKeys } from "../utils/queryKeys";
+import { config } from "@/lib/config";
 
 interface UseComplaintMessagesSSEOptions {
   complaintId: number | null;
@@ -32,9 +33,9 @@ export function useComplaintMessagesSSE({
       eventSourceRef.current.close();
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || "";
+    const token = localStorage.getItem("auth_token");
     const eventSource = new EventSource(
-      `${apiUrl}/api/complaint-messages/${complaintId}/stream`,
+      `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`,
       {
         withCredentials: true,
       }

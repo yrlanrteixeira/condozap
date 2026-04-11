@@ -160,10 +160,11 @@ export async function sendComplaintMessageHandler(
 ) {
   const user = request.user as AuthUser;
   const complaintId = Number((request.params as { complaintId: string }).complaintId);
-  const { content, attachmentUrl, isInternal } = request.body as {
+  const { content, attachmentUrl, isInternal, notifyWhatsapp = true } = request.body as {
     content: string;
     attachmentUrl?: string;
     isInternal?: boolean;
+    notifyWhatsapp?: boolean;
   };
 
   if (!content?.trim()) {
@@ -249,7 +250,7 @@ export async function sendComplaintMessageHandler(
       }
     }
   } else {
-    if (!isInternalMessage && complaint.resident.userId) {
+    if (!isInternalMessage && notifyWhatsapp && complaint.resident.userId) {
       notify(
         prisma,
         request.log,

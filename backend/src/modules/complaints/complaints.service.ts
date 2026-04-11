@@ -489,7 +489,7 @@ export async function addComplaintComment(
     data: { updatedAt: new Date() },
   });
 
-  if (complaint.resident.consentWhatsapp) {
+  if (complaint.resident.consentWhatsapp && data.notifyWhatsapp !== false) {
     const message = buildComplaintCommentMessage(
       complaint.resident.name,
       complaint.id,

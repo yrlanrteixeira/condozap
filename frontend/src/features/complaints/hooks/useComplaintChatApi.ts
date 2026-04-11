@@ -42,16 +42,19 @@ export function useSendComplaintMessage() {
       content,
       isInternal,
       attachmentUrl,
+      notifyWhatsapp,
     }: {
       complaintId: number;
       content: string;
       isInternal?: boolean;
       attachmentUrl?: string;
+      notifyWhatsapp?: boolean;
     }) => {
       const { data } = await api.post(`/complaint-messages/${complaintId}`, {
         content,
         ...(isInternal && { isInternal }),
         ...(attachmentUrl && { attachmentUrl }),
+        ...(notifyWhatsapp !== undefined && { notifyWhatsapp }),
       });
       return data;
     },

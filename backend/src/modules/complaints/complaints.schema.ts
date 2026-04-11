@@ -41,6 +41,7 @@ export const updatePrioritySchema = z.object({
 
 export const addCommentSchema = z.object({
   notes: z.string().min(1),
+  notifyWhatsapp: z.boolean().optional().default(true),
 });
 
 export const assignComplaintSchema = z.object({
