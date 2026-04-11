@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import {
   listComplaintMessagesHandler,
   sendComplaintMessageHandler,
+  sseComplaintMessagesHandler,
 } from "./complaints-chat.controller";
 
 export const complaintChatRoutes: FastifyPluginAsync = async (fastify) => {
@@ -9,6 +10,12 @@ export const complaintChatRoutes: FastifyPluginAsync = async (fastify) => {
     "/:complaintId",
     { onRequest: [fastify.authenticate] },
     listComplaintMessagesHandler
+  );
+
+  fastify.get(
+    "/:complaintId/stream",
+    { onRequest: [fastify.authenticate] },
+    sseComplaintMessagesHandler
   );
 
   fastify.post(
