@@ -5,6 +5,15 @@ import { cn } from "@/lib/utils";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
 import { api } from "@/lib/api";
 
+interface ActivityLog {
+  id: string;
+  type: string;
+  description: string;
+  createdAt: string;
+  status: string;
+  errorMessage: string | null;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   NEW: "Nova",
   OPEN: "Triagem",
