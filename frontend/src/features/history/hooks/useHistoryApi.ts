@@ -82,11 +82,23 @@ export function useActivityLogs(condominiumId: string, options?: {
 }
 
 export function useComplaintActivityLogs(condominiumId: string, complaintId: number) {
-  const { data: logs = [] } = useActivityLogs(condominiumId, { limit: 200 });
-  return logs.filter(log => 
+  // Don't fetch if no valid condominium ID
+  if (!condominiumId || condominiumId === 'all' || !complaintId) {
+    return { data: [] as ActivityLog[], isLoading: false, isError: false };
+  }
+  
+  const { data: logs = [], isLoading, isError } = useActivityLogs(condominiumId, { limit: 200 });
+  
+  const filteredLogs = logs.filter(log => 
     (log.targetType === "Complaint" && log.targetId === String(complaintId)) ||
     (log.metadata?.complaintId === complaintId)
   );
+  
+  return { 
+    data: filteredLogs, 
+    isLoading, 
+    isError 
+  };
 }
 
 // =====================================================
