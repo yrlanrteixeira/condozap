@@ -151,5 +151,6 @@ export interface Sector {
   condominiumId: string;
   name: string;
   categories: string[];
+  allowedForwardingIds: string[];
   members: SectorMember[];
 }

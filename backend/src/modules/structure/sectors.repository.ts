@@ -53,6 +53,7 @@ export const createSector = (
     condominiumId: string;
     name: string;
     categories: string[];
+    allowedForwardingIds?: string[];
   }
 ) =>
   prisma.sector.create({ data });
@@ -60,7 +61,7 @@ export const createSector = (
 export const updateSector = (
   prisma: PrismaClient,
   sectorId: string,
-  data: { name?: string; categories?: string[] }
+  data: { name?: string; categories?: string[]; allowedForwardingIds?: string[] }
 ) =>
   prisma.sector.update({
     where: { id: sectorId },

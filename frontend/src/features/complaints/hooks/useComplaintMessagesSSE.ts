@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
 import type { ChatMessage } from "./useComplaintChatApi";
-import { queryKeys } from "../utils/queryKeys";
 import { config } from "@/lib/config";
 
 interface UseComplaintMessagesSSEOptions {
@@ -15,7 +14,7 @@ export function useComplaintMessagesSSE({
   enabled = true,
 }: UseComplaintMessagesSSEOptions) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const eventSourceRef = useRef<EventSource | null>(null);
   const onMessageRef = useRef<((message: ChatMessage) => void) | null>(null);
 
@@ -24,7 +23,7 @@ export function useComplaintMessagesSSE({
   }, []);
 
   useEffect(() => {
-    if (!enabled || !complaintId || complaintId <= 0 || !user?.id) {
+    if (!enabled || !complaintId || complaintId <= 0 || !user?.id || !token) {
       return;
     }
 
@@ -33,12 +32,8 @@ export function useComplaintMessagesSSE({
       eventSourceRef.current.close();
     }
 
-    const token = localStorage.getItem("auth_token");
     const eventSource = new EventSource(
-      `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`,
-      {
-        withCredentials: true,
-      }
+      `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`
     );
 
     eventSourceRef.current = eventSource;
@@ -53,7 +48,7 @@ export function useComplaintMessagesSSE({
         
         // Update React Query cache directly
         queryClient.setQueryData<{ messages: ChatMessage[] }>(
-          queryKeys.complaintMessages(complaintId),
+          ["complaint-messages", complaintId],
           (old) => {
             if (!old) return old;
             // Avoid duplicates
@@ -90,13 +85,9 @@ export function useComplaintMessagesSSE({
       eventSource.close();
       eventSourceRef.current = null;
     };
-  }, [complaintId, enabled, user?.id, queryClient]);
+  }, [complaintId, enabled, user?.id, token, queryClient]);
 
   return {
     setOnMessage,
   };
-}
-
-export function getSSEConnection() {
-  return eventSourceRef.current;
 }
