@@ -83,7 +83,10 @@ export function ResidentComplaintDetailSheet({
 
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
   const sendMessage = useSendComplaintMessage();
-  const activityLogs = useComplaintActivityLogs(complaintId ?? 0);
+  const activityLogs = useComplaintActivityLogs(
+    complaint?.condominiumId || "", 
+    complaintId ?? 0
+  );
 
   // Complement mutation — called when status is RETURNED
   const complementMutation = useMutation({
