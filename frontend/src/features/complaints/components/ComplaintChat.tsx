@@ -19,6 +19,7 @@ import { DateSeparator } from "./chat/DateSeparator";
 import { SystemEventPill } from "./chat/SystemEventPill";
 import { ComplaintChatHeader } from "./chat/ComplaintChatHeader";
 import type { ChatVariant, FeedItem, BubbleItem } from "./chat/types";
+import { useComplaintMessagesSSE } from "../hooks/useComplaintMessagesSSE";
 
 interface ComplaintChatProps {
   complaintId: number;
@@ -303,6 +304,12 @@ export function ComplaintChat({
     ? allMessages
     : allMessages.filter(m => !m.isInternal);
 
+  // SSE for real-time updates
+  useComplaintMessagesSSE({
+    complaintId,
+    enabled: showNewChat && !!complaint,
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
@@ -500,7 +507,7 @@ export function ComplaintChat({
     : "Digite uma mensagem...";
 
   return (
-    <div className={`rounded-lg border bg-background flex flex-col overflow-hidden ${showNewChat && complaint ? "h-full" : ""}`}
+    <div className={`rounded-lg border bg-background flex flex-col overflow-hidden ${showNewChat && complaint ? "h-full" : ""}`}>
       {/* Header */}
       {showNewChat && complaint ? (
         <ComplaintChatHeader complaint={complaint} variant={effectiveVariant} />

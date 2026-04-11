@@ -4,6 +4,7 @@ interface SSEConnection {
   reply: any;
   userId: string;
   condominiumId?: string;
+  channels?: string[];
 }
 
 const connections = new Map<string, SSEConnection>();
@@ -48,9 +49,10 @@ const ssePlugin = async (fastify: FastifyInstance) => {
 
     const query = request.query as Record<string, string>;
     const condoId = query?.condominiumId;
+    const channels = query?.channels?.split(",").filter(Boolean) || [];
 
     const key = `user:${userId}`;
-    connections.set(key, { reply: reply.raw, userId, condominiumId: condoId });
+    connections.set(key, { reply: reply.raw, userId, condominiumId: condoId, channels });
 
     // Keep-alive heartbeat
     const heartbeat = setInterval(() => {
@@ -68,12 +70,31 @@ export default ssePlugin;
 
 // Enviar notification para um usuário específico
 export function sendSSENotification(userId: string, event: string, data: any) {
+  // Check if it's a channel (contains :)
+  if (userId.includes(":")) {
+    broadcastToChannel(userId, event, data);
+    return;
+  }
+  
   const key = `user:${userId}`;
   const conn = connections.get(key);
   
   if (conn?.reply) {
     const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     conn.reply.write(message);
+  }
+}
+
+// Broadcast to a specific channel (e.g., "complaint:123")
+export function broadcastToChannel(channel: string, event: string, data: any) {
+  const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  
+  for (const conn of connections.values()) {
+    const userChannels = conn.channels || [];
+    if (userChannels.includes(channel) || userChannels.length === 0) {
+      // If no channels subscribed, send to all (fallback)
+      conn.reply?.write(message);
+    }
   }
 }
 
