@@ -290,14 +290,6 @@ export function ComplaintChat({
         currentUserId,
       })
     : [];
-    ? buildFeedItems({
-        complaint,
-        messages: data?.messages ?? [],
-        statusHistory,
-        variant: effectiveVariant,
-        currentUserId,
-      })
-    : [];
 
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
