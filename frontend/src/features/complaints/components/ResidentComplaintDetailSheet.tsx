@@ -36,7 +36,7 @@ import { api } from "@/lib/api";
 
 import { useComplaint } from "../hooks/useComplaintsApi";
 import { useSendComplaintMessage } from "../hooks/useComplaintChatApi";
-import { useComplaintActivityLogs } from "@/features/history/hooks/useHistoryApi";
+import { useComplaintActivityLogs, type ActivityLog } from "@/features/history/hooks/useHistoryApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
 import { ComplaintTimeline } from "./ComplaintTimeline";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
@@ -254,6 +254,7 @@ export function ResidentComplaintDetailSheet({
 
                   <ResidentComplaintBody
                     complaint={complaint as ComplaintDetail}
+                    activityLogs={activityLogs.data}
                   />
                 </div>
               </ScrollArea>
@@ -352,7 +353,13 @@ export function ResidentComplaintDetailSheet({
 // Body content (description, attachments, timeline)
 // ---------------------------------------------------------------------------
 
-function ResidentComplaintBody({ complaint }: { complaint: ComplaintDetail }) {
+function ResidentComplaintBody({
+  complaint,
+  activityLogs,
+}: {
+  complaint: ComplaintDetail;
+  activityLogs: ActivityLog[];
+}) {
   const attachments = complaint.attachments ?? [];
 
   return (
