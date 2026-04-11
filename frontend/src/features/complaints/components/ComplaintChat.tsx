@@ -273,7 +273,23 @@ export function ComplaintChat({
   const sendMessage = useSendComplaintMessage();
   const isComplementMode = Boolean(onComplement && complaint?.status === "RETURNED");
   const effectiveVariant: ChatVariant = variant === "admin" && showInternalToggle ? "admin" : "resident";
-  const feedItems: FeedItem[] = complaint && statusHistory.length >= 0
+  const showNewChat = Boolean(complaint && statusHistory.length >= 0);
+  
+  // SSE for real-time updates - must be after showNewChat is defined
+  useComplaintMessagesSSE({
+    complaintId,
+    enabled: showNewChat,
+  });
+
+  const feedItems: FeedItem[] = showNewChat
+    ? buildFeedItems({
+        complaint,
+        messages: data?.messages ?? [],
+        statusHistory,
+        variant: effectiveVariant,
+        currentUserId,
+      })
+    : [];
     ? buildFeedItems({
         complaint,
         messages: data?.messages ?? [],
@@ -303,12 +319,6 @@ export function ComplaintChat({
   const messages = showInternalToggle
     ? allMessages
     : allMessages.filter(m => !m.isInternal);
-
-  // SSE for real-time updates
-  useComplaintMessagesSSE({
-    complaintId,
-    enabled: showNewChat && !!complaint,
-  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -501,7 +511,6 @@ export function ComplaintChat({
     }
   };
 
-  const showNewChat = complaint && statusHistory.length >= 0;
   const placeholder = isComplementMode
     ? "Envie um complemento para retomar a ocorrência..."
     : "Digite uma mensagem...";
