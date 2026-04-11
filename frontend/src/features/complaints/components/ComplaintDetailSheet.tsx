@@ -518,8 +518,11 @@ function ComplaintDetailContent({
 
       {/* Chat */}
       <ComplaintChat
+        variant="admin"
         complaintId={complaint.id}
         currentUserId={currentUserId}
+        complaint={complaint}
+        statusHistory={complaint.statusHistory ?? []}
         showInternalToggle={true}
         defaultShowInternal={false}
       />

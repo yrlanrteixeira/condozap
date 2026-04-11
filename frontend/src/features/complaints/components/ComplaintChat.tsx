@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon, Circle, CircleCheck } from "lucide-react";
+import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon, Circle, CircleCheck, FileText, Download } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -13,12 +13,22 @@ import apiClient from "@/lib/api-client";
 import type { ChatMessage } from "../hooks/useComplaintChatApi";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
 import { api } from "@/lib/api";
+import type { ComplaintDetail, ComplaintStatusHistory } from "../types";
+import { buildFeedItems } from "./chat/buildFeedItems";
+import { DateSeparator } from "./chat/DateSeparator";
+import { SystemEventPill } from "./chat/SystemEventPill";
+import { ComplaintChatHeader } from "./chat/ComplaintChatHeader";
+import type { ChatVariant, FeedItem, BubbleItem } from "./chat/types";
 
 interface ComplaintChatProps {
   complaintId: number;
   currentUserId: string;
+  variant?: ChatVariant;
+  complaint?: ComplaintDetail;
+  statusHistory?: ComplaintStatusHistory[];
   showInternalToggle?: boolean;
   defaultShowInternal?: boolean;
+  onComplement?: (message: string) => Promise<void>;
 }
 
 const ROLE_BADGE_STYLES: Record<string, string> = {
@@ -148,9 +158,15 @@ function WhatsAppStatusIndicator({ status }: { status?: string | null }) {
 function MessageBubble({
   message,
   isOwn,
+  isFirstInCluster = true,
+  isLastInCluster = true,
+  variant = "admin",
 }: {
   message: ChatMessage;
   isOwn: boolean;
+  isFirstInCluster?: boolean;
+  isLastInCluster?: boolean;
+  variant?: ChatVariant;
 }) {
   const timeAgo = formatDistanceToNow(new Date(message.createdAt), {
     addSuffix: true,
@@ -161,35 +177,41 @@ function MessageBubble({
   const hasAudio = message.attachmentUrl && isAudioUrl(message.attachmentUrl);
   const hasUnknownAttachment = message.attachmentUrl && !hasImage && !hasAudio;
 
+  const showHeader = isFirstInCluster;
+  const showTimestamp = isLastInCluster;
+  const showWhatsAppIndicator = isOwn && isLastInCluster && message.source === "WHATSAPP" && variant === "admin";
+
   return (
     <div className={`flex flex-col gap-1 ${isOwn ? "items-end" : "items-start"}`}>
-      <div className={`flex items-center gap-1.5 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
-        <span className="text-xs font-medium text-foreground">
-          {message.senderName}
-        </span>
-        <RoleBadge role={message.senderRole} />
-        {message.isInternal && (
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0 leading-tight bg-amber-50 text-amber-700 border-amber-200"
-          >
-            Interno
-          </Badge>
-        )}
-        {message.source === "WHATSAPP" && (
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0 leading-tight bg-emerald-50 text-emerald-700 border-emerald-200"
-          >
-            WhatsApp
-          </Badge>
-        )}
-      </div>
+      {showHeader && (
+        <div className={`flex items-center gap-1.5 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+          <span className="text-xs font-medium text-foreground">
+            {message.senderName}
+          </span>
+          <RoleBadge role={message.senderRole} />
+          {message.isInternal && (
+            <Badge
+              variant="outline"
+              className="text-[10px] px-1.5 py-0 leading-tight bg-amber-50 text-amber-700 border-amber-200"
+            >
+              Interno
+            </Badge>
+          )}
+          {message.source === "WHATSAPP" && (
+            <Badge
+              variant="outline"
+              className="text-[10px] px-1.5 py-0 leading-tight bg-emerald-50 text-emerald-700 border-emerald-200"
+            >
+              WhatsApp
+            </Badge>
+          )}
+        </div>
+      )}
       <div
         className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed break-words ${
           isOwn
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-muted text-foreground rounded-tl-sm"
+            ? `bg-primary text-primary-foreground${!isFirstInCluster ? " rounded-tr-sm" : ""}`
+            : `bg-muted text-foreground${!isFirstInCluster ? " rounded-tl-sm" : ""}`
         }`}
       >
         {message.content !== "🎤 Mensagem de áudio" && message.content !== "📎 Anexo" && (
@@ -205,28 +227,60 @@ function MessageBubble({
             <AudioPlayer src={message.attachmentUrl!} className="w-full" />
           </div>
         )}
-        {hasUnknownAttachment && (
-          <div className="mt-2">
-            <AudioPlayer src={message.attachmentUrl!} className="w-full" />
+        {hasUnknownAttachment && message.attachmentUrl && (
+          <div className="mt-2 flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs flex-1 truncate">
+              {message.content || "Arquivo"}
+            </span>
+            <button
+              type="button"
+              onClick={() => window.open(message.attachmentUrl, "_blank")}
+              className="text-primary hover:underline text-xs"
+            >
+              <Download className="h-3 w-3" />
+            </button>
           </div>
         )}
       </div>
-      <div className={`flex items-center gap-1 ${isOwn ? "justify-end" : "justify-start"}`}>
-        <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
-        {isOwn && message.source === "WHATSAPP" && (
-          <WhatsAppStatusIndicator status={message.whatsappStatus} />
-        )}
-      </div>
+      {showTimestamp && (
+        <div className={`flex items-center gap-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+          <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
+          {showWhatsAppIndicator && (
+            <WhatsAppStatusIndicator status={message.whatsappStatus} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-export function ComplaintChat({ complaintId, currentUserId, showInternalToggle = false, defaultShowInternal = false }: ComplaintChatProps) {
+export function ComplaintChat({ 
+  complaintId, 
+  currentUserId, 
+  variant = "admin",
+  complaint,
+  statusHistory = [],
+  showInternalToggle = false, 
+  defaultShowInternal = false,
+  onComplement,
+}: ComplaintChatProps) {
   const [inputValue, setInputValue] = useState("");
   const [isInternal, setIsInternal] = useState(defaultShowInternal);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useComplaintMessages(complaintId);
   const sendMessage = useSendComplaintMessage();
+  const isComplementMode = Boolean(onComplement && complaint?.status === "RETURNED");
+  const effectiveVariant: ChatVariant = variant === "admin" && showInternalToggle ? "admin" : "resident";
+  const feedItems: FeedItem[] = complaint && statusHistory.length >= 0
+    ? buildFeedItems({
+        complaint,
+        messages: data?.messages ?? [],
+        statusHistory,
+        variant: effectiveVariant,
+        currentUserId,
+      })
+    : [];
 
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -389,11 +443,15 @@ export function ComplaintChat({ complaintId, currentUserId, showInternalToggle =
     if (!content || sendMessage.isPending) return;
     setInputValue("");
     try {
-      await sendMessage.mutateAsync({
-        complaintId,
-        content,
-        isInternal: showInternalToggle ? isInternal : false,
-      });
+      if (isComplementMode && onComplement) {
+        await onComplement(content);
+      } else {
+        await sendMessage.mutateAsync({
+          complaintId,
+          content,
+          isInternal: showInternalToggle ? isInternal : false,
+        });
+      }
     } catch {
       setInputValue(content);
     }
@@ -406,46 +464,99 @@ export function ComplaintChat({ complaintId, currentUserId, showInternalToggle =
     }
   };
 
+  const renderFeedItem = (item: FeedItem) => {
+    switch (item.kind) {
+      case "date":
+        return <DateSeparator key={item.id} date={item.date} />;
+      case "pill":
+        return (
+          <SystemEventPill
+            key={item.id}
+            kind={item.pillKind}
+            label={item.label}
+            notes={item.notes}
+            status={item.status}
+          />
+        );
+      case "bubble":
+        return (
+          <MessageBubble
+            key={item.id}
+            message={item.message}
+            isOwn={item.isOwn}
+            isFirstInCluster={item.isFirstInCluster}
+            isLastInCluster={item.isLastInCluster}
+            variant={effectiveVariant}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const showNewChat = complaint && statusHistory.length >= 0;
+  const placeholder = isComplementMode
+    ? "Envie um complemento para retomar a ocorrência..."
+    : "Digite uma mensagem...";
+
   return (
-    <div className="rounded-lg border bg-background flex flex-col overflow-hidden">
+    <div className={`rounded-lg border bg-background flex flex-col overflow-hidden ${showNewChat && complaint ? "h-full" : ""}`}
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Chat</span>
+      {showNewChat && complaint ? (
+        <ComplaintChatHeader complaint={complaint} variant={effectiveVariant} />
+      ) : (
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Chat</span>
+          </div>
+          {showInternalToggle && (
+            <button
+              type="button"
+              onClick={() => setIsInternal(!isInternal)}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                isInternal
+                  ? "bg-amber-100 text-amber-700 border border-amber-300"
+                  : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+              }`}
+              title={isInternal ? "Mensagem interna - não visível pelo morador" : "Mensagem pública"}
+            >
+              {isInternal ? (
+                <>
+                  <Lock className="h-3 w-3" />
+                  <span>Interno</span>
+                </>
+              ) : (
+                <>
+                  <LockOpen className="h-3 w-3" />
+                  <span>Público</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
-        {showInternalToggle && (
-          <button
-            type="button"
-            onClick={() => setIsInternal(!isInternal)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-              isInternal
-                ? "bg-amber-100 text-amber-700 border border-amber-300"
-                : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-            }`}
-            title={isInternal ? "Mensagem interna - não visível pelo morador" : "Mensagem pública"}
-          >
-            {isInternal ? (
-              <>
-                <Lock className="h-3 w-3" />
-                <span>Interno</span>
-              </>
-            ) : (
-              <>
-                <LockOpen className="h-3 w-3" />
-                <span>Público</span>
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Messages area */}
-      <div className="flex flex-col gap-3 p-3 min-h-[160px] max-h-[320px] overflow-y-auto">
+      <div className={`flex flex-col gap-3 p-3 ${showNewChat ? "flex-1 overflow-y-auto" : "min-h-[160px] max-h-[320px] overflow-y-auto"}`}>
         {isLoading ? (
           <div className="flex items-center justify-center flex-1 py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
+        ) : showNewChat ? (
+          feedItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center flex-1 py-8 gap-2 text-muted-foreground">
+              <MessageCircle className="h-8 w-8 opacity-30" />
+              <p className="text-sm text-center">
+                Nenhuma mensagem ainda. Inicie a conversa!
+              </p>
+            </div>
+          ) : (
+            <>
+              {feedItems.map(renderFeedItem)}
+              <div ref={bottomRef} />
+            </>
+          )
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 py-8 gap-2 text-muted-foreground">
             <MessageCircle className="h-8 w-8 opacity-30" />
@@ -593,7 +704,7 @@ export function ComplaintChat({ complaintId, currentUserId, showInternalToggle =
             <Mic className="h-4 w-4" />
           </Button>
           <Input
-            placeholder="Digite uma mensagem..."
+            placeholder={placeholder}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}

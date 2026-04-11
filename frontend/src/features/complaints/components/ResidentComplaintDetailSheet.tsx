@@ -16,7 +16,6 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { Badge } from "@/shared/components/ui/badge";
 import {
   Calendar,
@@ -36,9 +35,8 @@ import { api } from "@/lib/api";
 
 import { useComplaint } from "../hooks/useComplaintsApi";
 import { useSendComplaintMessage } from "../hooks/useComplaintChatApi";
-import { useComplaintActivityLogs, type ActivityLog } from "@/features/history/hooks/useHistoryApi";
 import { ComplaintStatusBadge } from "./ComplaintStatusBadge";
-import { ComplaintTimeline } from "./ComplaintTimeline";
+import { ComplaintChat } from "./ComplaintChat";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
 import { ProxiedImage } from "@/shared/components/ProxiedImage";
 import { formatDateTime } from "@/shared/utils/helpers";
@@ -74,7 +72,6 @@ export function ResidentComplaintDetailSheet({
   open,
   onOpenChange,
 }: ResidentComplaintDetailSheetProps) {
-  const [commentText, setCommentText] = useState("");
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
   const [reopenReason, setReopenReason] = useState("");
   const { toast } = useToast();
@@ -82,11 +79,6 @@ export function ResidentComplaintDetailSheet({
   const { user: currentUser } = useAuth();
 
   const { data: complaint, isLoading } = useComplaint(complaintId ?? 0);
-  const sendMessage = useSendComplaintMessage();
-  const activityLogs = useComplaintActivityLogs(
-    complaint?.condominiumId || "", 
-    complaintId ?? 0
-  );
 
   // Complement mutation — called when status is RETURNED
   const complementMutation = useMutation({
@@ -159,47 +151,6 @@ export function ResidentComplaintDetailSheet({
     Date.now() - new Date(complaint.closedAt).getTime() <
       REOPEN_DEADLINE_DAYS * 24 * 60 * 60 * 1000;
 
-  const handleAddComment = async () => {
-    if (!complaintId || !commentText.trim()) return;
-
-    try {
-      if (complaint?.status === "RETURNED") {
-        await complementMutation.mutateAsync({
-          complaintId,
-          message: commentText.trim(),
-        });
-      } else {
-        await sendMessage.mutateAsync({
-          complaintId,
-          content: commentText.trim(),
-        });
-        toast({
-          title: "Mensagem enviada",
-          description: "A administração será notificada.",
-          variant: "success",
-        });
-      }
-      setCommentText("");
-    } catch {
-      if (complaint?.status !== "RETURNED") {
-        toast({
-          title: "Erro",
-          description: "Não foi possível enviar a mensagem. Tente novamente.",
-          variant: "error",
-        });
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleAddComment();
-    }
-  };
-
-  const isSending = sendMessage.isPending || complementMutation.isPending;
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -236,72 +187,37 @@ export function ResidentComplaintDetailSheet({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1">
-                <div className="px-4">
-                  {/* Reopen button — shown when within deadline */}
-                  {canReopen && (
-                    <div className="pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setReopenDialogOpen(true)}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Reabrir Ocorrencia
-                      </Button>
-                    </div>
-                  )}
-
-                  <ResidentComplaintBody
-                    complaint={complaint as ComplaintDetail}
-                    activityLogs={activityLogs.data}
-                  />
+              {/* Reopen button — shown when within deadline */}
+              {canReopen && (
+                <div className="p-4 border-b">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReopenDialogOpen(true)}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Reabrir Ocorrencia
+                  </Button>
                 </div>
-              </ScrollArea>
+              )}
 
-              {/* Sticky comment / complement form at bottom */}
-              <div className="p-4 border-t bg-muted/30 shrink-0">
-                {/* RETURNED alert */}
-                {complaint.status === "RETURNED" && (
-                  <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 mb-4">
-                    <p className="text-sm text-orange-500 font-medium">
-                      Esta ocorrencia foi devolvida e aguarda seu complemento
-                    </p>
-                  </div>
-                )}
-
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  {complaint.status === "RETURNED"
-                    ? "Enviar complemento"
-                    : "Enviar mensagem"}
-                </label>
-                <Textarea
-                  placeholder={
-                    complaint.status === "RETURNED"
-                      ? "Descreva o complemento solicitado..."
-                      : "Escreva sua mensagem..."
-                  }
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="min-h-[72px] mb-2 resize-none"
-                  disabled={isSending}
-                />
-                <Button
-                  onClick={handleAddComment}
-                  disabled={!commentText.trim() || isSending}
-                  className="w-full"
-                >
-                  {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  {complaint.status === "RETURNED"
-                    ? "Enviar complemento"
-                    : "Enviar comentario"}
-                </Button>
-              </div>
+              <ComplaintChat
+                variant="resident"
+                complaintId={complaint.id}
+                currentUserId={currentUser?.id ?? ""}
+                complaint={complaint as ComplaintDetail}
+                statusHistory={complaint.statusHistory ?? []}
+                onComplement={
+                  complaint.status === "RETURNED"
+                    ? async (message: string) => {
+                        await complementMutation.mutateAsync({
+                          complaintId,
+                          message,
+                        });
+                      }
+                    : undefined
+                }
+              />
             </>
           )}
         </SheetContent>
@@ -346,91 +262,6 @@ export function ResidentComplaintDetailSheet({
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Body content (description, attachments, timeline)
-// ---------------------------------------------------------------------------
-
-function ResidentComplaintBody({
-  complaint,
-  activityLogs,
-}: {
-  complaint: ComplaintDetail;
-  activityLogs: ActivityLog[];
-}) {
-  const attachments = complaint.attachments ?? [];
-
-  return (
-    <div className="space-y-5 py-4">
-      {/* Description section */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-xs uppercase">
-            {complaint.category}
-          </Badge>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {formatDateTime(complaint.createdAt)}
-          </span>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium text-foreground mb-1">Descricao</p>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-            {complaint.content}
-          </p>
-        </div>
-
-        {complaint.sector && (
-          <p className="text-xs text-muted-foreground">
-            Setor: <span className="font-medium">{complaint.sector.name}</span>
-          </p>
-        )}
-
-        {(complaint.responseDueAt || complaint.resolutionDueAt) && (
-          <div className="text-xs text-muted-foreground space-y-1 rounded-md bg-muted/40 p-2.5">
-            {complaint.responseDueAt && (
-              <p>Previsao de resposta: {formatDateTime(complaint.responseDueAt)}</p>
-            )}
-            {complaint.resolutionDueAt && (
-              <p>Previsao de resolucao: {formatDateTime(complaint.resolutionDueAt)}</p>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* Attachments section */}
-      {attachments.length > 0 && (
-        <section>
-          <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-            <Paperclip className="h-4 w-4" />
-            Anexos ({attachments.length})
-          </p>
-          <ul className="space-y-2">
-            {attachments.map((attachment) => (
-              <AttachmentItem key={attachment.id} attachment={attachment} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Timeline / Acompanhamento */}
-      {(complaint.statusHistory && complaint.statusHistory.length > 0) || (complaint.messages && complaint.messages.length > 0) ? (
-        <section className="space-y-2">
-          <h4 className="text-sm font-semibold">Acompanhamento</h4>
-          <ComplaintTimeline
-            statusHistory={complaint.statusHistory || []}
-            createdAt={complaint.createdAt}
-            description={complaint.content}
-            sectorName={complaint.sector?.name}
-            complaintMessages={complaint.messages}
-            activityLogs={activityLogs}
-          />
-        </section>
-      ) : null}
-    </div>
   );
 }
 
