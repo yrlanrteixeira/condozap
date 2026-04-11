@@ -12,6 +12,10 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     reply: FastifyReply
   ) {
     try {
+      const query = request.query as Record<string, string>;
+      if (!request.headers.authorization && query?.token) {
+        request.headers.authorization = `Bearer ${query.token}`;
+      }
       await request.jwtVerify();
     } catch (err) {
       reply.status(401).send({

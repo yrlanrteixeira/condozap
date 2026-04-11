@@ -1,4 +1,4 @@
-import { Bell, Undo2, RotateCcw, Timer } from "lucide-react";
+import { Bell, Undo2, RotateCcw, Timer, NotebookPen } from "lucide-react";
 import type { ComplaintStatus } from "../../types";
 import type { PillKind } from "./types";
 import { ComplaintStatusBadge } from "../ComplaintStatusBadge";
@@ -35,6 +35,11 @@ const PILL_STYLES: Record<PillKind, { border: string; text: string; icon: typeof
     border: "border-muted",
     text: "text-muted-foreground",
     icon: Timer,
+  },
+  comment: {
+    border: "border-sky-200 bg-sky-50 dark:bg-sky-950/30",
+    text: "text-sky-700 dark:text-sky-400",
+    icon: NotebookPen,
   },
 };
 

@@ -224,6 +224,16 @@ function makePill(entry: ComplaintStatusHistory): InternalPill | null {
       date,
     };
   }
+  if (action === "COMMENT") {
+    return {
+      kind: "pill",
+      id: `pill-${entry.id}`,
+      pillKind: "comment",
+      label: "Andamento Registrado",
+      notes: entry.notes,
+      date,
+    };
+  }
 
   // Plain status change
   if (entry.toStatus) {
@@ -256,24 +266,17 @@ export function buildFeedItems(args: BuildFeedItemsArgs): FeedItem[] {
   // 2. Chat messages → bubbles
   const messageBubbles = makeMessageBubbles(messages, variant, currentUserId);
 
-  // 3. Status history → bubbles for COMMENT, pills otherwise
-  const historyBubbles: InternalBubble[] = [];
+  // 3. Status history → pills
   const historyPills: InternalPill[] = [];
   for (const entry of statusHistory) {
-    const action = entry.action?.toUpperCase();
-    if (action === "COMMENT") {
-      historyBubbles.push(makeCommentBubble(entry, currentUserId));
-    } else {
-      const pill = makePill(entry);
-      if (pill) historyPills.push(pill);
-    }
+    const pill = makePill(entry);
+    if (pill) historyPills.push(pill);
   }
 
   // 4. Merge & sort by date ascending
   const merged: Array<InternalBubble | InternalPill> = [
     ...opening,
     ...messageBubbles,
-    ...historyBubbles,
     ...historyPills,
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 

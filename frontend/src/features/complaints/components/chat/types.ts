@@ -3,7 +3,7 @@ import type { ComplaintStatus } from "../../types";
 
 export type ChatVariant = "resident" | "admin";
 
-export type PillKind = "status" | "nudge" | "return" | "reopen" | "autoclose";
+export type PillKind = "status" | "nudge" | "return" | "reopen" | "autoclose" | "comment";
 
 export interface DateSeparatorItem {
   kind: "date";

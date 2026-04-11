@@ -1,10 +1,16 @@
 import { useRef, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon, Circle, CircleCheck, FileText, Download } from "lucide-react";
+import { Send, MessageCircle, Loader2, Lock, LockOpen, Mic, MicOff, X, Play, Pause, Paperclip, ImageIcon, Circle, CircleCheck, FileText, Download, NotebookPen } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/components/ui/popover";
 import {
   useComplaintMessages,
   useSendComplaintMessage,
@@ -13,7 +19,7 @@ import apiClient from "@/lib/api-client";
 import type { ChatMessage } from "../hooks/useComplaintChatApi";
 import { AudioPlayer } from "@/shared/components/AudioPlayer";
 import { api } from "@/lib/api";
-import type { ComplaintDetail, ComplaintStatusHistory } from "../types";
+import type { ComplaintDetail, ComplaintStatusHistory, CannedResponse } from "../types";
 import { buildFeedItems } from "./chat/buildFeedItems";
 import { DateSeparator } from "./chat/DateSeparator";
 import { SystemEventPill } from "./chat/SystemEventPill";
@@ -266,9 +272,33 @@ export function ComplaintChat({
   defaultShowInternal = false,
   onComplement,
 }: ComplaintChatProps) {
+  const qc = useQueryClient();
   const [inputValue, setInputValue] = useState("");
   const [isInternal, setIsInternal] = useState(defaultShowInternal);
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
+  const [actionType, setActionType] = useState<"message" | "progress">("message");
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Fetch canned responses/templates
+  const { data: cannedResponses = [] } = useQuery<CannedResponse[]>({
+    queryKey: ["canned-responses", complaint?.condominiumId, complaint?.sectorId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (complaint?.condominiumId) params.set("condominiumId", complaint.condominiumId);
+      if (complaint?.sectorId) params.set("sectorId", complaint.sectorId);
+      const { data } = await api.get(`/canned-responses?${params}`);
+      return data;
+    },
+    enabled: showInternalToggle && !!complaint,
+  });
+
+  const filteredTemplates = cannedResponses.filter(
+    (t: CannedResponse) =>
+      t.title.toLowerCase().includes(templateSearch.toLowerCase()) ||
+      t.content.toLowerCase().includes(templateSearch.toLowerCase())
+  );
   const { data, isLoading } = useComplaintMessages(complaintId);
   const sendMessage = useSendComplaintMessage();
   const isComplementMode = Boolean(onComplement && complaint?.status === "RETURNED");
@@ -376,6 +406,7 @@ export function ComplaintChat({
         content: "🎤 Mensagem de áudio",
         attachmentUrl: response.data.url,
         isInternal: showInternalToggle ? isInternal : false,
+        notifyWhatsapp,
       });
       cancelRecording();
     } catch (err) {
@@ -438,6 +469,7 @@ export function ComplaintChat({
         content: isImage ? "📎 Anexo" : "📎 Anexo",
         attachmentUrl: response.data.url,
         isInternal: showInternalToggle ? isInternal : false,
+        notifyWhatsapp,
       });
       cancelPendingFile();
     } catch (err) {
@@ -452,14 +484,28 @@ export function ComplaintChat({
     if (!content || sendMessage.isPending) return;
     setInputValue("");
     try {
-      if (isComplementMode && onComplement) {
-        await onComplement(content);
-      } else {
-        await sendMessage.mutateAsync({
-          complaintId,
-          content,
-          isInternal: showInternalToggle ? isInternal : false,
+      if (actionType === "progress" && showInternalToggle) {
+        // Se for "andamento", cria APENAS o registro formal (histórico) e ignora o chat
+        await api.post(`/complaints/${complaintId}/comment`, {
+          notes: content,
+          notifyWhatsapp,
         });
+        
+        // Invalida a query da ocorrência para forçar atualização do histórico
+        qc.invalidateQueries({ queryKey: ["complaints"] });
+        qc.invalidateQueries({ queryKey: ["complaint", String(complaintId)] });
+      } else {
+        // Envio normal de chat
+        if (isComplementMode && onComplement) {
+          await onComplement(content);
+        } else {
+          await sendMessage.mutateAsync({
+            complaintId,
+            content,
+            isInternal: showInternalToggle ? isInternal : false,
+            notifyWhatsapp,
+          });
+        }
       }
     } catch {
       setInputValue(content);
@@ -519,28 +565,30 @@ export function ComplaintChat({
             <span className="text-sm font-medium text-foreground">Chat</span>
           </div>
           {showInternalToggle && (
-            <button
-              type="button"
-              onClick={() => setIsInternal(!isInternal)}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                isInternal
-                  ? "bg-amber-100 text-amber-700 border border-amber-300"
-                  : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-              }`}
-              title={isInternal ? "Mensagem interna - não visível pelo morador" : "Mensagem pública"}
-            >
-              {isInternal ? (
-                <>
-                  <Lock className="h-3 w-3" />
-                  <span>Interno</span>
-                </>
-              ) : (
-                <>
-                  <LockOpen className="h-3 w-3" />
-                  <span>Público</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsInternal(!isInternal)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  isInternal
+                    ? "bg-amber-100 text-amber-700 border border-amber-300"
+                    : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                }`}
+                title={isInternal ? "Mensagem interna - não visível pelo morador" : "Mensagem pública"}
+              >
+                {isInternal ? (
+                  <>
+                    <Lock className="h-3 w-3" />
+                    <span>Interno</span>
+                  </>
+                ) : (
+                  <>
+                    <LockOpen className="h-3 w-3" />
+                    <span>Público</span>
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -691,6 +739,53 @@ export function ComplaintChat({
       {/* Input (only show when not recording and no audio/file preview) */}
       {!isRecording && !audioUrl && !pendingFile && (
         <div className="flex items-center gap-2 p-3 border-t bg-muted/10">
+          {/* Templates button - only for admin variant */}
+          {showInternalToggle && (
+            <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 p-0 shrink-0"
+                  title="Usar template"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-2" align="start">
+                <Input
+                  placeholder="Buscar template..."
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="mb-2"
+                />
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {filteredTemplates.map((t: CannedResponse) => (
+                    <button
+                      key={t.id}
+                      className="w-full text-left p-2 rounded hover:bg-muted text-sm"
+                      onClick={() => {
+                        setInputValue(t.content);
+                        setTemplateOpen(false);
+                        setTemplateSearch("");
+                      }}
+                    >
+                      <p className="font-medium">{t.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {t.content}
+                      </p>
+                    </button>
+                  ))}
+                  {filteredTemplates.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-2 text-center">
+                      Nenhum template encontrado
+                    </p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
           <Button
             type="button"
             size="sm"
@@ -711,6 +806,60 @@ export function ComplaintChat({
           >
             <Mic className="h-4 w-4" />
           </Button>
+          {/* Action type selector - only for admin */}
+          {showInternalToggle && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActionType(actionType === "progress" ? "message" : "progress")}
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                    actionType === "progress"
+                      ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                      : "text-muted-foreground hover:bg-muted border border-transparent"
+                  }`}
+                  title={actionType === "progress" ? "Modo: Registrar Andamento Formal" : "Modo: Enviar Mensagem"}
+                >
+                  <NotebookPen className="h-3 w-3" />
+                  <span>Andamento</span>
+                </button>
+              </div>
+
+              <div className="w-[1px] h-4 bg-border hidden sm:block" />
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsInternal(!isInternal)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                    isInternal
+                      ? "bg-amber-100 text-amber-700 border border-amber-200 font-medium"
+                      : "text-muted-foreground hover:bg-muted border border-transparent"
+                  }`}
+                  title={isInternal ? "Mensagem interna" : "Mensagem pública"}
+                >
+                  {isInternal ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
+                  <span>{isInternal ? "Interno" : "Público"}</span>
+                </button>
+
+                {!isInternal && (
+                  <button
+                    type="button"
+                    onClick={() => setNotifyWhatsapp(!notifyWhatsapp)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                      notifyWhatsapp
+                        ? "bg-green-100 text-green-700 border border-green-200 font-medium"
+                        : "text-muted-foreground hover:bg-muted border border-transparent"
+                    }`}
+                    title={notifyWhatsapp ? "Vai notificar no WhatsApp" : "Não notificar no WhatsApp (apenas sistema)"}
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <Input
             placeholder={placeholder}
             value={inputValue}
