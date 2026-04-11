@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
 import type { ChatMessage } from "./useComplaintChatApi";
-import { queryKeys } from "../utils/queryKeys";
 import { config } from "@/lib/config";
 
 interface UseComplaintMessagesSSEOptions {
@@ -34,10 +33,7 @@ export function useComplaintMessagesSSE({
     }
 
     const eventSource = new EventSource(
-      `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`,
-      {
-        withCredentials: true,
-      }
+      `${config.apiUrl}/complaint-messages/${complaintId}/stream?token=${token}`
     );
 
     eventSourceRef.current = eventSource;
@@ -52,7 +48,7 @@ export function useComplaintMessagesSSE({
         
         // Update React Query cache directly
         queryClient.setQueryData<{ messages: ChatMessage[] }>(
-          queryKeys.complaintMessages(complaintId),
+          ["complaint-messages", complaintId],
           (old) => {
             if (!old) return old;
             // Avoid duplicates
@@ -94,8 +90,4 @@ export function useComplaintMessagesSSE({
   return {
     setOnMessage,
   };
-}
-
-export function getSSEConnection() {
-  return eventSourceRef.current;
 }
