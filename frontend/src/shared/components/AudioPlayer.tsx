@@ -16,12 +16,28 @@ export function AudioPlayer({ src, className = "" }: AudioPlayerProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const listenersRef = useRef<Array<{ event: string; handler: EventListener }>>([]);
+
+  const cleanupAudio = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      for (const { event, handler } of listenersRef.current) {
+        audio.removeEventListener(event, handler);
+      }
+      listenersRef.current = [];
+      audio.src = "";
+      audioRef.current = null;
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  };
 
   useEffect(() => {
     return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-      }
+      cleanupAudio();
     };
   }, []);
 
@@ -37,6 +53,7 @@ export function AudioPlayer({ src, className = "" }: AudioPlayerProps) {
       return;
     }
 
+    cleanupAudio();
     setIsLoading(true);
     setError(false);
 
@@ -54,32 +71,48 @@ export function AudioPlayer({ src, className = "" }: AudioPlayerProps) {
       const audio = new Audio(url);
       audioRef.current = audio;
 
-      audio.addEventListener("loadedmetadata", () => {
+      const addListener = (event: string, handler: EventListener) => {
+        audio.addEventListener(event, handler);
+        listenersRef.current.push({ event, handler });
+      };
+
+      addListener("loadedmetadata", () => {
         setDuration(audio.duration);
         setIsLoading(false);
       });
 
-      audio.addEventListener("timeupdate", () => {
+      addListener("timeupdate", () => {
         setCurrentTime(audio.currentTime);
       });
 
-      audio.addEventListener("ended", () => {
+      addListener("ended", () => {
         setIsPlaying(false);
         setCurrentTime(0);
       });
 
-      audio.addEventListener("error", () => {
+      addListener("error", () => {
         setError(true);
         setIsLoading(false);
+        setIsPlaying(false);
       });
 
       audio.play();
       setIsPlaying(true);
     } catch (err) {
       console.error("Audio load error:", err);
+      cleanupAudio();
       setError(true);
       setIsLoading(false);
+      setIsPlaying(false);
     }
+  };
+
+  const retry = () => {
+    cleanupAudio();
+    setError(false);
+    setDuration(0);
+    setCurrentTime(0);
+    loadAndPlay();
   };
 
   const togglePlayback = () => {
@@ -95,8 +128,16 @@ export function AudioPlayer({ src, className = "" }: AudioPlayerProps) {
   if (error) {
     return (
       <div className={`flex items-center gap-2 text-muted-foreground ${className}`}>
-        <Play className="w-4 h-4" />
-        <span className="text-xs">Erro ao carregar áudio</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={retry}
+          title="Tentar novamente"
+        >
+          <Play className="w-4 h-4" />
+        </Button>
+        <span className="text-xs">Erro ao carregar áudio — clique para tentar novamente</span>
       </div>
     );
   }

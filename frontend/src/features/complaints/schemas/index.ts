@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 const statusEnum = z.enum([
+  "OPEN",
   "NEW",
   "TRIAGE",
   "IN_PROGRESS",
@@ -13,6 +14,8 @@ const statusEnum = z.enum([
   "RESOLVED",
   "CLOSED",
   "CANCELLED",
+  "RETURNED",
+  "REOPENED",
 ]);
 
 const priorityEnum = z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
@@ -50,6 +53,8 @@ export const ComplaintSchema = z.object({
   escalatedAt: z.string().nullable().optional(),
   resolvedAt: z.string().nullable().optional(),
   resolvedBy: z.string().nullable().optional(),
+  closedAt: z.string().nullable().optional(),
+  lastNudgedAt: z.string().nullable().optional(),
   resident: z
     .object({
       name: z.string(),

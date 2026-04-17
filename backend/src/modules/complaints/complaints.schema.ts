@@ -11,6 +11,8 @@ export const statusEnum = z.enum([
   "RESOLVED",
   "CLOSED",
   "CANCELLED",
+  "RETURNED",
+  "REOPENED",
 ]);
 
 export const createComplaintSchema = z.object({

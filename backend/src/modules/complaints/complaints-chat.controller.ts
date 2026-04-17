@@ -41,6 +41,8 @@ export async function sseComplaintMessagesHandler(
   reply.raw.write(`event: connected\ndata: ${JSON.stringify({ complaintId })}\n\n`);
 
   let lastId: string | null = null;
+  let polling = false;
+  let closed = false;
 
   const latest = await prisma.complaintMessage.findFirst({
     where: { complaintId },
@@ -49,18 +51,21 @@ export async function sseComplaintMessagesHandler(
   });
   lastId = latest?.id ?? null;
 
-  const check = () => {
-    prisma.complaintMessage.findMany({
-      where: {
-        complaintId,
-        ...(lastId ? { id: { gt: lastId } } : {}),
-        ...(user.role === "RESIDENT" ? { isInternal: false } : {}),
-      },
-      orderBy: { createdAt: "asc" },
-      take: 10,
-      include: { sender: { select: { id: true, name: true } } },
-    }).then((msgs) => {
-      if (msgs.length > 0) {
+  const check = async () => {
+    if (polling || closed) return;
+    polling = true;
+    try {
+      const msgs = await prisma.complaintMessage.findMany({
+        where: {
+          complaintId,
+          ...(lastId ? { id: { gt: lastId } } : {}),
+          ...(user.role === "RESIDENT" ? { isInternal: false } : {}),
+        },
+        orderBy: { createdAt: "asc" },
+        take: 10,
+        include: { sender: { select: { id: true, name: true } } },
+      });
+      if (msgs.length > 0 && !closed) {
         lastId = msgs[msgs.length - 1].id;
         for (const msg of msgs) {
           reply.raw.write(`event: new_message\ndata: ${JSON.stringify({
@@ -76,12 +81,28 @@ export async function sseComplaintMessagesHandler(
           })}\n\n`);
         }
       }
-    }).catch(() => {});
+    } catch (err) {
+      request.log.error({ err, complaintId }, "complaint chat SSE poll failed");
+    } finally {
+      polling = false;
+    }
   };
 
   const interval = setInterval(check, 3000);
+  const heartbeat = setInterval(() => {
+    if (closed) return;
+    try {
+      reply.raw.write(`: heartbeat\n\n`);
+    } catch {
+      // socket already closed; cleanup handled by 'close' event
+    }
+  }, 25000);
 
-  request.raw.on("close", () => clearInterval(interval));
+  request.raw.on("close", () => {
+    closed = true;
+    clearInterval(interval);
+    clearInterval(heartbeat);
+  });
 }
 
 export async function listComplaintMessagesHandler(
@@ -205,6 +226,10 @@ export async function sendComplaintMessageHandler(
     include: { sender: { select: { id: true, name: true } } },
   });
 
+  const logNotifyError = (target: string) => (err: unknown) => {
+    request.log.error({ err, complaintId, target }, "complaint chat notify failed");
+  };
+
   if (user.role === "RESIDENT") {
     if (complaint.assigneeId) {
       notify(
@@ -219,7 +244,7 @@ export async function sendComplaintMessageHandler(
         },
         complaint.assigneeId,
         complaint.condominiumId
-      ).catch(() => {});
+      ).catch(logNotifyError("assignee"));
     }
 
     if (complaint.sectorId) {
@@ -245,7 +270,7 @@ export async function sendComplaintMessageHandler(
             },
             member.userId,
             complaint.condominiumId
-          ).catch(() => {});
+          ).catch(logNotifyError(`sector_member:${member.userId}`));
         }
       }
     }
@@ -263,7 +288,7 @@ export async function sendComplaintMessageHandler(
         },
         complaint.resident.userId,
         complaint.condominiumId
-      ).catch(() => {});
+      ).catch(logNotifyError("resident"));
     }
   }
 
@@ -275,6 +300,9 @@ export async function sendComplaintMessageHandler(
     content: message.content,
     attachmentUrl: message.attachmentUrl,
     source: message.source,
+    isInternal: message.isInternal,
+    whatsappStatus: message.whatsappStatus,
+    whatsappMessageId: message.whatsappMessageId,
     createdAt: message.createdAt.toISOString(),
   };
 
@@ -282,7 +310,7 @@ export async function sendComplaintMessageHandler(
   sendSSENotification(
     `complaint:${complaintId}`,
     "new_message",
-    { ...response, isInternal: message.isInternal }
+    response
   );
 
   return reply.status(201).send(response);

@@ -9,7 +9,20 @@ export function useSSENotifications() {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const [isConnected, setIsConnected] = useState(false);
+
+  const scheduleReconnect = useCallback((connectFn: () => void) => {
+    if (reconnectTimeoutRef.current || !user?.id) return;
+    const attempt = reconnectAttemptsRef.current;
+    const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+    const jitter = Math.random() * 1000;
+    reconnectAttemptsRef.current = attempt + 1;
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      if (user?.id && token) connectFn();
+    }, delay + jitter);
+  }, [user?.id, token]);
 
   const connect = useCallback(() => {
     if (!user?.id || !token) return;
@@ -39,6 +52,7 @@ export function useSSENotifications() {
       }
 
       setIsConnected(true);
+      reconnectAttemptsRef.current = 0;
       console.log("[SSE] Conectado para notificações");
 
       const reader = response.body.getReader();
@@ -48,6 +62,9 @@ export function useSSENotifications() {
         reader.read().then(({ done, value }) => {
           if (done || controller.signal.aborted) {
             setIsConnected(false);
+            if (!controller.signal.aborted) {
+              scheduleReconnect(connect);
+            }
             return;
           }
 
@@ -100,6 +117,11 @@ export function useSSENotifications() {
           }
 
           read();
+        }).catch((err) => {
+          setIsConnected(false);
+          if (controller.signal.aborted) return;
+          console.error("[SSE] Erro lendo stream:", err);
+          scheduleReconnect(connect);
         });
       }
 
@@ -108,19 +130,10 @@ export function useSSENotifications() {
       setIsConnected(false);
       if (err.name !== "AbortError") {
         console.log("[SSE] Erro na conexão:", err.message);
-        
-        // Tentar reconectar após 5 segundos
-        if (!reconnectTimeoutRef.current && user?.id) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectTimeoutRef.current = null;
-            if (user?.id && token) {
-              connect();
-            }
-          }, 5000);
-        }
+        scheduleReconnect(connect);
       }
     });
-  }, [user, token, queryClient, toast]);
+  }, [user, token, queryClient, toast, scheduleReconnect]);
 
   useEffect(() => {
     if (user?.id && token) {
