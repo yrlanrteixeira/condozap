@@ -79,7 +79,9 @@ const onRefreshed = (token: string): void => {
  */
 export const api: AxiosInstance = axios.create({
   baseURL: config.apiUrl,
-  timeout: 120000,
+  // 30s cobre operações comuns; uploads grandes/relatórios podem sobrescrever
+  // via `{ timeout: ... }` no call site.
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },

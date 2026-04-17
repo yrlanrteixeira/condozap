@@ -21,6 +21,9 @@ export const listBySubscription = (
     where: { subscriptionId },
     orderBy: { createdAt: "desc" },
     take,
+    // providerPayload nunca é exposto pelo DTO público; evita carregar bytes
+    // de payload do gateway em listagens.
+    omit: { providerPayload: true },
   });
 
 export const create = (
