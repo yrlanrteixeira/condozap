@@ -75,7 +75,11 @@ export const updateCouncilPositionSchema = z.object({
   councilPosition: z.string().max(100).nullable(),
 });
 
-export type UserRole = "ADMIN" | "SYNDIC" | "RESIDENT";
+// Re-export Prisma's UserRole so repository signatures cover the full enum
+// (SUPER_ADMIN, PROFESSIONAL_SYNDIC, ADMIN, SYNDIC, TRIAGE, SETOR_MANAGER,
+// SETOR_MEMBER, RESIDENT). The route-level Zod schemas above still restrict
+// which roles can be CREATED/UPDATED via the public API.
+export type { UserRole } from "@prisma/client";
 export type CreateAdminRequest = z.infer<typeof createAdminSchema>;
 export type CreateSyndicRequest = z.infer<typeof createSyndicSchema>;
 export type UpdateUserRoleRequest = z.infer<typeof updateUserRoleSchema>;

@@ -109,6 +109,16 @@ export function useSSENotifications() {
                     duration: 5000,
                   });
                   playNotificationSound();
+                } else if (eventType === "notification") {
+                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                  queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+                  toast({
+                    title: data.title ?? "Notificação",
+                    description: data.body ?? "",
+                    variant: "default",
+                    duration: 6000,
+                  });
+                  playNotificationSound();
                 }
               } catch (err) {
                 console.error("[SSE] Erro ao processar evento:", err);

@@ -103,6 +103,25 @@ export function useRealtimeNotifications() {
                     duration: 8000,
                   });
                   playNotificationSound();
+                } else if (eventType === "complaint_assigned") {
+                  queryClient.invalidateQueries({ queryKey: ["complaints"] });
+                  toast({
+                    title: "Ocorrência atribuída",
+                    description: "Você foi atribuído a uma nova ocorrência",
+                    variant: "default",
+                    duration: 5000,
+                  });
+                  playNotificationSound();
+                } else if (eventType === "notification") {
+                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                  queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+                  toast({
+                    title: data.title ?? "Notificação",
+                    description: data.body ?? "",
+                    variant: "default",
+                    duration: 6000,
+                  });
+                  playNotificationSound();
                 }
               } catch (err) {
                 console.error("[SSE] Erro:", err);

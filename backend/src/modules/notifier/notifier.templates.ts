@@ -76,7 +76,7 @@ export function buildTemplate(event: NotificationEvent): TemplateResult {
           `${event.authorName} adicionou uma mensagem.`,
         inAppTitle: "Nova mensagem",
         inAppBody: `${event.authorName} comentou na ocorrência #${event.complaintId}.`,
-        inAppType: "complaint_status",
+        inAppType: "complaint_comment",
       };
 
     case "sla_warning": {
@@ -100,7 +100,7 @@ export function buildTemplate(event: NotificationEvent): TemplateResult {
           `Prioridade: ${priorityLabel}`,
         inAppTitle: "SLA violado",
         inAppBody: `Ocorrência #${event.complaintId} (${event.category}, prioridade ${priorityLabel}) ultrapassou o prazo do SLA.`,
-        inAppType: "sla_warning",
+        inAppType: "sla_escalation",
       };
     }
 

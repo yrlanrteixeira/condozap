@@ -106,7 +106,7 @@ export function TeamManagementPage() {
 
   const updateAssignedTowerMutation = useMutation({
     mutationFn: async ({ userId, assignedTower }: { userId: string; assignedTower: string | null }) => {
-      const { data } = await api.patch(`/api/users/${userId}/assigned-tower`, {
+      const { data } = await api.patch(`/users/${userId}/assigned-tower`, {
         assignedTower,
         condominiumId: currentCondominiumId,
       });

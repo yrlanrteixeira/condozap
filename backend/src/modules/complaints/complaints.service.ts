@@ -846,6 +846,15 @@ export async function assignComplaint(
     },
     "Complaint assigned"
   );
+
+  if (assigneeId) {
+    sendSSENotification(assigneeId, "complaint_assigned", {
+      complaintId,
+      category: complaint.category,
+      sectorId: data.sectorId,
+    });
+  }
+
   return updated;
 }
 

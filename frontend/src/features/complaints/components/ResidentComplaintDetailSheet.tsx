@@ -89,7 +89,7 @@ export function ResidentComplaintDetailSheet({
       complaintId: number;
       message: string;
     }) => {
-      const { data } = await api.post(`/api/complaints/${id}/complement`, {
+      const { data } = await api.post(`/complaints/${id}/complement`, {
         message,
       });
       return data;
@@ -120,7 +120,7 @@ export function ResidentComplaintDetailSheet({
       complaintId: number;
       reason: string;
     }) => {
-      const { data } = await api.post(`/api/complaints/${id}/reopen`, {
+      const { data } = await api.post(`/complaints/${id}/reopen`, {
         reason,
       });
       return data;
