@@ -155,7 +155,7 @@ model Condominium {
 /// Convite criado pelo síndico para o morador concluir cadastro via link (WhatsApp).
 model ResidentInvite {
   id               String    @id @default(cuid())
-  condominiumId  String    @map("condominium_id")
+  condominiumId    String    @map("condominium_id")
   createdByUserId  String    @map("created_by_user_id")
   name             String
   phone            String
@@ -262,8 +262,8 @@ model User {
   createdAnnouncements  Announcement[]        @relation("AnnouncementAuthor")
 
   // Billing
-  subscription      Subscription? @relation("SyndicSubscription")
-  ownedCondominiums Condominium[] @relation("OwnedCondominiums")
+  subscription           Subscription?    @relation("SyndicSubscription")
+  ownedCondominiums      Condominium[]    @relation("OwnedCondominiums")
   createdResidentInvites ResidentInvite[] @relation("ResidentInviteCreator")
 
   @@index([email])
@@ -273,19 +273,19 @@ model User {
 }
 
 model UserCondominium {
-  id              String   @id @default(cuid())
-  userId          String   @map("user_id")
-  condominiumId   String   @map("condominium_id")
+  id              String                    @id @default(cuid())
+  userId          String                    @map("user_id")
+  condominiumId   String                    @map("condominium_id")
   role            UserRole
-  councilPosition String?  @map("council_position") // Função no condomínio (ex: Conselheiro, Porteiro, Obras)
-  assignedTower   String?  @map("assigned_tower")
+  councilPosition String?                   @map("council_position") // Função no condomínio (ex: Conselheiro, Porteiro, Obras)
+  assignedTower   String?                   @map("assigned_tower")
   permissionMode  CondominiumPermissionMode @default(ROLE_DEFAULT) @map("permission_mode")
-  createdAt       DateTime @default(now()) @map("created_at")
+  createdAt       DateTime                  @default(now()) @map("created_at")
 
   // Relations
-  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  condominium        Condominium                 @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
-  customPermissions  UserCondominiumPermission[]
+  user              User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condominium       Condominium                 @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
+  customPermissions UserCondominiumPermission[]
 
   @@unique([userId, condominiumId])
   @@index([userId])
@@ -375,11 +375,12 @@ model Complaint {
   assignments      ComplaintAssignment[]
   messages         ComplaintMessage[]
 
+  @@unique([residentId, condominiumId, requestKey])
   @@index([condominiumId, status])
+  @@index([condominiumId, status, createdAt])
   @@index([condominiumId, priority])
   @@index([condominiumId, sectorId])
   @@index([assigneeId])
-  @@unique([residentId, condominiumId, requestKey])
   @@map("complaints")
 }
 
@@ -585,22 +586,23 @@ model Notification {
   user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+  @@index([userId, read, createdAt])
   @@index([userId, createdAt])
   @@map("notifications")
 }
 
 model ComplaintMessage {
-  id            String   @id @default(cuid())
-  complaintId   Int      @map("complaint_id")
-  senderId      String   @map("sender_id")
-  senderRole    String   @map("sender_role")
-  content       String   @db.Text
-  attachmentUrl String?  @map("attachment_url")
-  source        String   @default("WEB")
-  isInternal    Boolean  @default(false) @map("is_internal")
-  whatsappStatus String? @map("whatsapp_status")
-  whatsappMessageId String? @map("whatsapp_message_id")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                String   @id @default(cuid())
+  complaintId       Int      @map("complaint_id")
+  senderId          String   @map("sender_id")
+  senderRole        String   @map("sender_role")
+  content           String   @db.Text
+  attachmentUrl     String?  @map("attachment_url")
+  source            String   @default("WEB")
+  isInternal        Boolean  @default(false) @map("is_internal")
+  whatsappStatus    String?  @map("whatsapp_status")
+  whatsappMessageId String?  @map("whatsapp_message_id")
+  createdAt         DateTime @default(now()) @map("created_at")
 
   complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
   sender    User      @relation("ComplaintMessageSender", fields: [senderId], references: [id])
@@ -757,18 +759,18 @@ enum ActivityType {
 }
 
 model ActivityLog {
-  id              String       @id @default(cuid())
-  condominiumId   String       @map("condominium_id")
-  userId          String       @map("user_id")
-  userName        String?      @map("user_name")
-  type            ActivityType
-  description     String       @db.Text
-  metadata        Json?        @db.JsonB
-  targetId        String?      @map("target_id")
-  targetType      String?      @map("target_type")
-  status          String       @default("success")
-  errorMessage    String?      @map("error_message")
-  createdAt       DateTime     @default(now()) @map("created_at")
+  id            String       @id @default(cuid())
+  condominiumId String       @map("condominium_id")
+  userId        String       @map("user_id")
+  userName      String?      @map("user_name")
+  type          ActivityType
+  description   String       @db.Text
+  metadata      Json?        @db.JsonB
+  targetId      String?      @map("target_id")
+  targetType    String?      @map("target_type")
+  status        String       @default("success")
+  errorMessage  String?      @map("error_message")
+  createdAt     DateTime     @default(now()) @map("created_at")
 
   @@index([condominiumId, createdAt])
   @@index([type])

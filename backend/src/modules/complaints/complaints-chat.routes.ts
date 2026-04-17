@@ -20,7 +20,15 @@ export const complaintChatRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post(
     "/:complaintId",
-    { onRequest: [fastify.authenticate] },
+    {
+      onRequest: [fastify.authenticate],
+      config: {
+        rateLimit: {
+          max: 60,
+          timeWindow: "1 minute",
+        },
+      },
+    },
     sendComplaintMessageHandler
   );
 };

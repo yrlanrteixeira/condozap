@@ -68,7 +68,12 @@ export async function uploadRoutes(app: FastifyInstance) {
    */
   app.post(
     "/media",
-    { onRequest: [app.authenticate] },
+    {
+      onRequest: [app.authenticate],
+      config: {
+        rateLimit: { max: 30, timeWindow: "1 minute" },
+      },
+    },
     async (request, reply) => {
       if (!request.user) {
         throw new UnauthorizedError();
@@ -101,6 +106,9 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/complaints/:complaintId/attachments",
     {
       onRequest: [app.authenticate],
+      config: {
+        rateLimit: { max: 30, timeWindow: "1 minute" },
+      },
     },
     async (request, reply) => {
       const params = uploadComplaintAttachmentParamsSchema.parse(request.params);
@@ -166,6 +174,9 @@ export async function uploadRoutes(app: FastifyInstance) {
     "/documents",
     {
       onRequest: [app.authenticate],
+      config: {
+        rateLimit: { max: 30, timeWindow: "1 minute" },
+      },
     },
     async (request, reply) => {
       const user = request.user;
