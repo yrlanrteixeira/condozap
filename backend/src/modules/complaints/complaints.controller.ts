@@ -294,6 +294,9 @@ export async function submitCsatHandler(
   reply: FastifyReply
 ) {
   const complaintId = Number(request.params.id);
+  if (!Number.isInteger(complaintId) || complaintId <= 0) {
+    return reply.status(400).send({ error: "ID da ocorrência inválido" });
+  }
   const { score, comment } = request.body;
 
   if (!Number.isInteger(score) || score < 1 || score > 5) {

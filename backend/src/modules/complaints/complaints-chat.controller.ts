@@ -11,6 +11,9 @@ export async function sseComplaintMessagesHandler(
 ) {
   const user = request.user as AuthUser;
   const complaintId = Number((request.params as { complaintId: string }).complaintId);
+  if (!Number.isInteger(complaintId) || complaintId <= 0) {
+    return reply.status(400).send({ error: "ID da ocorrência inválido" });
+  }
 
   const complaint = await prisma.complaint.findUnique({
     where: { id: complaintId },
@@ -111,6 +114,9 @@ export async function listComplaintMessagesHandler(
 ) {
   const user = request.user as AuthUser;
   const complaintId = Number((request.params as { complaintId: string }).complaintId);
+  if (!Number.isInteger(complaintId) || complaintId <= 0) {
+    return reply.status(400).send({ error: "ID da ocorrência inválido" });
+  }
   const query = request.query as { limit?: string; cursor?: string };
   const limit = Math.min(Number(query.limit) || 50, 100);
   const cursor = query.cursor as string | undefined;
@@ -181,6 +187,9 @@ export async function sendComplaintMessageHandler(
 ) {
   const user = request.user as AuthUser;
   const complaintId = Number((request.params as { complaintId: string }).complaintId);
+  if (!Number.isInteger(complaintId) || complaintId <= 0) {
+    return reply.status(400).send({ error: "ID da ocorrência inválido" });
+  }
   const { content, attachmentUrl, isInternal, notifyWhatsapp = true } = request.body as {
     content: string;
     attachmentUrl?: string;

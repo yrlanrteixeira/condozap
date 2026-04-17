@@ -102,6 +102,18 @@ export async function createComplaint(
         sectorId: data.sectorId ?? null,
         responseDueAt,
         resolutionDueAt,
+        ...(data.attachments && data.attachments.length > 0
+          ? {
+              attachments: {
+                create: data.attachments.map((att) => ({
+                  fileUrl: att.fileUrl,
+                  fileName: att.fileName,
+                  fileType: att.fileType,
+                  fileSize: att.fileSize,
+                })),
+              },
+            }
+          : {}),
       },
       include: {
         resident: true,
@@ -139,29 +151,6 @@ export async function createComplaint(
       }
     }
     throw error;
-  }
-
-  // Create attachments if provided
-  if (data.attachments && data.attachments.length > 0) {
-    await prisma.complaintAttachment.createMany({
-      data: data.attachments.map((att) => ({
-        complaintId: complaint.id,
-        fileUrl: att.fileUrl,
-        fileName: att.fileName,
-        fileType: att.fileType,
-        fileSize: att.fileSize,
-      })),
-    });
-    // Reload complaint with attachments
-    complaint = await prisma.complaint.findUnique({
-      where: { id: complaint.id },
-      include: {
-        resident: true,
-        attachments: true,
-        sector: true,
-        assignee: true,
-      },
-    }) as ComplaintWithRelations;
   }
 
   let effectiveSectorId = data.sectorId ?? null;
