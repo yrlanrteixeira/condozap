@@ -1,0 +1,17 @@
+{
+  "event": "MESSAGES_UPSERT",
+  "instance": "condozap-test",
+  "data": {
+    "key": {
+      "id": "MSG_MOCK_1",
+      "remoteJid": "5511999999999@s.whatsapp.net",
+      "fromMe": false
+    },
+    "pushName": "Test Contact",
+    "message": {
+      "conversation": "Olá, gostaria de abrir uma solicitação."
+    },
+    "messageTimestamp": 1745251200,
+    "status": "RECEIVED"
+  }
+}
