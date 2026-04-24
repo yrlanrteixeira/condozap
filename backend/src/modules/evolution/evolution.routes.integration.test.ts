@@ -180,14 +180,17 @@ describe("evolution — POST /api/evolution/check-numbers", () => {
 });
 
 // =====================================================
-// POST /api/evolution/webhook (inbound, no auth)
+// POST /api/evolution/webhook (inbound, shared-secret protected)
 // =====================================================
+const EVO_KEY = "test-evolution-key"; // from .env.test EVOLUTION_API_KEY
+
 describe("evolution — POST /api/evolution/webhook (inbound)", () => {
   it("accepts MESSAGES_UPSERT and returns received:true", async () => {
     const app = await getTestApp();
     const res = await app.inject({
       method: "POST",
       url: "/api/evolution/webhook",
+      headers: { apikey: EVO_KEY },
       payload: {
         event: "MESSAGES_UPSERT",
         instance: "test",
@@ -207,6 +210,7 @@ describe("evolution — POST /api/evolution/webhook (inbound)", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/evolution/webhook",
+      headers: { apikey: EVO_KEY },
       payload: {
         event: "CONNECTION_UPDATE",
         instance: "test",
@@ -221,6 +225,7 @@ describe("evolution — POST /api/evolution/webhook (inbound)", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/evolution/webhook",
+      headers: { apikey: EVO_KEY },
       payload: {
         event: "UNKNOWN_EVENT",
         instance: "test",
@@ -235,6 +240,7 @@ describe("evolution — POST /api/evolution/webhook (inbound)", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/evolution/webhook",
+      headers: { apikey: EVO_KEY },
       payload: {
         event: "MESSAGES_UPSERT",
         instance: "test",
@@ -246,4 +252,100 @@ describe("evolution — POST /api/evolution/webhook (inbound)", () => {
     });
     expect(res.statusCode).toBe(200);
   });
+
+  it("returns 401 when shared secret header is missing", async () => {
+    const app = await getTestApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/evolution/webhook",
+      payload: {
+        event: "CONNECTION_UPDATE",
+        instance: "test",
+        data: { state: "open" },
+      },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 401 when shared secret is wrong", async () => {
+    const app = await getTestApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/evolution/webhook",
+      headers: { apikey: "bogus" },
+      payload: {
+        event: "CONNECTION_UPDATE",
+        instance: "test",
+        data: { state: "open" },
+      },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("accepts x-evolution-token header as alternative", async () => {
+    const app = await getTestApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/evolution/webhook",
+      headers: { "x-evolution-token": EVO_KEY },
+      payload: {
+        event: "CONNECTION_UPDATE",
+        instance: "test",
+        data: { state: "open" },
+      },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+// =====================================================
+// Role guards on operational endpoints (item 2)
+// =====================================================
+describe("evolution — role guards on operational endpoints", () => {
+  it("RESIDENT receives 403 on POST /disconnect", async () => {
+    const app = await getTestApp();
+    const u = await makeUser({ role: UserRole.RESIDENT });
+    const res = await authedInject(app, asAuthUser(u), {
+      method: "POST",
+      url: "/api/evolution/disconnect",
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("RESIDENT receives 403 on POST /restart", async () => {
+    const app = await getTestApp();
+    const u = await makeUser({ role: UserRole.RESIDENT });
+    const res = await authedInject(app, asAuthUser(u), {
+      method: "POST",
+      url: "/api/evolution/restart",
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("RESIDENT receives 403 on POST /send", async () => {
+    const app = await getTestApp();
+    const u = await makeUser({ role: UserRole.RESIDENT });
+    const res = await authedInject(app, asAuthUser(u), {
+      method: "POST",
+      url: "/api/evolution/send",
+      payload: { phone: "5511987654321", message: "hi" },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("RESIDENT receives 403 on POST /check-numbers", async () => {
+    const app = await getTestApp();
+    const u = await makeUser({ role: UserRole.RESIDENT });
+    const res = await authedInject(app, asAuthUser(u), {
+      method: "POST",
+      url: "/api/evolution/check-numbers",
+      payload: { numbers: ["5511987654321"] },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  // Happy path with SUPER_ADMIN already covered above in
+  // "evolution — POST /api/evolution/disconnect + /restart". Avoiding SYNDIC
+  // happy-path here because the global subscription guard intercepts SYNDICs
+  // without a TRIAL/active sub (returns 402) — that's tested in billing/.
 });
