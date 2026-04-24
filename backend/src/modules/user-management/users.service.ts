@@ -11,7 +11,6 @@ import type {
   UpdateCouncilPositionRequest,
   RemoveUserRequest,
   InviteUserRequest,
-  UserRole,
 } from "./user-management.schema";
 import * as usersRepository from "./users.repository";
 import { EMAIL_CONFLICT_MESSAGE } from "./messages";
@@ -339,25 +338,30 @@ export async function updateUserRole(
       );
     }
     // Restrict role update to memberships in shared condos only.
-    await usersRepository.updateUser(prisma, data.userId, {
-      role: data.newRole as UserRole,
+    // Wrap multi-write op in a transaction so a partial failure rolls back.
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: data.userId },
+        data: { role: data.newRole as PrismaUserRole },
+      });
+      for (const condoId of sharedCondos) {
+        await tx.userCondominium.updateMany({
+          where: { userId: data.userId, condominiumId: condoId },
+          data: { role: data.newRole as PrismaUserRole },
+        });
+      }
     });
-    for (const condoId of sharedCondos) {
-      await usersRepository.updateUserCondominiums(
-        prisma,
-        { userId: data.userId, condominiumId: condoId },
-        { role: data.newRole as UserRole }
-      );
-    }
   } else {
-    await usersRepository.updateUser(prisma, data.userId, {
-      role: data.newRole as UserRole,
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: data.userId },
+        data: { role: data.newRole as PrismaUserRole },
+      });
+      await tx.userCondominium.updateMany({
+        where: { userId: data.userId },
+        data: { role: data.newRole as PrismaUserRole },
+      });
     });
-    await usersRepository.updateUserCondominiums(
-      prisma,
-      { userId: data.userId },
-      { role: data.newRole as UserRole }
-    );
   }
 
   logger.info(`User ${data.userId} role updated to ${data.newRole}`);
@@ -406,22 +410,31 @@ export async function removeUserFromCondominium(
     throw new ForbiddenError("Acesso negado ao condomínio solicitado");
   }
 
-  await usersRepository.deleteUserCondominiums(prisma, {
-    userId: data.userId,
-    condominiumId: data.condominiumId,
-  });
-
-  const remainingCondos = await usersRepository.countUserCondominiums(prisma, {
-    userId: data.userId,
-  });
-
-  let userSuspended = false;
-  if (remainingCondos === 0) {
-    await usersRepository.updateUser(prisma, data.userId, {
-      status: "SUSPENDED",
+  // Atomic: delete the membership, recount remaining links, and suspend the
+  // user if it was their last condo. Wrapped in a transaction so a crash
+  // between delete and update can't leave the user in a half-removed state.
+  const { userSuspended } = await prisma.$transaction(async (tx) => {
+    await tx.userCondominium.deleteMany({
+      where: {
+        userId: data.userId,
+        condominiumId: data.condominiumId,
+      },
     });
-    userSuspended = true;
-  }
+
+    const remainingCondos = await tx.userCondominium.count({
+      where: { userId: data.userId },
+    });
+
+    let suspended = false;
+    if (remainingCondos === 0) {
+      await tx.user.update({
+        where: { id: data.userId },
+        data: { status: "SUSPENDED" },
+      });
+      suspended = true;
+    }
+    return { userSuspended: suspended };
+  });
 
   logger.info(
     `User ${data.userId} removed from condominium ${data.condominiumId}`
