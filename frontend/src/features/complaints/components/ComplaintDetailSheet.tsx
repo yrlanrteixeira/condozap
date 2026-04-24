@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/components/ui/sheet";
+
 import {
   Dialog,
   DialogContent,
@@ -189,16 +184,15 @@ export function ComplaintDetailSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="right" 
-        className="w-[100dvw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex flex-col p-0 h-[100dvh] sm:h-[85vh] sm:mt-[7.5vh]"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent 
+        className="w-[100dvw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl flex flex-col p-0 h-[100dvh] sm:h-[85vh] sm:rounded-xl overflow-hidden"
       >
-        <SheetHeader className="p-4 border-b shrink-0">
-          <SheetTitle className="text-left text-lg sm:text-xl">
+        <DialogHeader className="p-4 border-b shrink-0">
+          <DialogTitle className="text-left text-lg sm:text-xl">
             {complaintId ? `Ocorrência #${complaintId}` : "Detalhe"}
-          </SheetTitle>
-        </SheetHeader>
+          </DialogTitle>
+        </DialogHeader>
 
         {!complaintId ? (
           <div className="p-4 text-muted-foreground text-sm">
@@ -257,8 +251,8 @@ export function ComplaintDetailSheet({
 
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 

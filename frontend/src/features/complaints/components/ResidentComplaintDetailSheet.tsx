@@ -1,11 +1,6 @@
 import { useState } from "react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/shared/components/ui/sheet";
+
 import {
   Dialog,
   DialogContent,
@@ -153,17 +148,16 @@ export function ResidentComplaintDetailSheet({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="right"
-          className="w-[100dvw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex flex-col p-0 h-[100dvh] sm:h-[85vh] sm:mt-[7.5vh]"
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="w-[100dvw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl flex flex-col p-0 h-[100dvh] sm:h-[85vh] sm:rounded-xl overflow-hidden"
         >
           {/* Header */}
-          <SheetHeader className="p-4 border-b shrink-0">
+          <DialogHeader className="p-4 border-b shrink-0">
             <div className="flex items-center justify-between gap-3 pr-6">
-              <SheetTitle className="text-left text-lg sm:text-xl">
+              <DialogTitle className="text-left text-lg sm:text-xl">
                 {complaintId ? `Ocorrencia #${complaintId}` : "Detalhe"}
-              </SheetTitle>
+              </DialogTitle>
               {complaint && (
                 <ComplaintStatusBadge
                   status={complaint.status as ComplaintStatus}
@@ -171,10 +165,10 @@ export function ResidentComplaintDetailSheet({
                 />
               )}
             </div>
-            <SheetDescription className="sr-only">
+            <DialogDescription className="sr-only">
               Detalhes da ocorrencia e historico de atualizacoes
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
 
           {/* Content */}
           {!complaintId ? (
@@ -220,8 +214,8 @@ export function ResidentComplaintDetailSheet({
               />
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {/* Reopen Confirmation Dialog */}
       <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>

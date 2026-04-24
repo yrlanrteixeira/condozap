@@ -75,12 +75,6 @@ export const Sidebar = ({
       permission: Permissions.VIEW_DASHBOARD,
     },
     {
-      title: "Dashboard Unificado",
-      href: "/unified-dashboard",
-      icon: Globe,
-      permission: Permissions.VIEW_UNIFIED_DASHBOARD,
-    },
-    {
       title: "Dashboard do Setor",
       href: "/sector-dashboard",
       icon: LayoutDashboard,

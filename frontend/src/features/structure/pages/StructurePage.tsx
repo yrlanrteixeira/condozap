@@ -2,6 +2,15 @@ import { useState, useMemo } from "react";
 import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/components/ui/table";
 import { PageHeaderSkeleton, StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { Resident } from "@/features/residents/types";
@@ -10,7 +19,8 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
 import { ResidentDialog } from "@/features/residents";
-import { TowerCard, StructureConfigDialog, SectorManagementDialog } from "../components";
+import { StructureConfigDialog, SectorManagementDialog } from "../components";
+import { formatTowerHeading } from "../utils/towerDisplay";
 import { useStructure } from "../hooks/useStructureApi";
 
 export function StructurePage() {
@@ -47,13 +57,21 @@ export function StructurePage() {
     isError,
   } = useResidents(condoIdToFetch, {});
 
-  // Group residents by tower
-  const residentsByTower = useMemo(() => {
-    if (!residents) return {};
-    return residents.reduce((acc, resident) => {
-      (acc[resident.tower] ??= []).push(resident);
-      return acc;
-    }, {} as Record<string, Resident[]>);
+  // Sort residents
+  const sortedResidents = useMemo(() => {
+    if (!residents) return [];
+    return [...residents].sort((a, b) => {
+      // Sort by tower
+      if (a.tower !== b.tower) return a.tower.localeCompare(b.tower);
+      // Sort by floor (descending)
+      const floorA = parseInt(a.floor) || 0;
+      const floorB = parseInt(b.floor) || 0;
+      if (floorA !== floorB) return floorB - floorA;
+      // Sort by unit
+      const unitA = parseInt(a.unit) || 0;
+      const unitB = parseInt(b.unit) || 0;
+      return unitA - unitB;
+    });
   }, [residents]);
 
   // All towers = configured structure towers + any towers from residents (union)
@@ -208,17 +226,57 @@ export function StructurePage() {
         </div>
       ) : null}
 
-      {/* Towers Grid */}
-      {allTowers.length > 0 ? (
-        <div className="space-y-4">
-          {allTowers.map((tower) => (
-            <TowerCard
-              key={tower}
-              towerName={tower}
-              residents={residentsByTower[tower] ?? []}
-            />
-          ))}
-        </div>
+      {/* Units Table */}
+      {sortedResidents.length > 0 ? (
+        <Card className="border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Torre/Bloco</TableHead>
+                <TableHead>Andar</TableHead>
+                <TableHead>Unidade</TableHead>
+                <TableHead>Morador</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedResidents.map((resident) => (
+                <TableRow key={resident.id}>
+                  <TableCell className="font-medium whitespace-nowrap">
+                    {formatTowerHeading(resident.tower)}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{resident.floor}º Andar</TableCell>
+                  <TableCell className="whitespace-nowrap">{resident.unit}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{resident.name}</span>
+                      <span className="text-xs text-muted-foreground">{resident.email || resident.phone}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={
+                      resident.type === "OWNER" 
+                        ? "border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300" 
+                        : "border-green-200 text-green-700 bg-green-50 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
+                    }>
+                      {resident.type === "OWNER" ? "Proprietário" : "Inquilino"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditResident(resident)}
+                    >
+                      Editar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       ) : (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center p-6 sm:p-12">
