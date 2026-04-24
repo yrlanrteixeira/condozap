@@ -366,7 +366,11 @@ model Complaint {
 
   // Relations
   condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
-  resident         Resident                 @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  // Resident deletion is BLOCKED when complaints reference it (Restrict).
+  // The service-layer guard in deleteResident() returns a friendly 409 first,
+  // but Restrict is a defense-in-depth invariant: no path can silently erase
+  // the complaints log by deleting a resident (raw SQL, accidental cascades, etc).
+  resident         Resident                 @relation(fields: [residentId], references: [id], onDelete: Restrict)
   sector           Sector?                  @relation(fields: [sectorId], references: [id], onDelete: SetNull)
   assignee         User?                    @relation("ComplaintAssignee", fields: [assigneeId], references: [id])
   escalationTarget User?                    @relation("ComplaintEscalationTarget", fields: [escalationTargetId], references: [id])
