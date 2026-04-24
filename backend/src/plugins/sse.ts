@@ -9,6 +9,35 @@ interface SSEConnection {
 
 const connections = new Map<string, SSEConnection>();
 
+/**
+ * Channel-only subscriptions (e.g. `complaint:123`).
+ * Each channel maps to a Set of raw `reply` writers.
+ */
+const channelConnections = new Map<string, Set<any>>();
+
+/**
+ * Subscribe a raw response stream to a named channel. Returns an
+ * unsubscribe function that cleans up the entry safely.
+ */
+export function subscribeToChannel(channel: string, replyRaw: any): () => void {
+  let set = channelConnections.get(channel);
+  if (!set) {
+    set = new Set();
+    channelConnections.set(channel, set);
+  }
+  set.add(replyRaw);
+  return () => {
+    const current = channelConnections.get(channel);
+    if (!current) return;
+    current.delete(replyRaw);
+    if (current.size === 0) channelConnections.delete(channel);
+  };
+}
+
+export function getChannelSubscriberCount(channel: string): number {
+  return channelConnections.get(channel)?.size ?? 0;
+}
+
 const ssePlugin = async (fastify: FastifyInstance) => {
   // Registrar rota SSE
   fastify.get("/sse", { config: { raw: true } }, async (request, reply) => {
@@ -88,11 +117,23 @@ export function sendSSENotification(userId: string, event: string, data: any) {
 // Broadcast to a specific channel (e.g., "complaint:123")
 export function broadcastToChannel(channel: string, event: string, data: any) {
   const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  
+
+  // 1. Channel-only subscribers (per-resource streams like complaint chat)
+  const channelSet = channelConnections.get(channel);
+  if (channelSet) {
+    for (const reply of channelSet) {
+      try {
+        reply.write(message);
+      } catch {
+        // socket already closed; subscription cleanup handled by 'close'
+      }
+    }
+  }
+
+  // 2. User-level connections that opted into this channel via query param
   for (const conn of connections.values()) {
     const userChannels = conn.channels || [];
-    if (userChannels.includes(channel) || userChannels.length === 0) {
-      // If no channels subscribed, send to all (fallback)
+    if (userChannels.includes(channel)) {
       conn.reply?.write(message);
     }
   }

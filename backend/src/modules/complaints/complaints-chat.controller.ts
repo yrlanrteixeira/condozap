@@ -3,7 +3,7 @@ import { prisma } from "../../shared/db/prisma";
 import type { AuthUser } from "../../types/auth";
 import { notify } from "../notifier/notifier.service";
 import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
-import { sendSSENotification } from "../../plugins/sse";
+import { sendSSENotification, subscribeToChannel } from "../../plugins/sse";
 
 export async function sseComplaintMessagesHandler(
   request: FastifyRequest,
@@ -34,6 +34,8 @@ export async function sseComplaintMessagesHandler(
     }
   }
 
+  reply.hijack();
+
   reply.raw.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -41,57 +43,16 @@ export async function sseComplaintMessagesHandler(
     "Access-Control-Allow-Origin": "*",
   });
 
-  reply.raw.write(`event: connected\ndata: ${JSON.stringify({ complaintId })}\n\n`);
+  reply.raw.write(
+    `event: connected\ndata: ${JSON.stringify({ complaintId })}\n\n`
+  );
 
-  let lastId: string | null = null;
-  let polling = false;
+  // Subscribe this raw stream to the per-complaint channel.
+  // Pushes happen from sendComplaintMessageHandler via sendSSENotification
+  // -> broadcastToChannel, eliminating the previous 3s polling loop.
+  const unsubscribe = subscribeToChannel(`complaint:${complaintId}`, reply.raw);
+
   let closed = false;
-
-  const latest = await prisma.complaintMessage.findFirst({
-    where: { complaintId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  });
-  lastId = latest?.id ?? null;
-
-  const check = async () => {
-    if (polling || closed) return;
-    polling = true;
-    try {
-      const msgs = await prisma.complaintMessage.findMany({
-        where: {
-          complaintId,
-          ...(lastId ? { id: { gt: lastId } } : {}),
-          ...(user.role === "RESIDENT" ? { isInternal: false } : {}),
-        },
-        orderBy: { createdAt: "asc" },
-        take: 10,
-        include: { sender: { select: { id: true, name: true } } },
-      });
-      if (msgs.length > 0 && !closed) {
-        lastId = msgs[msgs.length - 1].id;
-        for (const msg of msgs) {
-          reply.raw.write(`event: new_message\ndata: ${JSON.stringify({
-            id: msg.id,
-            senderId: msg.senderId,
-            senderRole: msg.senderRole,
-            senderName: msg.sender.name,
-            content: msg.content,
-            attachmentUrl: msg.attachmentUrl,
-            source: msg.source,
-            isInternal: msg.isInternal,
-            createdAt: msg.createdAt.toISOString(),
-          })}\n\n`);
-        }
-      }
-    } catch (err) {
-      request.log.error({ err, complaintId }, "complaint chat SSE poll failed");
-    } finally {
-      polling = false;
-    }
-  };
-
-  const interval = setInterval(check, 3000);
   const heartbeat = setInterval(() => {
     if (closed) return;
     try {
@@ -101,11 +62,15 @@ export async function sseComplaintMessagesHandler(
     }
   }, 25000);
 
-  request.raw.on("close", () => {
+  const cleanup = () => {
+    if (closed) return;
     closed = true;
-    clearInterval(interval);
     clearInterval(heartbeat);
-  });
+    unsubscribe();
+  };
+
+  request.raw.on("close", cleanup);
+  request.raw.on("error", cleanup);
 }
 
 export async function listComplaintMessagesHandler(
