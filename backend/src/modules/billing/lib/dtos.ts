@@ -85,7 +85,7 @@ export function toPublicSubscriptionDto(
   };
 }
 
-export function toPublicBillDto(bill: PaymentBill): PublicBillDto {
+export function toPublicBillDto(bill: Omit<PaymentBill, "providerPayload">): PublicBillDto {
   return {
     id: bill.id,
     status: bill.status,

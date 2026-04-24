@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Loader2 } from "lucide-react";
 import { AppProvider } from "@/shared/contexts";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ThemeProvider } from "@/shared/components/theme-provider";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
@@ -34,10 +35,12 @@ export default function App() {
           <ThemeProvider defaultTheme="system" storageKey="talkzap-ui-theme">
             <TooltipProvider delayDuration={300}>
               <BrowserRouter>
-                <AppProvider>
-                  <AppRoutes />
-                  <Toaster />
-                </AppProvider>
+                <ErrorBoundary>
+                  <AppProvider>
+                    <AppRoutes />
+                    <Toaster />
+                  </AppProvider>
+                </ErrorBoundary>
               </BrowserRouter>
               {import.meta.env.DEV && (
                 <ReactQueryDevtools initialIsOpen={false} />

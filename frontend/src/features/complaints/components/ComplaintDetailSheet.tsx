@@ -90,7 +90,7 @@ export function ComplaintDetailSheet({
 
   const returnMutation = useMutation({
     mutationFn: async ({ complaintId, reason }: { complaintId: number; reason: string }) => {
-      const { data } = await api.post(`/api/complaints/${complaintId}/return`, { reason });
+      const { data } = await api.post(`/complaints/${complaintId}/return`, { reason });
       return data;
     },
     onSuccess: () => {

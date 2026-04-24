@@ -3,6 +3,7 @@
  */
 
 export type ComplaintStatus =
+  | "OPEN"
   | "NEW"
   | "TRIAGE"
   | "IN_PROGRESS"

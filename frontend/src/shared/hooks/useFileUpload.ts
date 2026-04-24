@@ -73,6 +73,9 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        // Uploads grandes em conexões lentas precisam de mais tempo que o
+        // timeout padrão do axios (30s).
+        timeout: 180000,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentage = Math.round(

@@ -37,22 +37,28 @@ export const prisma =
 
 if (config.isDev) globalForPrisma.prisma = prisma;
 
-process.on("SIGINT", async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
+let healthCheckInterval: NodeJS.Timeout | null = null;
 
 if (!config.isDev) {
-  setInterval(async () => {
+  healthCheckInterval = setInterval(async () => {
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch (error) {
       console.error("❌ Prisma health check failed:", error);
     }
   }, 60000);
+  // Allow process to exit even if interval is still scheduled
+  healthCheckInterval.unref?.();
 }
+
+const shutdown = async () => {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = null;
+  }
+  await prisma.$disconnect();
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

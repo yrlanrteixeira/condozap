@@ -11,6 +11,8 @@ export const statusEnum = z.enum([
   "RESOLVED",
   "CLOSED",
   "CANCELLED",
+  "RETURNED",
+  "REOPENED",
 ]);
 
 export const createComplaintSchema = z.object({
@@ -88,6 +90,11 @@ export const complaintFiltersSchema = z.object({
   condominiumId: z.string().optional(),
   sectorId: z.string().optional(),
   assigneeId: z.string().optional(),
+  // Paginação opt-in. Quando `page` é informado, o handler responde com
+  // envelope { data, total, page, pageSize } e aplica take/skip no Prisma.
+  // Sem `page`, retorna o array completo (compatibilidade com UI atual).
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(200).optional().default(20),
 });
 
 export const complaintIdParamSchema = z.object({

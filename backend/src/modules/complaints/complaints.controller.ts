@@ -4,6 +4,7 @@ import * as complaintService from "./complaints.service";
 import {
   findComplaintByIdForUser,
   findComplaintsForUser,
+  countComplaintsForUser,
 } from "./complaints.repository";
 import {
   addCommentSchema,
@@ -253,6 +254,16 @@ export async function getAllComplaintsHandler(
 
   const user = request.user as AuthUser;
   const complaints = await findComplaintsForUser(prisma, user, filters);
+
+  if (filters.page) {
+    const total = await countComplaintsForUser(prisma, user, filters);
+    return reply.send({
+      data: complaints,
+      total,
+      page: filters.page,
+      pageSize: filters.pageSize ?? 20,
+    });
+  }
   return reply.send(complaints);
 }
 
@@ -262,15 +273,28 @@ export async function getComplaintsByCondominiumHandler(
 ) {
   const { condominiumId } = condominiumIdParamSchema.parse(request.params);
   const filters = complaintFiltersSchema
-    .pick({ status: true, priority: true, category: true })
+    .pick({
+      status: true,
+      priority: true,
+      category: true,
+      page: true,
+      pageSize: true,
+    })
     .parse(request.query);
 
   const user = request.user as AuthUser;
-  const complaints = await findComplaintsForUser(prisma, user, {
-    ...filters,
-    condominiumId,
-  });
+  const mergedFilters = { ...filters, condominiumId };
+  const complaints = await findComplaintsForUser(prisma, user, mergedFilters);
 
+  if (filters.page) {
+    const total = await countComplaintsForUser(prisma, user, mergedFilters);
+    return reply.send({
+      data: complaints,
+      total,
+      page: filters.page,
+      pageSize: filters.pageSize ?? 20,
+    });
+  }
   return reply.send(complaints);
 }
 
@@ -294,6 +318,9 @@ export async function submitCsatHandler(
   reply: FastifyReply
 ) {
   const complaintId = Number(request.params.id);
+  if (!Number.isInteger(complaintId) || complaintId <= 0) {
+    return reply.status(400).send({ error: "ID da ocorrência inválido" });
+  }
   const { score, comment } = request.body;
 
   if (!Number.isInteger(score) || score < 1 || score > 5) {

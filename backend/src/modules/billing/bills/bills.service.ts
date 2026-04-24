@@ -111,7 +111,9 @@ export async function createPixBillForCurrentCycle(
       } as unknown as import("@prisma/client").Prisma.InputJsonValue,
     });
   } catch (err) {
-    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
+      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+    });
     throw err;
   }
 }
@@ -176,7 +178,9 @@ export async function createCardBillForCurrentCycle(
       } as unknown as import("@prisma/client").Prisma.InputJsonValue,
     });
   } catch (err) {
-    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
+      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+    });
     throw err;
   }
 }
@@ -239,7 +243,9 @@ export async function createManualBill(
       } as unknown as import("@prisma/client").Prisma.InputJsonValue,
     });
   } catch (err) {
-    await repo.deleteById(prisma, bill.id).catch(() => undefined);
+    await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
+      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+    });
     throw err;
   }
 }

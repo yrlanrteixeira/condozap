@@ -1,40 +1,19 @@
 import { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Info, Building2 } from "lucide-react";
+import { Loader2, Info, User, Mail, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
-import { Input } from "@/shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { RegisterUserSchema, type RegisterUserInput } from "../schemas";
-import {
-  AuthCard,
-  AuthHeader,
-  AuthFooter,
-  AuthErrorAlert,
-  ConsentDialog,
-  TextInput,
-  PasswordInput,
-} from "../components";
+import { AuthErrorAlert, ConsentDialog, PasswordInput } from "../components";
 import { api } from "@/lib/api";
 import type { CondominiumStructure } from "@/features/structure/hooks/useStructureApi";
-import {
-  formatTowerHeading,
-  resolveTowerValueForSelect,
-} from "@/features/structure/utils/towerDisplay";
+import { formatTowerHeading, resolveTowerValueForSelect } from "@/features/structure/utils/towerDisplay";
+
+/* ── Types ──────────────────────────────────────────────────────────────── */
 
 type PublicCondominiumPreview = {
   id: string;
@@ -63,6 +42,108 @@ type RegisterResponse = {
   refreshToken?: string;
 };
 
+/* ── Small reusable field component ─────────────────────────────────────── */
+
+function Field({
+  label,
+  icon,
+  error,
+  children,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-gray-700 dark:text-muted-foreground block">{label}</label>
+      <div className="relative">
+        {icon && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">{icon}</span>
+        )}
+        {children}
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+/* ── Simple error / info screens ─────────────────────────────────────────── */
+
+function SimpleScreen({
+  title,
+  description,
+  linkTo,
+  linkLabel,
+}: {
+  title: string;
+  description: string;
+  linkTo: string;
+  linkLabel: string;
+}) {
+  return (
+    <RegisterLayout heroText="Bem-vindo ao seu novo lar digital.">
+      <div className="space-y-4">
+        <TalkZapLogo />
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        <p className="text-sm text-muted-foreground">{description}</p>
+        <Link to={linkTo} className="text-[#1e3a5f] dark:text-primary font-medium hover:underline text-sm">
+          {linkLabel}
+        </Link>
+      </div>
+    </RegisterLayout>
+  );
+}
+
+/* ── Hero left panel ─────────────────────────────────────────────────────── */
+
+function RegisterLayout({
+  children,
+  heroText = "Bem-vindo ao seu novo lar digital.",
+}: {
+  children: React.ReactNode;
+  heroText?: string;
+}) {
+  return (
+    <div className="h-[100dvh] w-[100dvw] flex flex-col md:flex-row">
+      {/* Left: hero photo */}
+      <section className="hidden md:flex flex-1 relative overflow-hidden flex-col justify-end p-10">
+        <img
+          src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1400&q=85&auto=format&fit=crop"
+          alt="Condomínio"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <div className="relative z-10 max-w-xs">
+          <h2 className="text-3xl font-bold text-white leading-tight mb-3">{heroText}</h2>
+          <p className="text-sm text-white/80 leading-relaxed">
+            Conecte-se com seu condomínio, gerencie autorizações e participe da comunidade de forma simples e segura.
+          </p>
+        </div>
+      </section>
+
+      {/* Right: form */}
+      <section className="flex-1 flex items-center justify-center px-6 py-10 bg-[#f7f8fa] dark:bg-background overflow-y-auto">
+        <div className="w-full max-w-md">{children}</div>
+      </section>
+    </div>
+  );
+}
+
+function TalkZapLogo() {
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      <div className="w-8 h-8 rounded-lg bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-bold">
+        ⬛
+      </div>
+      <span className="text-xl font-bold text-[#1e3a5f] dark:text-foreground tracking-tight">TalkZap</span>
+    </div>
+  );
+}
+
+/* ── Main page ───────────────────────────────────────────────────────────── */
+
 export function RegisterPage() {
   const { condoSlug = "" } = useParams<{ condoSlug: string }>();
   const [searchParams] = useSearchParams();
@@ -71,22 +152,25 @@ export function RegisterPage() {
   const { signUp } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
-
   const [showDataDialog, setShowDataDialog] = useState(false);
   const [showWhatsappDialog, setShowWhatsappDialog] = useState(false);
 
-  const { data: condoPreview, isLoading: condoLoading, isError } = useQuery({
+  /* Fetch condo preview */
+  const {
+    data: condoPreview,
+    isLoading: condoLoading,
+    isError,
+  } = useQuery({
     queryKey: ["publicCondominium", condoSlug],
     queryFn: async (): Promise<PublicCondominiumPreview> => {
-      const { data } = await api.get<PublicCondominiumPreview>(
-        `/public/condominiums/${encodeURIComponent(condoSlug)}`
-      );
+      const { data } = await api.get<PublicCondominiumPreview>(`/public/condominiums/${encodeURIComponent(condoSlug)}`);
       return data;
     },
     enabled: condoSlug.length > 0,
     retry: false,
   });
 
+  /* Fetch invite preview */
   const {
     data: invitePreview,
     isLoading: inviteLoading,
@@ -95,7 +179,7 @@ export function RegisterPage() {
     queryKey: ["registerInvite", inviteParam],
     queryFn: async (): Promise<RegisterInvitePreview> => {
       const { data } = await api.get<RegisterInvitePreview>(
-        `/public/register-invites/${encodeURIComponent(inviteParam)}`
+        `/public/register-invites/${encodeURIComponent(inviteParam)}`,
       );
       return data;
     },
@@ -103,6 +187,7 @@ export function RegisterPage() {
     retry: false,
   });
 
+  /* Form */
   const form = useForm<RegisterUserInput>({
     resolver: zodResolver(RegisterUserSchema),
     mode: "onBlur",
@@ -126,9 +211,7 @@ export function RegisterPage() {
   useEffect(() => {
     if (!invitePreview) return;
     if (invitePreview.condominiumSlug !== condoSlug) {
-      setError(
-        "Este convite não corresponde ao link do condomínio. Use o link completo enviado pelo WhatsApp."
-      );
+      setError("Este convite não corresponde ao link do condomínio.");
       return;
     }
     form.setValue("inviteToken", inviteParam);
@@ -139,25 +222,27 @@ export function RegisterPage() {
     if (invitePreview.unit) form.setValue("requestedUnit", invitePreview.unit);
   }, [invitePreview, condoSlug, inviteParam, form]);
 
+  /* Tower options */
   const structure = condoPreview?.structure ?? null;
   const towerNames = (() => {
     const base = structure?.towers?.map((t) => t.name) ?? [];
     const set = new Set(base);
     const t = form.watch("requestedTower");
     if (t && !set.has(t)) set.add(t);
-    return Array.from(set).sort((a, b) =>
-      a.localeCompare(b, "pt-BR", { numeric: true })
-    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
   })();
 
   const towerSelectValue = resolveTowerValueForSelect(
     form.watch("requestedTower") || "",
-    towerNames.length > 0 ? towerNames : ["A", "B", "C"]
+    towerNames.length > 0 ? towerNames : ["A", "B", "C"],
   );
 
+  /* TowerStructure.floors is string[] — no nested objects for units */
+  // Floor/unit inputs are always free-text; selects only for towers.
+
+  /* Step navigation */
   const handleNextStep = async () => {
     const baseFields = ["name", "email", "phone"] as const;
-
     if (inviteParam) {
       if (!invitePreview || invitePreview.condominiumSlug !== condoSlug) {
         setError("Convite inválido ou ainda carregando.");
@@ -165,39 +250,25 @@ export function RegisterPage() {
       }
       const okName = await form.trigger([...baseFields]);
       if (!okName) return;
-      const t =
-        form.getValues("requestedTower")?.trim() ||
-        invitePreview.tower?.trim() ||
-        "";
-      const f =
-        form.getValues("requestedFloor")?.trim() ||
-        invitePreview.floor?.trim() ||
-        "";
-      const u =
-        form.getValues("requestedUnit")?.trim() ||
-        invitePreview.unit?.trim() ||
-        "";
+      const t = form.getValues("requestedTower")?.trim() || invitePreview.tower?.trim() || "";
+      const f = form.getValues("requestedFloor")?.trim() || invitePreview.floor?.trim() || "";
+      const u = form.getValues("requestedUnit")?.trim() || invitePreview.unit?.trim() || "";
       if (!t || !f || !u) {
-        setError("Informe torre, andar e unidade (ou peça ao síndico para pré-preencher o convite).");
+        setError("Informe torre, andar e unidade.");
         return;
       }
       setError(null);
       setStep(2);
       return;
     }
-
-    const ok = await form.trigger([
-      ...baseFields,
-      "requestedTower",
-      "requestedFloor",
-      "requestedUnit",
-    ]);
+    const ok = await form.trigger([...baseFields, "requestedTower", "requestedFloor", "requestedUnit"]);
     if (ok) {
       setStep(2);
       setError(null);
     }
   };
 
+  /* Submit */
   const onSubmit = async (values: RegisterUserInput) => {
     setError(null);
     try {
@@ -215,7 +286,6 @@ export function RegisterPage() {
         consentDataProcessing: values.consentDataProcessing,
         consentWhatsapp: values.consentWhatsapp,
       })) as RegisterResponse;
-
       if (result.user?.mustChangePassword) {
         navigate("/auth/first-access", { replace: true });
       } else if (result.user?.status === "PENDING") {
@@ -224,415 +294,321 @@ export function RegisterPage() {
         navigate("/", { replace: true });
       }
     } catch (err: unknown) {
-      setError(
-        typeof err === "string"
-          ? err
-          : err instanceof Error
-            ? err.message
-            : "Erro ao criar conta"
-      );
+      setError(typeof err === "string" ? err : err instanceof Error ? err.message : "Erro ao criar conta");
     }
   };
 
+  /* Consent handlers */
   const handleDataConsentClick = () => {
-    if (!form.getValues("consentDataProcessing")) {
-      setShowDataDialog(true);
-    } else {
-      form.setValue("consentDataProcessing", false);
-    }
+    if (!form.getValues("consentDataProcessing")) setShowDataDialog(true);
+    else form.setValue("consentDataProcessing", false);
   };
-
   const handleWhatsappConsentClick = () => {
-    if (!form.getValues("consentWhatsapp")) {
-      setShowWhatsappDialog(true);
-    }
+    if (!form.getValues("consentWhatsapp")) setShowWhatsappDialog(true);
   };
-
-  const handleDataConsentAccept = () => {
-    form.setValue("consentDataProcessing", true, { shouldValidate: true });
-  };
-
-  const handleWhatsappConsentAccept = () => {
-    form.setValue("consentWhatsapp", true);
-  };
+  const handleDataConsentAccept = () => form.setValue("consentDataProcessing", true, { shouldValidate: true });
+  const handleWhatsappConsentAccept = () => form.setValue("consentWhatsapp", true);
 
   const isSubmitting = form.formState.isSubmitting;
-  const consentDataProcessing = useWatch({
-    control: form.control,
-    name: "consentDataProcessing",
-  });
-  const consentWhatsapp = useWatch({
-    control: form.control,
-    name: "consentWhatsapp",
-  });
+  const consentDataProcessing = useWatch({ control: form.control, name: "consentDataProcessing" });
+  const consentWhatsapp = useWatch({ control: form.control, name: "consentWhatsapp" });
 
+  /* ── Guard states ── */
   if (!condoSlug) {
     return (
-      <AuthCard maxWidth="md">
-        <AuthHeader
-          title="Link inválido"
-          description="Abra o cadastro pelo link enviado pelo seu condomínio."
-        />
-        <AuthFooter>
-          <Link
-            to="/auth/register"
-            className="text-primary hover:underline font-medium"
-          >
-            Saiba como obter o link
-          </Link>
-        </AuthFooter>
-      </AuthCard>
+      <SimpleScreen
+        title="Link inválido"
+        description="Abra o cadastro pelo link enviado pelo seu condomínio."
+        linkTo="/auth/login"
+        linkLabel="Ir para o login"
+      />
     );
   }
-
   if (inviteParam && inviteError) {
     return (
-      <AuthCard maxWidth="md">
-        <AuthHeader
-          title="Convite inválido"
-          description="Este link de convite não existe, expirou ou já foi utilizado. Peça um novo convite ao síndico."
-        />
-        <AuthFooter>
-          <Link to="/auth/login" className="text-primary hover:underline font-medium">
-            Ir para o login
-          </Link>
-        </AuthFooter>
-      </AuthCard>
+      <SimpleScreen
+        title="Convite inválido"
+        description="Este link de convite não existe, expirou ou já foi utilizado."
+        linkTo="/auth/login"
+        linkLabel="Ir para o login"
+      />
     );
   }
-
   if (condoLoading || (inviteParam && inviteLoading)) {
     return (
-      <AuthCard maxWidth="xl">
-        <div className="flex flex-col items-center justify-center gap-4 py-16">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <RegisterLayout>
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-[#1e3a5f]" />
           <p className="text-sm text-muted-foreground">Carregando…</p>
         </div>
-      </AuthCard>
+      </RegisterLayout>
     );
   }
-
   if (isError || !condoPreview) {
     return (
-      <AuthCard maxWidth="md">
-        <AuthHeader
-          title="Condomínio não encontrado"
-          description="Verifique se o link está completo ou peça um novo link ao síndico."
-        />
-        <AuthFooter>
-          <Link to="/auth/login" className="text-primary hover:underline font-medium">
-            Ir para o login
-          </Link>
-        </AuthFooter>
-      </AuthCard>
+      <SimpleScreen
+        title="Condomínio não encontrado"
+        description="Verifique se o link está completo ou peça um novo link ao síndico."
+        linkTo="/auth/login"
+        linkLabel="Ir para o login"
+      />
     );
   }
-
-  if (inviteParam && invitePreview && !invitePreview.registrationOpen) {
-    return (
-      <AuthCard maxWidth="md">
-        <AuthHeader
-          title="Cadastro indisponível"
-          description="Este condomínio não está aceitando novos cadastros no momento."
-        />
-        <AuthFooter>
-          <Link to="/auth/login" className="text-primary hover:underline font-medium">
-            Ir para o login
-          </Link>
-        </AuthFooter>
-      </AuthCard>
-    );
-  }
-
   if (!condoPreview.registrationOpen && !inviteParam) {
     return (
-      <AuthCard maxWidth="md">
-        <AuthHeader
-          title="Cadastro indisponível"
-          description="Este condomínio não está aceitando novos cadastros no momento. Entre em contato com a administração."
-        />
-        <AuthFooter>
-          <Link to="/auth/login" className="text-primary hover:underline font-medium">
-            Ir para o login
-          </Link>
-        </AuthFooter>
-      </AuthCard>
+      <SimpleScreen
+        title="Cadastro indisponível"
+        description="Este condomínio não está aceitando novos cadastros no momento."
+        linkTo="/auth/login"
+        linkLabel="Ir para o login"
+      />
     );
   }
 
+  /* ── Render ── */
   return (
     <>
-      <AuthCard maxWidth="xl">
-        <AuthHeader
-          title="Criar conta"
-          description={
-            step === 1
-              ? "Preencha seus dados pessoais"
-              : "Crie sua senha e aceite os termos"
-          }
-        />
-
-        <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3">
-          <Building2 className="h-8 w-8 shrink-0 text-primary" />
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Condomínio
-            </p>
-            <p className="truncate font-semibold text-foreground">
-              {condoPreview.name}
+      <RegisterLayout>
+        <div className="space-y-6">
+          {/* Logo + header */}
+          <div>
+            <TalkZapLogo />
+            <h1 className="text-2xl font-bold text-foreground mt-3">Cadastro de Morador</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {step === 1
+                ? "Preencha seus dados para acessar o portal do seu condomínio."
+                : "Crie sua senha e aceite os termos para finalizar."}
             </p>
           </div>
-        </div>
 
-        {inviteParam ? (
-          <p className="text-sm text-muted-foreground rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
-            Você está concluindo um <strong>convite do síndico</strong>. Use o mesmo
-            telefone informado no convite.
-          </p>
-        ) : null}
+          {/* Step indicator */}
+          <div className="flex gap-2">
+            <div className="flex-1 h-1 rounded-full bg-[#1e3a5f]" />
+            <div className={`flex-1 h-1 rounded-full ${step >= 2 ? "bg-[#1e3a5f]" : "bg-gray-200 dark:bg-muted"}`} />
+          </div>
 
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex-1 h-1.5 rounded-full ${
-              step >= 1 ? "bg-primary" : "bg-border"
-            }`}
-          />
-          <div
-            className={`flex-1 h-1.5 rounded-full ${
-              step >= 2 ? "bg-primary" : "bg-border"
-            }`}
-          />
-        </div>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          {step === 1 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <TextInput
-                  type="text"
-                  label="Nome completo"
-                  placeholder="João Silva"
-                  autoComplete="name"
-                  error={form.formState.errors.name?.message}
-                  {...form.register("name")}
-                />
-
-                <TextInput
-                  type="email"
-                  label="E-mail"
-                  placeholder="joao@email.com"
-                  autoComplete="email"
-                  error={form.formState.errors.email?.message}
-                  {...form.register("email")}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <TextInput
-                  type="tel"
-                  label="Telefone (WhatsApp)"
-                  placeholder="(11) 99999-9999"
-                  autoComplete="tel"
-                  helperText="Usado para notificações do sistema"
-                  error={form.formState.errors.phone?.message}
-                  {...form.register("phone")}
-                />
-              </div>
-
-              <AuthErrorAlert message={error} />
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">
-                  Localização da unidade
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Torre
-                    </label>
-                    <Select
-                      value={towerSelectValue}
-                      onValueChange={(v) =>
-                        form.setValue("requestedTower", v, {
-                          shouldValidate: true,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Torre" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(towerNames.length > 0 ? towerNames : ["A", "B", "C"]).map(
-                          (tower) => (
-                            <SelectItem key={tower} value={tower}>
-                              {formatTowerHeading(tower)}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.requestedTower?.message ? (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.requestedTower.message}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Andar
-                    </label>
-                    <Input
-                      placeholder="Ex: 5"
-                      {...form.register("requestedFloor")}
-                    />
-                    {form.formState.errors.requestedFloor?.message ? (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.requestedFloor.message}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Unidade
-                    </label>
-                    <Input
-                      placeholder="Ex: 501"
-                      {...form.register("requestedUnit")}
-                    />
-                    {form.formState.errors.requestedUnit?.message ? (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.requestedUnit.message}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {inviteParam
-                    ? "Se o síndico já informou a unidade no convite, os campos vêm preenchidos."
-                    : "Obrigatório para solicitar acesso ao condomínio."}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleNextStep}
-                className="w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Continuar
-              </button>
+          {/* Invite banner */}
+          {inviteParam && (
+            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-3 py-2 text-sm text-blue-800 dark:text-blue-300">
+              <Info className="h-4 w-4 flex-shrink-0" />
+              Convite do síndico — use o mesmo telefone informado no convite.
             </div>
           )}
 
-          {step === 2 && (
-            <div className="space-y-5">
-              <PasswordInput
-                placeholder="••••••••"
-                autoComplete="new-password"
-                helperText="Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo"
-                error={form.formState.errors.password?.message}
-                {...form.register("password")}
-              />
-
-              <PasswordInput
-                label="Confirmar senha"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                error={form.formState.errors.confirmPassword?.message}
-                {...form.register("confirmPassword")}
-              />
-
-              <div className="space-y-4 pt-4 border-t border-border/50">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Info className="h-4 w-4" />
-                  Termos e Consentimentos
-                </div>
-
-                <div className="flex items-start space-x-3 rounded-2xl border border-border/50 bg-foreground/5 p-4">
-                  <Checkbox
-                    checked={consentDataProcessing}
-                    onCheckedChange={handleDataConsentClick}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* ── Step 1 ── */}
+            {step === 1 && (
+              <>
+                {/* Nome */}
+                <Field
+                  label="Nome Completo"
+                  icon={<User className="w-4 h-4" />}
+                  error={form.formState.errors.name?.message}
+                >
+                  <input
+                    type="text"
+                    placeholder="Ex: João da Silva"
+                    autoComplete="name"
+                    className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                    {...form.register("name")}
                   />
-                  <div className="space-y-1 leading-none flex-1">
-                    <label className="text-sm cursor-pointer">
-                      Aceito os{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowDataDialog(true)}
-                        className="text-primary underline hover:no-underline"
+                </Field>
+
+                {/* Email */}
+                <Field label="E-mail" icon={<Mail className="w-4 h-4" />} error={form.formState.errors.email?.message}>
+                  <input
+                    type="email"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                    {...form.register("email")}
+                  />
+                </Field>
+
+                {/* Localização no condomínio */}
+                <div className="rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/10 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-muted-foreground uppercase tracking-widest">
+                    Localização no Condomínio
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Torre */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-600 dark:text-muted-foreground">
+                        Torre / Bloco
+                      </label>
+                      <Select
+                        value={towerSelectValue}
+                        onValueChange={(v) => {
+                          form.setValue("requestedTower", v, { shouldValidate: true });
+                          form.setValue("requestedFloor", "");
+                          form.setValue("requestedUnit", "");
+                        }}
                       >
-                        Termos de Uso e Política de Privacidade
-                      </button>{" "}
-                      <span className="text-destructive">*</span>
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Autorizo o tratamento dos meus dados conforme a LGPD
-                    </p>
+                        <SelectTrigger className="bg-white dark:bg-muted/20">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(towerNames.length > 0 ? towerNames : ["A", "B", "C"]).map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {formatTowerHeading(t)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.requestedTower && (
+                        <p className="text-xs text-destructive">{form.formState.errors.requestedTower.message}</p>
+                      )}
+                    </div>
+
+                    {/* Andar */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Andar</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 5"
+                        className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                        {...form.register("requestedFloor")}
+                      />
+                      {form.formState.errors.requestedFloor && (
+                        <p className="text-xs text-destructive">{form.formState.errors.requestedFloor.message}</p>
+                      )}
+                    </div>
+
+                    {/* Unidade */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Unidade</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 501"
+                        className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                        {...form.register("requestedUnit")}
+                      />
+                      {form.formState.errors.requestedUnit && (
+                        <p className="text-xs text-destructive">{form.formState.errors.requestedUnit.message}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-4">
-                  <Checkbox
-                    checked={consentWhatsapp}
-                    onCheckedChange={handleWhatsappConsentClick}
-                  />
-                  <div className="space-y-1 leading-none flex-1">
-                    <label className="text-sm cursor-pointer">
-                      Aceito receber{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowWhatsappDialog(true)}
-                        className="text-green-600 dark:text-green-400 underline hover:no-underline"
-                      >
-                        notificações via WhatsApp
-                      </button>{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                      Obrigatório. As notificações WhatsApp são essenciais para o funcionamento da plataforma.
-                    </p>
-                  </div>
-                </div>
-              </div>
+                {/* Senha + Confirmar no Step 1 */}
+                <PasswordInput
+                  label="Senha"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  helperText="Mínimo 8 caracteres"
+                  error={form.formState.errors.password?.message}
+                  {...form.register("password")}
+                />
 
-              <AuthErrorAlert message={error} />
+                <PasswordInput
+                  label="Confirmar Senha"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  icon={<RotateCcw className="w-4 h-4" />}
+                  error={form.formState.errors.confirmPassword?.message}
+                  {...form.register("confirmPassword")}
+                />
 
-              <div className="flex gap-3">
+                <AuthErrorAlert message={error} />
+
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
-                  className="flex-1 rounded-2xl border border-border bg-foreground/5 py-4 font-medium hover:bg-foreground/10 transition-colors"
+                  onClick={handleNextStep}
+                  className="w-full rounded-lg bg-[#1e3a5f] py-3 font-semibold text-white hover:bg-[#162d4a] transition-colors flex items-center justify-center gap-2"
                 >
-                  Voltar
+                  Criar Conta →
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !consentDataProcessing || !consentWhatsapp}
-                  className="flex-1 rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Criando conta...
-                    </span>
-                  ) : (
-                    "Criar conta"
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </form>
+              </>
+            )}
 
-        <AuthFooter>
-          Já tem uma conta?{" "}
-          <Link
-            to="/auth/login"
-            className="text-primary hover:underline transition-colors font-medium"
-          >
-            Fazer login
-          </Link>
-        </AuthFooter>
-      </AuthCard>
+            {/* ── Step 2: Consents ── */}
+            {step === 2 && (
+              <>
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Info className="h-4 w-4" />
+                    Termos e Consentimentos
+                  </div>
+
+                  <div className="flex items-start space-x-3 rounded-lg border border-border/50 bg-white dark:bg-muted/10 p-4">
+                    <Checkbox checked={consentDataProcessing} onCheckedChange={handleDataConsentClick} />
+                    <div className="space-y-1 leading-none flex-1">
+                      <label className="text-sm cursor-pointer">
+                        Aceito os{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowDataDialog(true)}
+                          className="text-[#1e3a5f] underline hover:no-underline"
+                        >
+                          Termos de Uso e Política de Privacidade
+                        </button>{" "}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Autorizo o tratamento dos meus dados conforme a LGPD
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3 rounded-lg border border-green-500/30 bg-green-50 dark:bg-green-950/20 p-4">
+                    <Checkbox checked={consentWhatsapp} onCheckedChange={handleWhatsappConsentClick} />
+                    <div className="space-y-1 leading-none flex-1">
+                      <label className="text-sm cursor-pointer">
+                        Aceito receber{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowWhatsappDialog(true)}
+                          className="text-green-600 dark:text-green-400 underline hover:no-underline"
+                        >
+                          notificações via WhatsApp
+                        </button>{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                        Obrigatório para o funcionamento da plataforma.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <AuthErrorAlert message={error} />
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/10 py-3 font-medium hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !consentDataProcessing || !consentWhatsapp}
+                    className="flex-1 rounded-lg bg-[#1e3a5f] py-3 font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Criando...
+                      </span>
+                    ) : (
+                      "Confirmar Cadastro"
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+
+          {/* Footer */}
+          <p className="text-center text-sm text-gray-500 dark:text-muted-foreground">
+            Já possui uma conta?{" "}
+            <Link to="/auth/login" className="text-[#1e3a5f] dark:text-primary font-semibold hover:underline">
+              Entrar no portal
+            </Link>
+          </p>
+        </div>
+      </RegisterLayout>
 
       <ConsentDialog
         isOpen={showDataDialog}
@@ -640,7 +616,6 @@ export function RegisterPage() {
         type="data"
         onAccept={handleDataConsentAccept}
       />
-
       <ConsentDialog
         isOpen={showWhatsappDialog}
         onOpenChange={setShowWhatsappDialog}

@@ -11,6 +11,19 @@ export function useRealtimeNotifications() {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+
+  const scheduleReconnect = useCallback((connectFn: () => void) => {
+    if (reconnectTimeoutRef.current || !userId) return;
+    const attempt = reconnectAttemptsRef.current;
+    const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+    const jitter = Math.random() * 1000;
+    reconnectAttemptsRef.current = attempt + 1;
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      if (userId && token) connectFn();
+    }, delay + jitter);
+  }, [userId, token]);
 
   const connect = useCallback(() => {
     if (!userId || !token) {
@@ -44,6 +57,7 @@ export function useRealtimeNotifications() {
       }
 
       console.log("[SSE] Conectado!");
+      reconnectAttemptsRef.current = 0;
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -51,6 +65,9 @@ export function useRealtimeNotifications() {
       function read() {
         reader.read().then(({ done, value }) => {
           if (done || controller.signal.aborted) {
+            if (!controller.signal.aborted) {
+              scheduleReconnect(connect);
+            }
             return;
           }
 
@@ -86,6 +103,25 @@ export function useRealtimeNotifications() {
                     duration: 8000,
                   });
                   playNotificationSound();
+                } else if (eventType === "complaint_assigned") {
+                  queryClient.invalidateQueries({ queryKey: ["complaints"] });
+                  toast({
+                    title: "Ocorrência atribuída",
+                    description: "Você foi atribuído a uma nova ocorrência",
+                    variant: "default",
+                    duration: 5000,
+                  });
+                  playNotificationSound();
+                } else if (eventType === "notification") {
+                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                  queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+                  toast({
+                    title: data.title ?? "Notificação",
+                    description: data.body ?? "",
+                    variant: "default",
+                    duration: 6000,
+                  });
+                  playNotificationSound();
                 }
               } catch (err) {
                 console.error("[SSE] Erro:", err);
@@ -94,6 +130,10 @@ export function useRealtimeNotifications() {
           }
 
           read();
+        }).catch((err) => {
+          if (controller.signal.aborted) return;
+          console.error("[SSE] Erro lendo stream:", err);
+          scheduleReconnect(connect);
         });
       }
 
@@ -101,18 +141,10 @@ export function useRealtimeNotifications() {
     }).catch((err) => {
       if (err.name !== "AbortError") {
         console.log("[SSE] Erro:", err.message);
-        
-        if (!reconnectTimeoutRef.current && userId) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectTimeoutRef.current = null;
-            if (userId && token) {
-              connect();
-            }
-          }, 5000);
-        }
+        scheduleReconnect(connect);
       }
     });
-  }, [userId, token, queryClient, toast]);
+  }, [userId, token, queryClient, toast, scheduleReconnect]);
 
   useEffect(() => {
     if (userId && token) {

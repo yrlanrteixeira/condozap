@@ -5,21 +5,29 @@ interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
   helperText?: string
   label: string
+  icon?: React.ReactNode
 }
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ error, helperText, label, className = "", ...props }, ref) => {
+  ({ error, helperText, label, icon, className = "", ...props }, ref) => {
     return (
       <div>
-        <label className="text-sm font-medium text-muted-foreground">
+        <label className="text-sm font-medium text-gray-700 dark:text-muted-foreground block mb-1">
           {label}
         </label>
         <GlassInputWrapper>
-          <input
-            ref={ref}
-            className={`w-full bg-transparent text-sm text-foreground p-4 rounded-2xl focus:outline-none ${className}`}
-            {...props}
-          />
+          <div className="relative flex items-center">
+            {icon && (
+              <span className="absolute left-3 flex items-center text-gray-400">
+                {icon}
+              </span>
+            )}
+            <input
+              ref={ref}
+              className={`w-full bg-transparent text-sm text-foreground py-3 rounded-lg focus:outline-none ${icon ? "pl-10 pr-4" : "px-4"} ${className}`}
+              {...props}
+            />
+          </div>
         </GlassInputWrapper>
         {helperText && !error && (
           <p className="text-xs text-muted-foreground mt-1">

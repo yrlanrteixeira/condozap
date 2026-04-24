@@ -22,6 +22,15 @@ export interface ComplaintQueryFilters {
   sectorId?: string;
   assigneeId?: string;
   residentId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedComplaints {
+  data: Awaited<ReturnType<typeof findComplaintsForUser>>;
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 const complaintIncludes = {
@@ -121,11 +130,31 @@ export const findComplaintsForUser = async (
   prisma: PrismaClient,
   user: AuthUser,
   filters: ComplaintQueryFilters
-) =>
-  prisma.complaint.findMany({
-    where: await buildAccessFilteredWhere(prisma, user, filters),
+) => {
+  const where = await buildAccessFilteredWhere(prisma, user, filters);
+  const take =
+    filters.page && filters.pageSize
+      ? filters.pageSize
+      : undefined;
+  const skip =
+    filters.page && filters.pageSize
+      ? (filters.page - 1) * filters.pageSize
+      : undefined;
+  return prisma.complaint.findMany({
+    where,
     include: complaintIncludes,
     orderBy: [{ createdAt: "desc" }],
+    ...(take !== undefined ? { take, skip } : {}),
+  });
+};
+
+export const countComplaintsForUser = async (
+  prisma: PrismaClient,
+  user: AuthUser,
+  filters: ComplaintQueryFilters
+) =>
+  prisma.complaint.count({
+    where: await buildAccessFilteredWhere(prisma, user, filters),
   });
 
 export const findComplaintByIdForUser = async (

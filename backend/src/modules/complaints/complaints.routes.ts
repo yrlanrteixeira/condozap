@@ -80,6 +80,12 @@ export const complaintsRoutes: FastifyPluginAsync = async (fastify) => {
     {
       onRequest: [fastify.authenticate],
       preHandler: [requireCondoAccess({ source: "body" })],
+      config: {
+        rateLimit: {
+          max: 30,
+          timeWindow: "1 minute",
+        },
+      },
     },
     createComplaintHandler
   );

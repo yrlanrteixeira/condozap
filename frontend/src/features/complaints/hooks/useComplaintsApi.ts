@@ -46,6 +46,45 @@ export const useComplaints = createQuery({
 });
 
 // =====================================================
+// Query: Fetch Complaints (paginated)
+// =====================================================
+// Backend retorna envelope { data, total, page, pageSize } quando `page` é
+// informado. Hook destinado a telas que aderirem à paginação server-side.
+export interface PaginatedComplaints {
+  data: Complaint[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export const useComplaintsPaginated = createQuery({
+  queryKey: (
+    condominiumId: string,
+    page: number,
+    pageSize: number,
+    filters?: Omit<ComplaintFilters, 'page' | 'pageSize'>,
+  ) => [...queryKeys.list(condominiumId, filters as ComplaintFilters), 'page', page, pageSize] as const,
+  queryFn: async (
+    condominiumId: string,
+    page: number,
+    pageSize: number,
+    filters?: Omit<ComplaintFilters, 'page' | 'pageSize'>,
+  ): Promise<PaginatedComplaints> => {
+    const { data } = await api.get(`/complaints/${condominiumId}`, {
+      params: { ...(filters as Record<string, unknown> | undefined), page, pageSize },
+    });
+    return {
+      data: data.data.map((item: unknown) => ComplaintSchema.parse(item)),
+      total: data.total,
+      page: data.page,
+      pageSize: data.pageSize,
+    };
+  },
+  enabled: (condominiumId: string) => !!condominiumId,
+  staleTime: 1000 * 60 * 2,
+});
+
+// =====================================================
 // Query: Fetch Single Complaint
 // =====================================================
 

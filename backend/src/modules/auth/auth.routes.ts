@@ -156,7 +156,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  fastify.post("/login", async (request, reply) => {
+  fastify.post("/login", {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (request, reply) => {
     const body = loginSchema.parse(request.body) as LoginBody;
 
     const user = await prisma.user.findUnique({
@@ -483,6 +490,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     "/change-password",
     {
       onRequest: [fastify.authenticate],
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "15 minutes",
+        },
+      },
     },
     async (request, reply) => {
       const userId = (request.user as AuthUser).id;
