@@ -9,7 +9,11 @@ import {
 
 export const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get("/webhook", verifyWebhookHandler);
-  fastify.post("/webhook", webhookReceiverHandler);
+  fastify.post(
+    "/webhook",
+    { config: { rawBody: true } },
+    webhookReceiverHandler
+  );
 
   fastify.post(
     "/send",

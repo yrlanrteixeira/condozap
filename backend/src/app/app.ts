@@ -4,6 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
+import fastifyRawBody from "fastify-raw-body";
 import { config } from "../config/env";
 import authPlugin from "../plugins/auth";
 import ssePlugin from "../plugins/sse";
@@ -77,6 +78,16 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   // SSE para notificações em tempo real
   await fastify.register(ssePlugin);
+
+  // Capture raw body (opt-in per route via { config: { rawBody: true } }).
+  // Required by the WhatsApp/Meta webhook to verify the x-hub-signature-256
+  // HMAC against the exact bytes Meta signed.
+  await fastify.register(fastifyRawBody, {
+    field: "rawBody",
+    global: false,
+    encoding: false, // Buffer (HMAC operates on bytes)
+    runFirst: true,
+  });
 
   await fastify.register(multipart, {
     limits: {
