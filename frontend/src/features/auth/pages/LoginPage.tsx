@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { LoginSchema, type LoginInput } from "../schemas";
 import {
   AuthCard,
   AuthHeader,
-  AuthFooter,
   AuthErrorAlert,
   TextInput,
   PasswordInput
@@ -47,44 +46,47 @@ export function LoginPage() {
 
   return (
     <AuthCard>
-      {/* Logo TalkZap - visível apenas em mobile */}
-      <div className="flex items-center gap-2 md:hidden mb-2">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <Building2 className="h-6 w-6 text-primary" />
-        </div>
-        <span className="text-xl font-bold text-foreground">TalkZap</span>
-      </div>
-      
       <AuthHeader
-        title="Bem-vindo ao TalkZap"
-        description="Acesse sua conta para gerenciar seu condomínio"
+        title="Bem-vindo de volta"
+        description="Por favor, insira seus dados para acessar o portal do seu condomínio."
       />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <TextInput
           type="email"
           label="E-mail"
-          placeholder="exemplo@email.com"
+          placeholder="voce@exemplo.com"
           autoComplete="email"
+          icon={<Mail className="w-4 h-4" />}
           error={form.formState.errors.email?.message}
           {...form.register("email")}
         />
 
         <PasswordInput
-          placeholder="Digite sua senha"
+          label="Senha"
+          placeholder="••••••••"
           autoComplete="current-password"
           error={form.formState.errors.password?.message}
           {...form.register("password")}
         />
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-3 cursor-pointer">
+        {/* Remember me + Forgot password */}
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              className="w-4 h-4 rounded border-gray-300 text-[#1e3a5f] focus:ring-[#1e3a5f] accent-[#1e3a5f]"
             />
-            <span className="text-foreground/90">Manter conectado</span>
+            <span className="text-sm text-gray-600 dark:text-muted-foreground">
+              Manter conectado
+            </span>
           </label>
+          <button
+            type="button"
+            className="text-sm text-[#1e3a5f] dark:text-primary font-medium hover:underline transition-colors"
+          >
+            Esqueceu a senha?
+          </button>
         </div>
 
         <AuthErrorAlert message={error} />
@@ -92,7 +94,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-[#1e3a5f] py-3 font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
@@ -105,15 +107,22 @@ export function LoginPage() {
         </button>
       </form>
 
-      <AuthFooter>
-        Não tem uma conta?{" "}
-        <Link
-          to="/auth/register"
-          className="text-primary hover:underline transition-colors font-medium"
-        >
-          Criar conta
-        </Link>
-      </AuthFooter>
+      {/* Divider */}
+      <div className="relative flex items-center gap-3 py-1">
+        <div className="flex-1 h-px bg-gray-200 dark:bg-border" />
+        <div className="flex-1 h-px bg-gray-200 dark:bg-border" />
+      </div>
+
+      {/* Footer */}
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-gray-700 dark:text-foreground">
+          Não tem uma conta?
+        </p>
+        <p className="text-xs text-gray-500 dark:text-muted-foreground leading-relaxed">
+          Contate o administrador do seu condomínio ou acesse através do
+          seu link de convite específico.
+        </p>
+      </div>
     </AuthCard>
   );
 }
