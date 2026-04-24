@@ -270,11 +270,4 @@ describe("messages — POST /api/messages/send", () => {
     expect([400, 500]).toContain(res.statusCode);
   });
 
-  // TODO(test-infra): sendMessageHandler eventually writes to activity_logs via
-  // createActivityLog, which fails on the test DB (no migration for activity_logs
-  // table). Once that schema gap is closed, add a happy-path test that asserts
-  // status 200 and message persistence.
-  it.skip("sends a message (blocked by activity_logs infra gap)", async () => {
-    // placeholder to track the missing coverage
-  });
 });

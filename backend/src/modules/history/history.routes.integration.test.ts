@@ -174,9 +174,7 @@ describe("history — GET /api/history/logs/:logId", () => {
 });
 
 describe("history — GET /api/history/activity/:condominiumId", () => {
-  // activity_logs table does not exist in test DB (schema.prisma has it but no migration).
-  // See TODO in plan: skip until migration created.
-  it.skip("returns activity logs for member (TODO: activity_logs migration missing)", async () => {
+  it("returns activity logs for member", async () => {
     const app = await getTestApp();
     const prisma = getTestPrisma();
     const syndic = await makeUser({ role: UserRole.SYNDIC });

@@ -150,11 +150,7 @@ describe("residents — POST /api/residents", () => {
     expect(res.statusCode).toBe(401);
   });
 
-  // TODO(test-infra): test DB schema lacks `activity_logs` table (no migration
-  // present in prisma/migrations/*). createResidentHandler writes an activity
-  // log after create, which fails with "relation activity_logs does not exist"
-  // and returns 500. Re-enable once the table is added to the test schema.
-  it.skip("creates a resident when caller is SYNDIC of the condo", async () => {
+  it("creates a resident when caller is SYNDIC of the condo", async () => {
     const app = await getTestApp();
     const syndic = await makeSyndicWithSub();
     const condo = await makeCondominium({ primarySyndicId: syndic.id });
