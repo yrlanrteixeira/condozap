@@ -1,0 +1,27 @@
+{
+  "event": "billing.paid",
+  "devMode": false,
+  "data": {
+    "id": "bill_mock_123",
+    "status": "PAID",
+    "amount": 4990,
+    "customer": {
+      "id": "cust_mock_1",
+      "metadata": {
+        "name": "Test User",
+        "email": "test@example.com"
+      }
+    },
+    "products": [
+      {
+        "id": "prod_mock_1",
+        "externalId": "plan-basic",
+        "quantity": 1
+      }
+    ],
+    "metadata": {
+      "subscriptionId": "sub_mock_1"
+    },
+    "paidAt": "2026-04-21T12:00:00.000Z"
+  }
+}

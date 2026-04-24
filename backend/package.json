@@ -21,7 +21,10 @@
     "storage:create-buckets": "tsx scripts/create-storage-buckets.ts",
     "storage:test": "tsx scripts/test-storage.ts",
     "billing:test-webhook": "tsx --env-file=.env scripts/test-abacatepay-webhook.ts",
-    "test": "vitest run"
+    "db:test:reset": "tsx scripts/db-test-reset.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1010.0",
@@ -47,10 +50,12 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.20.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "pino-pretty": "^13.1.3",

@@ -7,8 +7,12 @@ import { api } from "@/lib/api";
 
 export interface TowerStructure {
   name: string;
-  floors: string[];
-  unitsPerFloor: number;
+  floors: {
+    number: number;
+    units: {
+      number: string;
+    }[];
+  }[];
 }
 
 export interface CondominiumStructure {
@@ -29,9 +33,7 @@ export function useStructure(condominiumId: string) {
   return useQuery({
     queryKey: ["structure", condominiumId],
     queryFn: async () => {
-      const { data } = await api.get<StructureResponse>(
-        `/structure/${condominiumId}`
-      );
+      const { data } = await api.get<StructureResponse>(`/structure/${condominiumId}`);
       return data;
     },
     enabled: !!condominiumId,
@@ -48,17 +50,8 @@ export function useUpdateStructure() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      condominiumId,
-      structure,
-    }: {
-      condominiumId: string;
-      structure: CondominiumStructure;
-    }) => {
-      const { data } = await api.patch<StructureResponse>(
-        `/structure/${condominiumId}`,
-        { structure }
-      );
+    mutationFn: async ({ condominiumId, structure }: { condominiumId: string; structure: CondominiumStructure }) => {
+      const { data } = await api.patch<StructureResponse>(`/structure/${condominiumId}`, { structure });
       return data;
     },
     onSuccess: async (data) => {
@@ -74,4 +67,3 @@ export function useUpdateStructure() {
     },
   });
 }
-

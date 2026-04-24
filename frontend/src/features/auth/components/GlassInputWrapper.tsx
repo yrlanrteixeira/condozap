@@ -4,7 +4,7 @@ interface GlassInputWrapperProps {
 
 export function GlassInputWrapper({ children }: GlassInputWrapperProps) {
   return (
-    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-sm transition-colors focus-within:border-primary/70 focus-within:bg-primary/10">
+    <div className="rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 transition-colors focus-within:border-[#1e3a5f] dark:focus-within:border-primary">
       {children}
     </div>
   )

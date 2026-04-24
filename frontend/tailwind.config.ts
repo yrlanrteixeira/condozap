@@ -51,6 +51,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        whatsapp: {
+          DEFAULT: "hsl(var(--whatsapp))",
+          foreground: "hsl(var(--whatsapp-foreground))",
+        },
         overlay: {
           DEFAULT: "hsl(var(--overlay))",
         },
@@ -63,23 +67,29 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm:  "0.25rem",
+        DEFAULT: "var(--radius)",
+        md:  "0.75rem",
+        lg:  "1rem",
+        xl:  "1.5rem",
+        full: "9999px",
       },
       fontFamily: {
         sans: [
-          "Manrope",
+          "Inter",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
-          "Roboto",
           "sans-serif",
         ],
       },
       boxShadow: {
-        focus: "0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring))",
+        focus:    "0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring))",
         "focus-sm": "0 0 0 1px hsl(var(--background)), 0 0 0 2px hsl(var(--ring))",
+        /* Elevation Level 1 — Cards */
+        card:   "0px 1px 3px rgba(0,0,0,0.10), 0 0 0 1px hsl(var(--border))",
+        /* Elevation Level 2 — Dropdowns / Modals */
+        modal:  "0px 10px 15px -3px rgba(0,0,0,0.10), 0px 4px 6px -4px rgba(0,0,0,0.08)",
       },
       keyframes: {
         "accordion-down": {

@@ -66,11 +66,13 @@ export async function updateCannedResponseHandler(
 ) {
   const { id } = request.params;
   const body = updateCannedResponseSchema.parse(request.body);
+  const user = request.user as AuthUser;
 
   const response = await cannedResponsesService.updateCannedResponse(
     prisma,
     id,
-    body
+    body,
+    { id: user.id, role: user.role }
   );
 
   return reply.send(response);
@@ -85,8 +87,12 @@ export async function deleteCannedResponseHandler(
   reply: FastifyReply
 ) {
   const { id } = request.params;
+  const user = request.user as AuthUser;
 
-  await cannedResponsesService.deleteCannedResponse(prisma, id);
+  await cannedResponsesService.deleteCannedResponse(prisma, id, {
+    id: user.id,
+    role: user.role,
+  });
 
   return reply.send({ success: true });
 }

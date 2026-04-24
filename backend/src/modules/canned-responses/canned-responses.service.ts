@@ -1,6 +1,23 @@
 import { PrismaClient } from "@prisma/client";
-import { NotFoundError } from "../../shared/errors";
+import { ForbiddenError, NotFoundError } from "../../shared/errors";
 import type { CreateCannedResponseRequest, UpdateCannedResponseRequest } from "./canned-responses.schema";
+
+type MutatingCaller = { id: string; role: string };
+
+const SYNDIC_ROLES = new Set(["SYNDIC", "PROFESSIONAL_SYNDIC"]);
+
+function assertCanMutate(
+  existing: { createdBy: string },
+  caller: MutatingCaller
+) {
+  const isSyndic = SYNDIC_ROLES.has(caller.role);
+  const isCreator = existing.createdBy === caller.id;
+  if (!isSyndic && !isCreator) {
+    throw new ForbiddenError(
+      "Apenas o criador ou um síndico pode alterar esta resposta"
+    );
+  }
+}
 
 export async function listCannedResponses(
   prisma: PrismaClient,
@@ -50,15 +67,22 @@ export async function createCannedResponse(
 export async function updateCannedResponse(
   prisma: PrismaClient,
   id: string,
-  data: UpdateCannedResponseRequest
+  data: UpdateCannedResponseRequest,
+  caller: MutatingCaller
 ) {
   const existing = await prisma.cannedResponse.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError("Resposta pré-cadastrada");
+  assertCanMutate(existing, caller);
   return prisma.cannedResponse.update({ where: { id }, data });
 }
 
-export async function deleteCannedResponse(prisma: PrismaClient, id: string) {
+export async function deleteCannedResponse(
+  prisma: PrismaClient,
+  id: string,
+  caller: MutatingCaller
+) {
   const existing = await prisma.cannedResponse.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError("Resposta pré-cadastrada");
+  assertCanMutate(existing, caller);
   return prisma.cannedResponse.delete({ where: { id } });
 }
