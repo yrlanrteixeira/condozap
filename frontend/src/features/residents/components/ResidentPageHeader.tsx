@@ -8,7 +8,7 @@ interface ResidentPageHeaderProps {
 }
 
 export const ResidentPageHeader = ({
-  title = "Moradores",
+  title = "Moradores 👥",
   description = "Gerencie os moradores e suas unidades",
   onAddResident,
 }: ResidentPageHeaderProps) => {

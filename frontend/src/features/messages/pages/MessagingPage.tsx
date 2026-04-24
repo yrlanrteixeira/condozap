@@ -5,7 +5,8 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { useToast } from "@/shared/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { useNavigate, Link } from "react-router-dom";
 import type { TargetData, MessageType, MessageScope, Message } from "@/features/messages/types";
 import type { Condominium } from "@/types";
 import { filterResidentsByTarget } from "@/shared/utils/helpers";
@@ -207,9 +208,10 @@ export function MessagingPage() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Novo Comunicado</h1>
+        <h1 className="text-2xl font-bold text-foreground">Mensagens diretas</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Enviar uma mensagem de WhatsApp para os moradores
+          Enviar uma mensagem direta no WhatsApp para os moradores. 
+          <span className="font-medium text-foreground"> Nota:</span> Isso é diferente de um <Link to="/announcements" className="underline font-medium text-primary hover:text-primary/80 transition-colors">Comunicado</Link> (mural) do condomínio.
         </p>
       </div>
 
@@ -297,42 +299,14 @@ export function MessagingPage() {
                 </Button>
               </div>
 
-              {/* Toolbar */}
-              <div className="flex items-center gap-1 border-b border-border pb-2">
-                {[
-                  { Icon: Bold, label: "Negrito" },
-                  { Icon: Italic, label: "Itálico" },
-                  { Icon: Strikethrough, label: "Riscado" },
-                  null,
-                  { Icon: List, label: "Lista" },
-                  { Icon: ListOrdered, label: "Lista Numerada" },
-                  null,
-                  { Icon: Smile, label: "Emoji" },
-                  { Icon: Paperclip, label: "Anexo" },
-                ].map((item, i) =>
-                  item === null ? (
-                    <div key={i} className="w-px h-5 bg-border mx-1" />
-                  ) : (
-                    <button
-                      key={item.label}
-                      type="button"
-                      title={item.label}
-                      className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <item.Icon className="h-4 w-4" />
-                    </button>
-                  )
-                )}
-              </div>
-
               {/* Textarea */}
-              <textarea
+              <Textarea
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
-                placeholder="Digite sua mensagem aqui..."
+                placeholder="Digite sua mensagem direta aqui..."
                 maxLength={4096}
                 rows={8}
-                className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className="w-full resize-none bg-background text-sm text-foreground"
               />
 
               {/* Footer */}
