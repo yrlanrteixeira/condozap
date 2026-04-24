@@ -237,13 +237,8 @@ export function RegisterPage() {
     towerNames.length > 0 ? towerNames : ["A", "B", "C"],
   );
 
-  /* Floor options derived from selected tower */
-  const selectedTowerData = structure?.towers?.find((t) => t.name === form.watch("requestedTower"));
-  const floorOptions = selectedTowerData?.floors?.map((f) => f.number) ?? [];
-  const unitOptions =
-    selectedTowerData?.floors
-      ?.find((f) => String(f.number) === String(form.watch("requestedFloor")))
-      ?.units?.map((u) => u.number) ?? [];
+  /* TowerStructure.floors is string[] — no nested objects for units */
+  // Floor/unit inputs are always free-text; selects only for towers.
 
   /* Step navigation */
   const handleNextStep = async () => {
@@ -468,33 +463,12 @@ export function RegisterPage() {
                     {/* Andar */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Andar</label>
-                      {floorOptions.length > 0 ? (
-                        <Select
-                          value={form.watch("requestedFloor")}
-                          onValueChange={(v) => {
-                            form.setValue("requestedFloor", v, { shouldValidate: true });
-                            form.setValue("requestedUnit", "");
-                          }}
-                        >
-                          <SelectTrigger className="bg-white dark:bg-muted/20">
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {floorOptions.map((f) => (
-                              <SelectItem key={f} value={String(f)}>
-                                {f}º andar
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="Ex: 5"
-                          className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
-                          {...form.register("requestedFloor")}
-                        />
-                      )}
+                      <input
+                        type="text"
+                        placeholder="Ex: 5"
+                        className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                        {...form.register("requestedFloor")}
+                      />
                       {form.formState.errors.requestedFloor && (
                         <p className="text-xs text-destructive">{form.formState.errors.requestedFloor.message}</p>
                       )}
@@ -503,30 +477,12 @@ export function RegisterPage() {
                     {/* Unidade */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Unidade</label>
-                      {unitOptions.length > 0 ? (
-                        <Select
-                          value={form.watch("requestedUnit")}
-                          onValueChange={(v) => form.setValue("requestedUnit", v, { shouldValidate: true })}
-                        >
-                          <SelectTrigger className="bg-white dark:bg-muted/20">
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {unitOptions.map((u) => (
-                              <SelectItem key={u} value={String(u)}>
-                                {u}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="Ex: 501"
-                          className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
-                          {...form.register("requestedUnit")}
-                        />
-                      )}
+                      <input
+                        type="text"
+                        placeholder="Ex: 501"
+                        className="w-full rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:outline-none focus:border-[#1e3a5f] transition-colors"
+                        {...form.register("requestedUnit")}
+                      />
                       {form.formState.errors.requestedUnit && (
                         <p className="text-xs text-destructive">{form.formState.errors.requestedUnit.message}</p>
                       )}
