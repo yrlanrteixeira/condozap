@@ -1,7 +1,7 @@
 import { PrismaClient, UserRole as PrismaUserRole } from "@prisma/client";
 import { FastifyBaseLogger } from "fastify";
 import bcrypt from "bcryptjs";
-import { ConflictError, NotFoundError, BadRequestError } from "../../shared/errors";
+import { ConflictError, NotFoundError, BadRequestError, ForbiddenError } from "../../shared/errors";
 import type {
   CreateAdminRequest,
   CreateSyndicRequest,
@@ -304,25 +304,61 @@ export async function getUsersByCondominium(
   }));
 }
 
+export interface CallerContext {
+  id: string;
+  role: string;
+  allowedCondominiumIds: string[];
+}
+
+const isGlobalCaller = (caller: CallerContext): boolean =>
+  caller.role === "SUPER_ADMIN" || caller.role === "PROFESSIONAL_SYNDIC";
+
 export async function updateUserRole(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
   data: UpdateUserRoleRequest,
-  currentUserId: string
+  caller: CallerContext
 ) {
-  if (data.userId === currentUserId) {
+  if (data.userId === caller.id) {
     throw new BadRequestError("Você não pode alterar sua própria função");
   }
 
-  await usersRepository.updateUser(prisma, data.userId, {
-    role: data.newRole as UserRole,
-  });
-
-  await usersRepository.updateUserCondominiums(
-    prisma,
-    { userId: data.userId },
-    { role: data.newRole as UserRole }
-  );
+  // Cross-tenant guard: caller must share at least one condominium with the
+  // target user, unless they are a global-scope operator.
+  if (!isGlobalCaller(caller)) {
+    const targetMemberships = await prisma.userCondominium.findMany({
+      where: { userId: data.userId },
+      select: { condominiumId: true },
+    });
+    const sharedCondos = targetMemberships
+      .map((m) => m.condominiumId)
+      .filter((id) => caller.allowedCondominiumIds.includes(id));
+    if (sharedCondos.length === 0) {
+      throw new ForbiddenError(
+        "Você não tem acesso ao condomínio do usuário alvo"
+      );
+    }
+    // Restrict role update to memberships in shared condos only.
+    await usersRepository.updateUser(prisma, data.userId, {
+      role: data.newRole as UserRole,
+    });
+    for (const condoId of sharedCondos) {
+      await usersRepository.updateUserCondominiums(
+        prisma,
+        { userId: data.userId, condominiumId: condoId },
+        { role: data.newRole as UserRole }
+      );
+    }
+  } else {
+    await usersRepository.updateUser(prisma, data.userId, {
+      role: data.newRole as UserRole,
+    });
+    await usersRepository.updateUserCondominiums(
+      prisma,
+      { userId: data.userId },
+      { role: data.newRole as UserRole }
+    );
+  }
 
   logger.info(`User ${data.userId} role updated to ${data.newRole}`);
 }
@@ -356,10 +392,18 @@ export async function removeUserFromCondominium(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
   data: RemoveUserRequest,
-  currentUserId: string
+  caller: CallerContext
 ) {
-  if (data.userId === currentUserId) {
+  if (data.userId === caller.id) {
     throw new BadRequestError("Você não pode remover a si mesmo");
+  }
+
+  // Cross-tenant guard: caller must have access to the target condominium.
+  if (
+    !isGlobalCaller(caller) &&
+    !caller.allowedCondominiumIds.includes(data.condominiumId)
+  ) {
+    throw new ForbiddenError("Acesso negado ao condomínio solicitado");
   }
 
   await usersRepository.deleteUserCondominiums(prisma, {
@@ -389,8 +433,17 @@ export async function removeUserFromCondominium(
 export async function inviteUserToCondominium(
   prisma: PrismaClient,
   logger: FastifyBaseLogger,
-  data: InviteUserRequest
+  data: InviteUserRequest,
+  caller: CallerContext
 ) {
+  // Cross-tenant guard: caller must have access to the target condominium.
+  if (
+    !isGlobalCaller(caller) &&
+    !caller.allowedCondominiumIds.includes(data.condominiumId)
+  ) {
+    throw new ForbiddenError("Acesso negado ao condomínio solicitado");
+  }
+
   const targetUser = await usersRepository.findUserByEmail(prisma, data.email);
   if (!targetUser) {
     throw new NotFoundError("Usuário");
