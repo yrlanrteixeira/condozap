@@ -45,6 +45,11 @@ interface NavItem {
   badge?: number;
 }
 
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
 interface SidebarProps {
   collapsed?: boolean;
   openComplaintsCount?: number;
@@ -61,121 +66,54 @@ export const Sidebar = ({
   const { can } = usePermissions();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
-  const navItems: NavItem[] = [
+  const navGroups: NavGroup[] = [
     {
-      title: "Painel da plataforma",
-      href: "/platform",
-      icon: BarChart3,
-      permission: Permissions.VIEW_PLATFORM_DASHBOARD,
+      title: "Visão Geral",
+      items: [
+        { title: "Painel da plataforma", href: "/platform", icon: BarChart3, permission: Permissions.VIEW_PLATFORM_DASHBOARD },
+        { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: Permissions.VIEW_DASHBOARD },
+        { title: "Dashboard do Setor", href: "/sector-dashboard", icon: LayoutDashboard, permission: Permissions.VIEW_SECTOR_DASHBOARD },
+      ],
     },
     {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      permission: Permissions.VIEW_DASHBOARD,
+      title: "Atendimento",
+      items: [
+        { title: "Ocorrências", href: "/complaints", icon: AlertTriangle, badge: openComplaintsCount },
+        { title: "Mensagens diretas", href: "/messages", icon: Send, permission: Permissions.SEND_MESSAGE },
+        { title: "Comunicados", href: "/announcements", icon: Megaphone, permission: Permissions.VIEW_ANNOUNCEMENTS },
+      ],
     },
     {
-      title: "Dashboard Unificado",
-      href: "/unified-dashboard",
-      icon: Globe,
-      permission: Permissions.VIEW_UNIFIED_DASHBOARD,
+      title: "Cadastros",
+      items: [
+        { title: "Moradores", href: "/residents", icon: Users, permission: Permissions.VIEW_RESIDENTS },
+        { title: "Aprovação", href: "/user-approval", icon: UserCheck, permission: Permissions.MANAGE_RESIDENTS },
+        { title: "Estrutura", href: "/structure", icon: Building, permission: Permissions.MANAGE_STRUCTURE },
+      ],
     },
     {
-      title: "Dashboard do Setor",
-      href: "/sector-dashboard",
-      icon: LayoutDashboard,
-      permission: Permissions.VIEW_SECTOR_DASHBOARD,
+      title: "Administração",
+      items: [
+        { title: "Membros ativos", href: "/team", icon: UsersRound, permission: Permissions.MANAGE_TEAM },
+        { title: "Permissões", href: "/access", icon: Shield, permission: Permissions.MANAGE_TEAM },
+        { title: "Síndicos", href: "/syndics", icon: Users, permission: Permissions.MANAGE_SYNDICS },
+        { title: "Condomínios", href: "/condominiums", icon: Building2, permission: Permissions.CREATE_CONDOMINIUM },
+      ],
     },
     {
-      title: "Enviar Mensagens",
-      href: "/messages",
-      icon: Send,
-      permission: Permissions.SEND_MESSAGE,
+      title: "Assinatura",
+      items: [
+        { title: "Minha assinatura", href: "/assinatura", icon: CreditCard, permission: Permissions.VIEW_BILLING },
+        { title: "Planos", href: "/super/planos", icon: CreditCard, permission: Permissions.MANAGE_BILLING_PLATFORM },
+        { title: "Financeiro", href: "/super/financeiro", icon: DollarSign, permission: Permissions.MANAGE_BILLING_PLATFORM },
+      ],
     },
     {
-      title: "Comunicados",
-      href: "/announcements",
-      icon: Megaphone,
-      permission: Permissions.VIEW_ANNOUNCEMENTS,
-    },
-    {
-      title: "Moradores",
-      href: "/residents",
-      icon: Users,
-      permission: Permissions.VIEW_RESIDENTS,
-    },
-    {
-      title: "Aprovação de Cadastros",
-      href: "/user-approval",
-      icon: UserCheck,
-      permission: Permissions.MANAGE_RESIDENTS,
-    },
-    {
-      title: "Membros ativos",
-      href: "/team",
-      icon: UsersRound,
-      permission: Permissions.MANAGE_TEAM,
-    },
-    {
-      title: "Acessos e permissões",
-      href: "/access",
-      icon: Shield,
-      permission: Permissions.MANAGE_TEAM,
-    },
-    {
-      title: "Síndicos",
-      href: "/syndics",
-      icon: Users,
-      permission: Permissions.MANAGE_SYNDICS,
-    },
-    {
-      title: "Condomínios",
-      href: "/condominiums",
-      icon: Building2,
-      permission: Permissions.CREATE_CONDOMINIUM,
-    },
-    {
-      title: "Planos",
-      href: "/super/planos",
-      icon: CreditCard,
-      permission: Permissions.MANAGE_BILLING_PLATFORM,
-    },
-    {
-      title: "Financeiro",
-      href: "/super/financeiro",
-      icon: DollarSign,
-      permission: Permissions.MANAGE_BILLING_PLATFORM,
-    },
-    {
-      title: "Minha assinatura",
-      href: "/assinatura",
-      icon: CreditCard,
-      permission: Permissions.VIEW_BILLING,
-    },
-    {
-      title: "Estrutura",
-      href: "/structure",
-      icon: Building,
-      permission: Permissions.MANAGE_STRUCTURE,
-    },
-    {
-      title: "Ocorrências",
-      href: "/complaints",
-      icon: AlertTriangle,
-      // Both admins (VIEW_COMPLAINTS) and residents (VIEW_OWN_COMPLAINTS) can access
-      badge: openComplaintsCount,
-    },
-    {
-      title: "Relatórios",
-      href: "/reports",
-      icon: FileBarChart,
-      permission: Permissions.VIEW_REPORTS,
-    },
-    {
-      title: "Histórico",
-      href: "/history",
-      icon: Clock,
-      permission: Permissions.VIEW_HISTORY,
+      title: "Auditoria",
+      items: [
+        { title: "Relatórios", href: "/reports", icon: FileBarChart, permission: Permissions.VIEW_REPORTS },
+        { title: "Histórico", href: "/history", icon: Clock, permission: Permissions.VIEW_HISTORY },
+      ],
     },
   ];
 
@@ -205,16 +143,18 @@ export const Sidebar = ({
   useEffect(() => {
     const initializeOpenMenus = () => {
       const newOpenMenus: Record<string, boolean> = {};
-      navItems.forEach((item) => {
-        if (item.subItems && item.subItems.length > 0) {
-          // Verificar se algum subitem está ativo
-          const isAnySubItemActive = item.subItems.some((sub) =>
-            isActive(sub.href)
-          );
-          if (isAnySubItemActive) {
-            newOpenMenus[item.title] = true;
+      navGroups.forEach((group) => {
+        group.items.forEach((item) => {
+          if (item.subItems && item.subItems.length > 0) {
+            // Verificar se algum subitem está ativo
+            const isAnySubItemActive = item.subItems.some((sub) =>
+              isActive(sub.href)
+            );
+            if (isAnySubItemActive) {
+              newOpenMenus[item.title] = true;
+            }
           }
-        }
+        });
       });
       // Manter os menus já abertos manualmente pelo usuário
       setOpenMenus((prev) => ({
@@ -225,18 +165,6 @@ export const Sidebar = ({
 
     initializeOpenMenus();
   }, [location.pathname, isActive]);
-
-  const filteredNavItems = navItems.filter((item) => {
-    if (item.href === "/complaints") {
-      return (
-        can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS)
-      );
-    }
-
-    if (!item.permission) return true;
-
-    return can(item.permission);
-  });
 
   const filteredBottomNavItems = bottomNavItems.filter((item) => {
     if (!item.permission) return true;
@@ -300,129 +228,150 @@ export const Sidebar = ({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {filteredNavItems.map((item) => {
-          const Icon = item.icon;
-          const hasSubItems = item.subItems && item.subItems.length > 0;
-          const isMenuOpen = openMenus[item.title];
-          const isAnySubItemActive =
-            hasSubItems && item.subItems
-              ? item.subItems.some((sub) => isActive(sub.href))
-              : false;
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+        {navGroups.map((group) => {
+          const filteredItems = group.items.filter((item) => {
+            if (item.href === "/complaints") {
+              return can(Permissions.VIEW_COMPLAINTS) || can(Permissions.VIEW_OWN_COMPLAINTS);
+            }
+            if (!item.permission) return true;
+            return can(item.permission);
+          });
 
-          // Se tem subitens, renderiza o menu expansível
-          if (hasSubItems) {
-            return (
-              <div key={item.title}>
-                <button
-                  onClick={() => toggleMenu(item.title)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isAnySubItemActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    collapsed && "justify-center"
-                  )}
-                  title={collapsed ? item.title : undefined}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 truncate text-left">
-                        {item.title}
-                      </span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <Badge variant="destructive" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
-                      {isMenuOpen ? (
-                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
-                      )}
-                    </>
-                  )}
-                  {collapsed && item.badge !== undefined && item.badge > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </button>
-                {/* Subitens */}
-                {isMenuOpen && !collapsed && item.subItems && (
-                  <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-3">
-                    {item.subItems.map((subItem) => {
-                      const isSubActive = isActive(subItem.href);
-                      // Verificar permissão do subitem
-                      if (subItem.permission && !can(subItem.permission)) {
-                        return null;
-                      }
-                      return (
-                        <Link
-                          key={subItem.href}
-                          to={subItem.href}
-                          onClick={onNavigate}
-                          className={cn(
-                            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-                            isSubActive
-                              ? "bg-primary font-medium text-primary-foreground"
-                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                          )}
-                        >
-                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{subItem.title}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          // Item sem submenu
-          if (!item.href) return null;
-
-          const active = isActive(item.href);
+          if (filteredItems.length === 0) return null;
 
           return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors relative",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                collapsed && "justify-center"
-              )}
-              title={collapsed ? item.title : undefined}
-            >
-              <Icon className="h-5 w-5 flex-shrink-0" />
+            <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <>
-                  <span className="truncate">{item.title}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <Badge variant="destructive" className="ml-auto">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </>
+                <h4 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {group.title}
+                </h4>
               )}
-              {collapsed && item.badge !== undefined && item.badge > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                >
-                  {item.badge}
-                </Badge>
-              )}
-            </Link>
+              {filteredItems.map((item) => {
+                const Icon = item.icon;
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isMenuOpen = openMenus[item.title];
+                const isAnySubItemActive =
+                  hasSubItems && item.subItems
+                    ? item.subItems.some((sub) => isActive(sub.href))
+                    : false;
+
+                // Se tem subitens, renderiza o menu expansível
+                if (hasSubItems) {
+                  return (
+                    <div key={item.title}>
+                      <button
+                        onClick={() => toggleMenu(item.title)}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          isAnySubItemActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                          collapsed && "justify-center"
+                        )}
+                        title={collapsed ? item.title : undefined}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1 truncate text-left">
+                              {item.title}
+                            </span>
+                            {item.badge !== undefined && item.badge > 0 && (
+                              <Badge variant="destructive" className="ml-auto">
+                                {item.badge}
+                              </Badge>
+                            )}
+                            {isMenuOpen ? (
+                              <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                            )}
+                          </>
+                        )}
+                        {collapsed && item.badge !== undefined && item.badge > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </button>
+                      {/* Subitens */}
+                      {isMenuOpen && !collapsed && item.subItems && (
+                        <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-3">
+                          {item.subItems.map((subItem) => {
+                            const isSubActive = isActive(subItem.href);
+                            // Verificar permissão do subitem
+                            if (subItem.permission && !can(subItem.permission)) {
+                              return null;
+                            }
+                            return (
+                              <Link
+                                key={subItem.href}
+                                to={subItem.href}
+                                onClick={onNavigate}
+                                className={cn(
+                                  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                                  isSubActive
+                                    ? "bg-primary font-medium text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )}
+                              >
+                                <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{subItem.title}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Item sem submenu
+                if (!item.href) return null;
+
+                const active = isActive(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={onNavigate}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors relative",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      collapsed && "justify-center"
+                    )}
+                    title={collapsed ? item.title : undefined}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.title}</span>
+                        {item.badge !== undefined && item.badge > 0 && (
+                          <Badge variant="destructive" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                    {collapsed && item.badge !== undefined && item.badge > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -right-1 -top-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           );
         })}
       </nav>
