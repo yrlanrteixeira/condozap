@@ -433,7 +433,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  fastify.post("/refresh", async (request, reply) => {
+  fastify.post("/refresh", {
+    // 20/min per IP — protects against credential-stuffing-style refresh abuse.
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: "1 minute",
+      },
+    },
+  }, async (request, reply) => {
     const body = refreshTokenSchema.parse(request.body) as RefreshTokenBody;
 
     try {
