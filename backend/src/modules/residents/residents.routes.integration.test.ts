@@ -411,6 +411,62 @@ describe("residents — PATCH /api/residents/:id/consent", () => {
     });
     expect([400, 500]).toContain(res.statusCode);
   });
+
+  it("RESIDENT can update own consent (200)", async () => {
+    const app = await getTestApp();
+    const condo = await makeCondominium();
+    const owner = await makeUser({ role: UserRole.RESIDENT });
+    await linkUserToCondo(owner.id, condo.id, UserRole.RESIDENT);
+    const resident = await makeResident({
+      condominiumId: condo.id,
+      userId: owner.id,
+    });
+
+    const res = await authedInject(app, asAuthUser(owner), {
+      method: "PATCH",
+      url: `/api/residents/${resident.id}/consent`,
+      payload: { consent_whatsapp: false },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().consentWhatsapp).toBe(false);
+  });
+
+  it("RESIDENT cannot update OTHER resident's consent in same condo (403 — LGPD)", async () => {
+    const app = await getTestApp();
+    const condo = await makeCondominium();
+    const userA = await makeUser({ role: UserRole.RESIDENT });
+    const userB = await makeUser({ role: UserRole.RESIDENT });
+    await linkUserToCondo(userA.id, condo.id, UserRole.RESIDENT);
+    await linkUserToCondo(userB.id, condo.id, UserRole.RESIDENT);
+    await makeResident({ condominiumId: condo.id, userId: userA.id });
+    const residentB = await makeResident({
+      condominiumId: condo.id,
+      userId: userB.id,
+    });
+
+    const res = await authedInject(app, asAuthUser(userA), {
+      method: "PATCH",
+      url: `/api/residents/${residentB.id}/consent`,
+      payload: { consent_whatsapp: false },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("RESIDENT in other condo gets 404 (cross-tenant)", async () => {
+    const app = await getTestApp();
+    const condoA = await makeCondominium();
+    const condoB = await makeCondominium();
+    const userA = await makeUser({ role: UserRole.RESIDENT });
+    await linkUserToCondo(userA.id, condoA.id, UserRole.RESIDENT);
+    const residentInB = await makeResident({ condominiumId: condoB.id });
+
+    const res = await authedInject(app, asAuthUser(userA), {
+      method: "PATCH",
+      url: `/api/residents/${residentInB.id}/consent`,
+      payload: { consent_whatsapp: false },
+    });
+    expect(res.statusCode).toBe(404);
+  });
 });
 
 // =====================================================
