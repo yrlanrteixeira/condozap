@@ -34,6 +34,7 @@ import { publicRoutes } from "../modules/public";
 import { registerGlobalBillingHook } from "../modules/billing/guards/global-subscription.hook";
 import slaCronPlugin from "../modules/sla-cron/sla-cron.plugin";
 import billingCronPlugin from "../modules/billing/cron/billing-cron.plugin";
+import { prisma } from "../shared/db/prisma";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const fastify = Fastify({
@@ -104,6 +105,31 @@ export const createApp = async (): Promise<FastifyInstance> => {
   fastify.get("/health", healthPayload);
   /** Alias útil se CDN/proxy tiver regra de redirect só em `/health` (evita loop 301→mesma URL). */
   fastify.get("/api/health", healthPayload);
+
+  /**
+   * Deep readiness probe: verifies the DB is reachable. K8s/load-balancers
+   * should hit /health/ready (not /health) to avoid sending traffic to a
+   * pod that booted but cannot serve real requests.
+   */
+  const readinessHandler = async (_req: any, reply: any) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return reply.send({
+        status: "ready" as const,
+        db: "ok" as const,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      fastify.log.error({ err }, "/health/ready: DB probe failed");
+      return reply.status(503).send({
+        status: "not-ready" as const,
+        db: "down" as const,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+  fastify.get("/health/ready", readinessHandler);
+  fastify.get("/api/health/ready", readinessHandler);
 
   await fastify.register(publicRoutes, { prefix: "/api/public" });
 
