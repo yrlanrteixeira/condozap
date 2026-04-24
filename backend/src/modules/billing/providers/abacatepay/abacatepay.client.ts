@@ -35,6 +35,8 @@ export class AbacatePayClient {
     try {
       response = await fetch(`${BASE_URL}${path}`, {
         ...init,
+        // 10s hard timeout — any AbortSignal supplied by the caller wins.
+        signal: init.signal ?? AbortSignal.timeout(10_000),
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
