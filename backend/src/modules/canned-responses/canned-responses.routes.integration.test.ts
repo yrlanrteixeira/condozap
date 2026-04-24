@@ -504,9 +504,7 @@ describe("canned-responses — DELETE /api/canned-responses/:id", () => {
     expect(after).toBeNull();
   });
 
-  it("allows ADMIN (sector member) to delete any template in their condo", async () => {
-    // Current behavior: service does NOT restrict delete to creator — any writer
-    // in the writer role set can delete. Document this via test.
+  it("returns 403 when ADMIN (not creator) tries to delete a template created by someone else", async () => {
     const app = await getTestApp();
     const prisma = getTestPrisma();
     const syndic = await makeSyndicWithActiveSub();
@@ -520,6 +518,30 @@ describe("canned-responses — DELETE /api/canned-responses/:id", () => {
         content: "c",
         condominiumId: condo.id,
         createdBy: syndic.id,
+      },
+    });
+
+    const res = await authedInject(app, asAuthUser(admin), {
+      method: "DELETE",
+      url: `/api/canned-responses/${tpl.id}`,
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("allows ADMIN to delete a template they authored", async () => {
+    const app = await getTestApp();
+    const prisma = getTestPrisma();
+    const syndic = await makeSyndicWithActiveSub();
+    const condo = await makeCondominium({ primarySyndicId: syndic.id });
+    const admin = await makeUser({ role: UserRole.ADMIN });
+    await linkUserToCondo(admin.id, condo.id, UserRole.ADMIN);
+
+    const tpl = await prisma.cannedResponse.create({
+      data: {
+        title: "by-admin",
+        content: "c",
+        condominiumId: condo.id,
+        createdBy: admin.id,
       },
     });
 
