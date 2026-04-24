@@ -207,12 +207,17 @@ export function MessagingPage() {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Mensagens diretas</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Enviar uma mensagem direta no WhatsApp para os moradores. 
-          <span className="font-medium text-foreground"> Nota:</span> Isso é diferente de um <Link to="/announcements" className="underline font-medium text-primary hover:text-primary/80 transition-colors">Comunicado</Link> (mural) do condomínio.
-        </p>
+      <div className="flex items-start gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+          <Send className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-bold text-foreground">Mensagens diretas</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Enviar uma mensagem direta no WhatsApp para os moradores. 
+            <span className="font-medium text-foreground"> Nota:</span> Isso é diferente de um <Link to="/announcements" className="underline font-medium text-primary hover:text-primary/80 transition-colors">Comunicado</Link> (mural) do condomínio.
+          </p>
+        </div>
       </div>
 
       {/* Two-column layout */}
@@ -306,7 +311,7 @@ export function MessagingPage() {
                 placeholder="Digite sua mensagem direta aqui..."
                 maxLength={4096}
                 rows={8}
-                className="w-full resize-none bg-background text-sm text-foreground"
+                className="w-full resize-none bg-transparent border-0 focus-visible:ring-0 shadow-none px-0 text-sm text-foreground"
               />
 
               {/* Footer */}
