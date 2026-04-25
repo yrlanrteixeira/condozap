@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { SubscriptionStatus, UserRole } from "@prisma/client";
 import { mockEvolutionService } from "../../../test/mocks/evolution-client";
@@ -77,21 +78,35 @@ describe("whatsapp — GET /api/whatsapp/webhook (verify)", () => {
 });
 
 // =====================================================
-// POST /api/whatsapp/webhook — status updates
+// POST /api/whatsapp/webhook — status updates + HMAC validation
 // =====================================================
+const signMetaPayload = (payload: unknown): { raw: string; signature: string } => {
+  const raw = JSON.stringify(payload);
+  const digest = crypto
+    .createHmac("sha256", config.WHATSAPP_APP_SECRET as string)
+    .update(raw)
+    .digest("hex");
+  return { raw, signature: `sha256=${digest}` };
+};
+
 describe("whatsapp — POST /api/whatsapp/webhook (status updates)", () => {
-  it("accepts empty payload (no statuses)", async () => {
+  it("accepts empty payload (no statuses) when signature is valid", async () => {
     const app = await getTestApp();
+    const { raw, signature } = signMetaPayload({});
     const res = await app.inject({
       method: "POST",
       url: "/api/whatsapp/webhook",
-      payload: {},
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": signature,
+      },
+      payload: raw,
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().success).toBe(true);
   });
 
-  it("updates message status from a status entry", async () => {
+  it("updates message status from a status entry when signature is valid", async () => {
     const app = await getTestApp();
     const prisma = getTestPrisma();
     const syndic = await makeSyndicWithSub();
@@ -110,27 +125,128 @@ describe("whatsapp — POST /api/whatsapp/webhook (status updates)", () => {
       },
     });
 
+    const payload = {
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                statuses: [{ id: "wamid.TESTID", status: "delivered" }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const { raw, signature } = signMetaPayload(payload);
     const res = await app.inject({
       method: "POST",
       url: "/api/whatsapp/webhook",
-      payload: {
-        entry: [
-          {
-            changes: [
-              {
-                value: {
-                  statuses: [{ id: "wamid.TESTID", status: "delivered" }],
-                },
-              },
-            ],
-          },
-        ],
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": signature,
       },
+      payload: raw,
     });
     expect(res.statusCode).toBe(200);
 
     const updated = await prisma.message.findUnique({ where: { id: msg.id } });
     expect(updated?.whatsappStatus).toBe("DELIVERED");
+  });
+
+  it("returns 200 but does NOT process when x-hub-signature-256 is missing", async () => {
+    const app = await getTestApp();
+    const prisma = getTestPrisma();
+    const syndic = await makeSyndicWithSub();
+    const condo = await makeCondominium({ primarySyndicId: syndic.id });
+    await linkUserToCondo(syndic.id, condo.id, UserRole.SYNDIC);
+    const msg = await prisma.message.create({
+      data: {
+        condominiumId: condo.id,
+        type: "TEXT",
+        scope: "UNIT",
+        content: "hi",
+        recipientCount: 1,
+        sentBy: syndic.id,
+        whatsappStatus: "SENT",
+        whatsappMessageId: "wamid.NOSIG",
+      },
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/whatsapp/webhook",
+      headers: { "content-type": "application/json" },
+      payload: JSON.stringify({
+        entry: [
+          {
+            changes: [
+              {
+                value: {
+                  statuses: [{ id: "wamid.NOSIG", status: "delivered" }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+
+    const after = await prisma.message.findUnique({ where: { id: msg.id } });
+    expect(after?.whatsappStatus).toBe("SENT"); // unchanged
+  });
+
+  it("returns 200 but does NOT process when signature is wrong", async () => {
+    const app = await getTestApp();
+    const prisma = getTestPrisma();
+    const syndic = await makeSyndicWithSub();
+    const condo = await makeCondominium({ primarySyndicId: syndic.id });
+    await linkUserToCondo(syndic.id, condo.id, UserRole.SYNDIC);
+    const msg = await prisma.message.create({
+      data: {
+        condominiumId: condo.id,
+        type: "TEXT",
+        scope: "UNIT",
+        content: "hi",
+        recipientCount: 1,
+        sentBy: syndic.id,
+        whatsappStatus: "SENT",
+        whatsappMessageId: "wamid.BADSIG",
+      },
+    });
+
+    const payload = JSON.stringify({
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                statuses: [{ id: "wamid.BADSIG", status: "delivered" }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    // a syntactically-valid but wrong digest
+    const wrong = "sha256=" + "f".repeat(64);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/whatsapp/webhook",
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": wrong,
+      },
+      payload,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+
+    const after = await prisma.message.findUnique({ where: { id: msg.id } });
+    expect(after?.whatsappStatus).toBe("SENT"); // unchanged
   });
 });
 

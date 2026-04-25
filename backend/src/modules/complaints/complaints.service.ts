@@ -262,20 +262,8 @@ export async function createComplaint(
     });
   }
 
-  // === CREATE ATTACHMENTS ===
-  if (data.attachments && data.attachments.length > 0) {
-    for (const att of data.attachments) {
-      await prisma.complaintAttachment.create({
-        data: {
-          complaintId: complaint.id,
-          fileUrl: att.fileUrl,
-          fileName: att.fileName,
-          fileType: att.fileType,
-          fileSize: att.fileSize,
-        },
-      });
-    }
-  }
+  // Attachments persisted via nested create above (lines 105-116);
+  // duplicate loop removed.
 
   logger.info(`Complaint ${complaint.id} created`);
 

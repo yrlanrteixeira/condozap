@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban, AlertCircle } from "lucide-react";
+import { PlusCircle, Building2, Grid3X3, Settings, FolderKanban, AlertCircle, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -14,7 +14,7 @@ import {
 import { PageHeaderSkeleton, StatsCardSkeleton, CardSkeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/components/ui/use-toast";
 import type { Resident } from "@/features/residents/types";
-import { useAppSelector } from "@/shared/hooks";
+import { useAppSelector, useIsMobile } from "@/shared/hooks";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { selectCurrentCondominiumId } from "@/shared/store/slices/condominiumSlice";
 import { useResidents } from "@/features/residents/hooks/useResidentsApi";
@@ -24,6 +24,7 @@ import { formatTowerHeading } from "../utils/towerDisplay";
 import { useStructure } from "../hooks/useStructureApi";
 
 export function StructurePage() {
+  const isMobile = useIsMobile();
   const currentCondominiumId = useAppSelector(selectCurrentCondominiumId);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -228,55 +229,100 @@ export function StructurePage() {
 
       {/* Units Table */}
       {sortedResidents.length > 0 ? (
-        <Card className="border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Torre/Bloco</TableHead>
-                <TableHead>Andar</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Morador</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedResidents.map((resident) => (
-                <TableRow key={resident.id}>
-                  <TableCell className="font-medium whitespace-nowrap">
-                    {formatTowerHeading(resident.tower)}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">{resident.floor}º Andar</TableCell>
-                  <TableCell className="whitespace-nowrap">{resident.unit}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{resident.name}</span>
-                      <span className="text-xs text-muted-foreground">{resident.email || resident.phone}</span>
+        isMobile ? (
+          <div className="space-y-3">
+            {sortedResidents.map((resident) => (
+              <div key={resident.id} className="border rounded-lg p-3 sm:p-4 bg-card hover:bg-muted/30 transition-colors">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="font-medium text-foreground truncate">
+                      {formatTowerHeading(resident.tower)} - {resident.floor}º Andar - Unidade {resident.unit}
+                    </span>
+                    <span className="text-sm text-muted-foreground truncate">{resident.name || "-"}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary hover:text-primary/80 p-0 h-auto shrink-0"
+                    onClick={() => handleEditResident(resident)}
+                  >
+                    <Pencil size={14} />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                  <div>
+                    <span className="text-muted-foreground text-xs">Telefone</span>
+                    <p className="font-mono text-muted-foreground">{resident.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Tipo</span>
+                    <div>
+                      <Badge variant="outline" className={
+                        resident.type === "OWNER" 
+                          ? "border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 mt-0.5" 
+                          : "border-green-200 text-green-700 bg-green-50 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 mt-0.5"
+                      }>
+                        {resident.type === "OWNER" ? "Proprietário" : "Inquilino"}
+                      </Badge>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={
-                      resident.type === "OWNER" 
-                        ? "border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300" 
-                        : "border-green-200 text-green-700 bg-green-50 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
-                    }>
-                      {resident.type === "OWNER" ? "Proprietário" : "Inquilino"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEditResident(resident)}
-                    >
-                      Editar
-                    </Button>
-                  </TableCell>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Card className="border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border">
+                  <TableHead className="font-bold text-foreground">Torre/Bloco</TableHead>
+                  <TableHead className="font-bold text-foreground">Andar</TableHead>
+                  <TableHead className="font-bold text-foreground">Unidade</TableHead>
+                  <TableHead className="font-bold text-foreground">Morador</TableHead>
+                  <TableHead className="font-bold text-foreground">Tipo</TableHead>
+                  <TableHead className="font-bold text-foreground text-right w-[120px]">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHeader>
+              <TableBody>
+                {sortedResidents.map((resident) => (
+                  <TableRow key={resident.id} className="hover:bg-muted/30 border-b border-border/50">
+                    <TableCell className="font-medium whitespace-nowrap text-foreground">
+                      {formatTowerHeading(resident.tower)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-foreground">{resident.floor}º Andar</TableCell>
+                    <TableCell className="whitespace-nowrap text-foreground">{resident.unit}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{resident.name || "-"}</span>
+                        <span className="text-xs text-muted-foreground">{resident.email || resident.phone || "-"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        resident.type === "OWNER" 
+                          ? "border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300" 
+                          : "border-green-200 text-green-700 bg-green-50 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
+                      }>
+                        {resident.type === "OWNER" ? "Proprietário" : "Inquilino"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="link" 
+                        size="sm"
+                        className="text-primary hover:text-primary/80 p-0 h-auto font-medium"
+                        onClick={() => handleEditResident(resident)}
+                      >
+                        <Pencil size={14} className="mr-1" />
+                        Editar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )
       ) : (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center p-6 sm:p-12">

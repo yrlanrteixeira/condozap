@@ -20,6 +20,20 @@ import {
 import * as userService from "./users.service";
 import { prisma } from "../../shared/db/prisma";
 import type { AuthUser } from "../../types/auth";
+import { resolveAccessContext } from "../../auth/context";
+
+async function buildCaller(user: AuthUser): Promise<userService.CallerContext> {
+  const ctx = await resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role as any,
+    permissionScope: user.permissionScope as any,
+  });
+  return {
+    id: user.id,
+    role: user.role as string,
+    allowedCondominiumIds: ctx.allowedCondominiumIds,
+  };
+}
 
 export async function createAdminHandler(
   request: FastifyRequest,
@@ -104,11 +118,12 @@ export async function updateUserRoleHandler(
     request.body
   ) as UpdateUserRoleRequest;
 
+  const caller = await buildCaller(currentUser);
   await userService.updateUserRole(
     prisma,
     request.log,
     body,
-    currentUser.id
+    caller
   );
 
   return reply.send({
@@ -144,11 +159,12 @@ export async function removeUserHandler(
   const currentUser = request.user as AuthUser;
   const body = removeUserSchema.parse(request.body) as RemoveUserRequest;
 
+  const caller = await buildCaller(currentUser);
   const { userSuspended } = await userService.removeUserFromCondominium(
     prisma,
     request.log,
     body,
-    currentUser.id
+    caller
   );
 
   return reply.send({
@@ -161,12 +177,15 @@ export async function inviteUserHandler(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
+  const currentUser = request.user as AuthUser;
   const body = inviteUserSchema.parse(request.body) as InviteUserRequest;
 
+  const caller = await buildCaller(currentUser);
   const invited = await userService.inviteUserToCondominium(
     prisma,
     request.log,
-    body
+    body,
+    caller
   );
 
   return reply.send({

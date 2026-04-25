@@ -176,6 +176,35 @@ export async function deleteCondominium(
     );
   }
 
+  // Billing observability: when the deleted condo had a primary syndic with
+  // an active subscription we log the impact so ops can reconcile billing
+  // (cancel/refund/downgrade) — the syndic's per-condo charge will silently
+  // drop on the next compute-cycle pass otherwise.
+  // TODO(billing): auto-cancel subscription when this was the syndic's last
+  // condominium. For now we only emit a structured signal.
+  if (existing.primarySyndicId) {
+    const otherCondos = await prisma.condominium.count({
+      where: { primarySyndicId: existing.primarySyndicId, id: { not: id } },
+    });
+    const subscription = await prisma.subscription.findUnique({
+      where: { syndicId: existing.primarySyndicId },
+      select: { id: true, status: true, currentPlanId: true },
+    });
+    if (subscription) {
+      logger.warn(
+        {
+          condominiumId: id,
+          syndicId: existing.primarySyndicId,
+          subscriptionId: subscription.id,
+          subscriptionStatus: subscription.status,
+          remainingCondos: otherCondos,
+          deletedBy: userId,
+        },
+        "condominium.delete: syndic subscription impacted — manual review may be required"
+      );
+    }
+  }
+
   await repo.deleteById(prisma, id);
 
   logger.info(`Condominium ${id} deleted by ${userId}`);

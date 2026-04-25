@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 import { config } from "../../config/env";
+import { logger } from "../logger";
 
 // Ajusta DATABASE_URL para compatibilidade com pgBouncer/Supabase
 const getDatabaseUrl = (): string => {
@@ -44,7 +45,7 @@ if (!config.isDev) {
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch (error) {
-      console.error("❌ Prisma health check failed:", error);
+      logger.error({ err: error }, "Prisma health check failed");
     }
   }, 60000);
   // Allow process to exit even if interval is still scheduled

@@ -15,6 +15,30 @@ import {
 import { addComplaintAttachment } from "../complaints/complaints.service";
 import { prisma } from "../../shared/db/prisma";
 import { NotFoundError, BadRequestError, UnauthorizedError, ForbiddenError } from "../../shared/errors";
+import { resolveAccessContext, isCondominiumAllowed } from "../../auth/context";
+import type { AuthUser } from "../../types/auth";
+
+async function getAccessCtx(user: AuthUser) {
+  return resolveAccessContext(prisma, {
+    id: user.id,
+    role: user.role as any,
+    permissionScope: user.permissionScope as any,
+  });
+}
+
+/**
+ * Extracts the condominiumId from a stored object URL.
+ * Storage layout: <endpoint>/<bucket>/<condominiumId>/<rest...>
+ * Returns null if the URL does not match the expected layout for the bucket.
+ */
+function extractCondominiumIdFromUrl(url: string, bucket: string): string | null {
+  const marker = `/${bucket}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  const tail = url.substring(idx + marker.length);
+  const firstSegment = tail.split("/")[0];
+  return firstSegment || null;
+}
 
 const ALLOWED_MEDIA_TYPES = [
   "image/png",
@@ -49,6 +73,26 @@ export async function uploadRoutes(app: FastifyInstance) {
         if (url.includes("/complaint-attachments/")) bucket = "complaint-attachments";
         else if (url.includes("/resident-documents/")) bucket = "resident-documents";
 
+        // Cross-condo isolation: derive condominiumId from URL path and
+        // validate against caller's access context. message-media (chat
+        // media) is not necessarily condo-scoped today; we only enforce
+        // the check for complaint-attachments and resident-documents.
+        if (
+          bucket === "complaint-attachments" ||
+          bucket === "resident-documents"
+        ) {
+          const user = request.user as AuthUser | undefined;
+          if (!user) throw new UnauthorizedError();
+          const condoId = extractCondominiumIdFromUrl(url, bucket);
+          if (!condoId) {
+            throw new BadRequestError("URL do objeto inválida");
+          }
+          const ctx = await getAccessCtx(user);
+          if (!isCondominiumAllowed(ctx, condoId)) {
+            throw new ForbiddenError("Acesso negado ao condomínio do arquivo");
+          }
+        }
+
         const { data, contentType } = await getFile(app.log, bucket, url);
 
         reply.header("Content-Type", contentType);
@@ -56,6 +100,13 @@ export async function uploadRoutes(app: FastifyInstance) {
 
         return reply.send(data);
       } catch (err) {
+        // Preserve auth/permission failures so they don't get masked as 404s.
+        // Check by AppError statusCode rather than instanceof to be resilient
+        // to module-instance duplication under vitest module reloads.
+        const code = (err as any)?.statusCode;
+        if (code === 401 || code === 403 || code === 400) {
+          throw err;
+        }
         const message = err instanceof Error ? err.message : "Erro ao baixar arquivo";
         throw new NotFoundError(message);
       }
@@ -126,6 +177,12 @@ export async function uploadRoutes(app: FastifyInstance) {
 
       if (!complaint) {
         throw new NotFoundError("Chamado não encontrado");
+      }
+
+      // Cross-condo isolation: ensure caller has access to the complaint's condo
+      const ctx = await getAccessCtx(user as AuthUser);
+      if (!isCondominiumAllowed(ctx, complaint.condominiumId)) {
+        throw new ForbiddenError("Acesso negado ao condomínio do chamado");
       }
 
       // Get uploaded file
@@ -287,6 +344,13 @@ export async function uploadRoutes(app: FastifyInstance) {
         throw new ForbiddenError("Você não tem permissão para deletar anexos");
       }
 
+      // Cross-condo isolation: ensure caller has access to the attachment's
+      // complaint condo (no SUPER_ADMIN bypass — SA is platform operator).
+      const ctx = await getAccessCtx(user as AuthUser);
+      if (!isCondominiumAllowed(ctx, attachment.complaint.condominiumId)) {
+        throw new ForbiddenError("Acesso negado ao condomínio do anexo");
+      }
+
       // Extract file path from URL
       const filePath = extractFilePathFromUrl(attachment.fileUrl, BUCKETS.COMPLAINTS);
 
@@ -334,7 +398,15 @@ export async function uploadRoutes(app: FastifyInstance) {
         throw new NotFoundError("Documento não encontrado");
       }
 
-      // Check authorization
+      // Cross-condo isolation: ALL roles must pass the condo check now.
+      // Previously the bypass only checked ownership for RESIDENT, leaving
+      // ADMIN/SYNDIC of one condo able to delete documents in another condo.
+      const ctx = await getAccessCtx(user as AuthUser);
+      if (!isCondominiumAllowed(ctx, document.resident.condominiumId)) {
+        throw new ForbiddenError("Acesso negado ao condomínio do documento");
+      }
+
+      // RESIDENT must additionally be the owner of the resident profile.
       if (
         user.role === "RESIDENT" &&
         document.resident.userId !== user.id

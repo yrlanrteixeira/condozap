@@ -66,10 +66,19 @@ export const structureRoutes: FastifyPluginAsync = async (fastify) => {
     listSectorCategoriesHandler
   );
 
-  // Público - sem auth, para morador criar ocorrência
+  // Público - sem auth, para morador criar ocorrência via página de cadastro.
+  // Returns only deduped category names (no sector IDs / no internal data).
+  // Rate-limited to mitigate scraping/enumeration of valid condominium IDs.
   fastify.get(
     "/:condominiumId/public/categories",
-    {},
+    {
+      config: {
+        rateLimit: {
+          max: 60,
+          timeWindow: "1 minute",
+        },
+      },
+    },
     listSectorCategoriesHandler
   );
 

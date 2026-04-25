@@ -1,5 +1,6 @@
 import type { UserRole } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
+import { logger } from "../shared/logger";
 import { getRoleCeiling, intersectPermissions } from "./role-permissions";
 
 const ALL_USER_ROLES: UserRole[] = [
@@ -28,7 +29,7 @@ describe("getRoleCeiling", () => {
   });
 
   it("returns [] and warns for a role not in the catalog", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const spy = vi.spyOn(logger, "error").mockImplementation(() => logger);
     const out = getRoleCeiling("NOT_A_ROLE" as UserRole);
     expect(out).toEqual([]);
     expect(spy).toHaveBeenCalledOnce();

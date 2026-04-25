@@ -625,6 +625,7 @@ describe("user-management — POST /api/users/invite", () => {
     const app = await getTestApp();
     const c = await makeCondominium();
     const syndic = await makeUser({ role: UserRole.SYNDIC });
+    await linkUser(syndic.id, c.id, UserRole.SYNDIC);
     const res = await authedInject(app, asAuthUser(syndic), {
       method: "POST",
       url: "/api/users/invite",
@@ -641,6 +642,7 @@ describe("user-management — POST /api/users/invite", () => {
     const app = await getTestApp();
     const c = await makeCondominium();
     const syndic = await makeUser({ role: UserRole.SYNDIC });
+    await linkUser(syndic.id, c.id, UserRole.SYNDIC);
     const target = await makeUser({ email: "already@test.local" });
     await linkUser(target.id, c.id, UserRole.RESIDENT);
 
@@ -671,6 +673,77 @@ describe("user-management — POST /api/users/invite", () => {
       },
     });
     expect(res.statusCode).toBe(403);
+  });
+
+  it("returns 403 when SYNDIC of condo A invites to condo B (cross-tenant)", async () => {
+    const app = await getTestApp();
+    const condoA = await makeCondominium();
+    const condoB = await makeCondominium();
+    const syndicA = await makeUser({ role: UserRole.SYNDIC });
+    await linkUser(syndicA.id, condoA.id, UserRole.SYNDIC);
+    const target = await makeUser({ email: "victim@test.local" });
+
+    const res = await authedInject(app, asAuthUser(syndicA), {
+      method: "POST",
+      url: "/api/users/invite",
+      payload: {
+        email: "victim@test.local",
+        condominiumId: condoB.id, // SyndicA does NOT have access to condoB
+        role: "RESIDENT",
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    void target;
+  });
+});
+
+describe("user-management — cross-tenant guards (regression)", () => {
+  it("PATCH /update-role: SYNDIC of condo A cannot change role of user in condo B", async () => {
+    const app = await getTestApp();
+    const prisma = getTestPrisma();
+    const condoA = await makeCondominium();
+    const condoB = await makeCondominium();
+    const syndicA = await makeUser({ role: UserRole.SYNDIC });
+    const targetInB = await makeUser({ role: UserRole.RESIDENT });
+    await linkUser(syndicA.id, condoA.id, UserRole.SYNDIC);
+    await linkUser(targetInB.id, condoB.id, UserRole.RESIDENT);
+
+    const res = await authedInject(app, asAuthUser(syndicA), {
+      method: "PATCH",
+      url: "/api/users/update-role",
+      payload: { userId: targetInB.id, newRole: "ADMIN" },
+    });
+    expect(res.statusCode).toBe(403);
+
+    // Confirm target was NOT mutated
+    const refreshed = await prisma.user.findUnique({
+      where: { id: targetInB.id },
+    });
+    expect(refreshed?.role).toBe("RESIDENT");
+  });
+
+  it("DELETE /remove: SYNDIC of condo A cannot remove user from condo B", async () => {
+    const app = await getTestApp();
+    const prisma = getTestPrisma();
+    const condoA = await makeCondominium();
+    const condoB = await makeCondominium();
+    const syndicA = await makeUser({ role: UserRole.SYNDIC });
+    const targetInB = await makeUser({ role: UserRole.ADMIN });
+    await linkUser(syndicA.id, condoA.id, UserRole.SYNDIC);
+    await linkUser(targetInB.id, condoB.id, UserRole.ADMIN);
+
+    const res = await authedInject(app, asAuthUser(syndicA), {
+      method: "DELETE",
+      url: "/api/users/remove",
+      payload: { userId: targetInB.id, condominiumId: condoB.id },
+    });
+    expect(res.statusCode).toBe(403);
+
+    // Confirm link still exists
+    const link = await prisma.userCondominium.findFirst({
+      where: { userId: targetInB.id, condominiumId: condoB.id },
+    });
+    expect(link).not.toBeNull();
   });
 });
 

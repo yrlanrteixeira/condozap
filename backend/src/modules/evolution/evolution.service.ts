@@ -44,7 +44,11 @@ class EvolutionService {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, options);
+    // 10s hard timeout to prevent hung requests from blocking the worker.
+    const response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(10_000),
+    });
     const raw = await response.text();
 
     let data: unknown = null;

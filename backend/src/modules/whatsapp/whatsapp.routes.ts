@@ -9,7 +9,20 @@ import {
 
 export const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get("/webhook", verifyWebhookHandler);
-  fastify.post("/webhook", webhookReceiverHandler);
+  fastify.post(
+    "/webhook",
+    {
+      // 300/min per IP — comfortably above Meta's burst rate, throttles abuse.
+      config: {
+        rawBody: true,
+        rateLimit: {
+          max: 300,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    webhookReceiverHandler
+  );
 
   fastify.post(
     "/send",

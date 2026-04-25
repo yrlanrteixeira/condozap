@@ -1,4 +1,5 @@
 import type { UserRole } from "@prisma/client";
+import { logger } from "../shared/logger";
 import roleCeilingJson from "./data/role-ceiling.json";
 
 const roleCeiling = roleCeilingJson as Record<string, readonly string[]>;
@@ -26,8 +27,9 @@ for (const role of USER_ROLES_REQUIRING_CEILING) {
 export function getRoleCeiling(role: UserRole): string[] {
   const list = roleCeiling[role];
   if (list === undefined) {
-    console.error(
-      `[getRoleCeiling] Papel sem teto no JSON: "${String(role)}". Verifique role-ceiling.json.`
+    logger.error(
+      { role },
+      "[getRoleCeiling] Papel sem teto no JSON. Verifique role-ceiling.json."
     );
     return [];
   }

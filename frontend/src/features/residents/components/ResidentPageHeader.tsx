@@ -8,15 +8,20 @@ interface ResidentPageHeaderProps {
 }
 
 export const ResidentPageHeader = ({
-  title = "Moradores 👥",
+  title = "Moradores",
   description = "Gerencie os moradores e suas unidades",
   onAddResident,
 }: ResidentPageHeaderProps) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
-        <p className="text-muted-foreground text-sm sm:text-base mt-1">{description}</p>
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-primary/10 shrink-0 text-xl sm:text-2xl">
+          👥
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base mt-1">{description}</p>
+        </div>
       </div>
       {onAddResident && (
         <Button onClick={onAddResident} className="shrink-0">

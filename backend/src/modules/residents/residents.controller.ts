@@ -157,6 +157,22 @@ export async function updateResidentConsentHandler(
 ) {
   const { id } = residentIdParamSchema.parse(request.params);
   const body = updateConsentSchema.parse(request.body);
+  const user = request.user as AuthUser;
+
+  // Cross-condo isolation: 404 if resident not visible to caller's scope.
+  const resident = await findResidentByIdForUser(prisma, user, id);
+  if (!resident) {
+    return reply
+      .status(404)
+      .send({ error: "Morador não encontrado" });
+  }
+
+  // LGPD: a RESIDENT may only modify their own consent.
+  if (user.role === "RESIDENT" && resident.userId !== user.id) {
+    return reply
+      .status(403)
+      .send({ error: "Você só pode alterar seu próprio consentimento" });
+  }
 
   const updated = await updateResidentConsent(prisma, request.log, id, body);
   return reply.send(updated);

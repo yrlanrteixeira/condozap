@@ -1,4 +1,8 @@
-import axios from "axios";
+import axiosBase from "axios";
+
+// Shared axios instance with a 10s timeout to prevent hung WhatsApp Cloud API
+// requests from blocking the calling worker indefinitely.
+const axios = axiosBase.create({ timeout: 10_000 });
 import type { PrismaClient, WhatsAppStatus } from "@prisma/client";
 import type { FastifyBaseLogger } from "fastify";
 import { config } from "../../config/env";

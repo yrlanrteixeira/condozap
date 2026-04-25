@@ -56,6 +56,41 @@ describe("AbacatePayClient (real)", () => {
     );
   });
 
+  it("attaches a 10s AbortSignal timeout to the fetch call", async () => {
+    const AbacatePayClient = await loadClient();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: { ok: true }, error: null }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const client = new AbacatePayClient("k1");
+    await client.request("/v1/ping");
+
+    const call = fetchMock.mock.calls[0];
+    const init = call[1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("respects a caller-supplied AbortSignal over the default timeout", async () => {
+    const AbacatePayClient = await loadClient();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: { ok: true }, error: null }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const ac = new AbortController();
+    const client = new AbacatePayClient("k1");
+    await client.request("/v1/ping", { signal: ac.signal });
+
+    const call = fetchMock.mock.calls[0];
+    const init = call[1] as RequestInit;
+    expect(init.signal).toBe(ac.signal);
+  });
+
   it("wraps network errors into PaymentProviderError", async () => {
     const AbacatePayClient = await loadClient();
     globalThis.fetch = vi

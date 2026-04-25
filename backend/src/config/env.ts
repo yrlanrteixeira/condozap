@@ -35,6 +35,12 @@ const envSchema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_ACCESS_TOKEN: z.string().optional(),
   WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
+  /**
+   * Meta App Secret used to validate `x-hub-signature-256` on incoming
+   * webhook deliveries (HMAC-SHA256 of the raw body).
+   * Optional in dev; absence is treated as "reject everything" in prod.
+   */
+  WHATSAPP_APP_SECRET: z.string().optional(),
 
   // Evolution API (Unofficial - Baileys)
   EVOLUTION_API_URL: z.string().default("http://localhost:8080"),

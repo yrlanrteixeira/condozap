@@ -45,6 +45,28 @@ describe("upload routes — auth + validation", () => {
       expect(res.statusCode).toBe(400);
     });
 
+    it("returns 403 when caller does not have access to the file's condo", async () => {
+      const app = await getTestApp();
+      const condoA = await makeCondominium();
+      const condoB = await makeCondominium();
+      const syndic = await makeUser({ role: UserRole.SYNDIC });
+      await getTestPrisma().userCondominium.create({
+        data: {
+          userId: syndic.id,
+          condominiumId: condoB.id,
+          role: UserRole.SYNDIC,
+        },
+      });
+      const res = await authedInject(app, asAuth(syndic), {
+        method: "GET",
+        url: "/api/uploads/media-proxy",
+        query: {
+          url: `https://mock-storage.local/complaint-attachments/${condoA.id}/file.png`,
+        },
+      });
+      expect(res.statusCode).toBe(403);
+    });
+
   });
 
   describe("POST /api/uploads/media", () => {
@@ -138,10 +160,13 @@ describe("upload routes — auth + validation", () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it("deletes attachment when caller is SYNDIC", async () => {
+    it("deletes attachment when caller is SYNDIC of the complaint's condo", async () => {
       const app = await getTestApp();
       const condo = await makeCondominium();
       const syndic = await makeUser({ role: UserRole.SYNDIC });
+      await getTestPrisma().userCondominium.create({
+        data: { userId: syndic.id, condominiumId: condo.id, role: UserRole.SYNDIC },
+      });
       const complaint = await makeComplaint({ condominiumId: condo.id });
       const att = await getTestPrisma().complaintAttachment.create({
         data: {
@@ -163,6 +188,34 @@ describe("upload routes — auth + validation", () => {
         where: { id: att.id },
       });
       expect(stillThere).toBeNull();
+    });
+
+    it("returns 403 when SYNDIC of another condo tries to delete attachment", async () => {
+      const app = await getTestApp();
+      const condoA = await makeCondominium();
+      const condoB = await makeCondominium();
+      const syndic = await makeUser({ role: UserRole.SYNDIC });
+      // syndic only in condoB
+      await getTestPrisma().userCondominium.create({
+        data: { userId: syndic.id, condominiumId: condoB.id, role: UserRole.SYNDIC },
+      });
+      const complaint = await makeComplaint({ condominiumId: condoA.id });
+      const att = await getTestPrisma().complaintAttachment.create({
+        data: {
+          complaintId: complaint.id,
+          fileUrl:
+            "https://mock-storage.local/complaint-attachments/x/y.png",
+          fileName: "y.png",
+          fileType: "image/png",
+          fileSize: 10,
+        },
+      });
+
+      const res = await authedInject(app, asAuth(syndic), {
+        method: "DELETE",
+        url: `/api/uploads/complaints/attachments/${att.id}`,
+      });
+      expect(res.statusCode).toBe(403);
     });
   });
 
@@ -216,6 +269,63 @@ describe("upload routes — auth + validation", () => {
         method: "DELETE",
         url: `/api/uploads/documents/${doc.id}`,
       });
+      expect(res.statusCode).toBe(403);
+    });
+
+    it("returns 403 when SYNDIC of another condo tries to delete a document", async () => {
+      const app = await getTestApp();
+      const condoA = await makeCondominium();
+      const condoB = await makeCondominium();
+      const syndic = await makeUser({ role: UserRole.SYNDIC });
+      await getTestPrisma().userCondominium.create({
+        data: {
+          userId: syndic.id,
+          condominiumId: condoB.id,
+          role: UserRole.SYNDIC,
+        },
+      });
+      const ownerInA = await makeUser({ role: UserRole.RESIDENT });
+      const residentInA = await makeResident({
+        condominiumId: condoA.id,
+        userId: ownerInA.id,
+      });
+      const doc = await getTestPrisma().residentDocument.create({
+        data: {
+          residentId: residentInA.id,
+          type: "RG",
+          fileUrl: `https://mock-storage.local/resident-documents/${condoA.id}/r/doc.pdf`,
+          status: "PENDING",
+        },
+      });
+
+      const res = await authedInject(app, asAuth(syndic), {
+        method: "DELETE",
+        url: `/api/uploads/documents/${doc.id}`,
+      });
+      expect(res.statusCode).toBe(403);
+    });
+  });
+
+  describe("POST /api/uploads/complaints/:complaintId/attachments — cross-condo", () => {
+    it("returns 403 when caller does not have access to complaint condo", async () => {
+      const app = await getTestApp();
+      const condoA = await makeCondominium();
+      const condoB = await makeCondominium();
+      const syndic = await makeUser({ role: UserRole.SYNDIC });
+      await getTestPrisma().userCondominium.create({
+        data: {
+          userId: syndic.id,
+          condominiumId: condoB.id,
+          role: UserRole.SYNDIC,
+        },
+      });
+      const complaint = await makeComplaint({ condominiumId: condoA.id });
+      const res = await authedInject(app, asAuth(syndic), {
+        method: "POST",
+        url: `/api/uploads/complaints/${complaint.id}/attachments`,
+      });
+      // Without multipart body, the route may also throw 400 — but auth check
+      // happens before file parsing, so we expect 403.
       expect(res.statusCode).toBe(403);
     });
   });

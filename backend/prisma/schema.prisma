@@ -319,8 +319,11 @@ model Resident {
   type          ResidentType @default(OWNER)
   createdAt     DateTime     @default(now()) @map("created_at")
 
-  // LGPD Compliance - Consentimento WhatsApp é OBRIGATÓRIO para cadastro
-  consentWhatsapp       Boolean @default(true) @map("consent_whatsapp") // Obrigatório - sem isso não recebe mensagens
+  // LGPD Compliance — opt-in only. Default is FALSE so a row created
+  // without an explicit consent flag never sends WhatsApp messages by
+  // accident. The síndico flow must collect consent explicitly before
+  // toggling this to true (tracked in register-invite/createResident).
+  consentWhatsapp       Boolean @default(false) @map("consent_whatsapp")
   consentDataProcessing Boolean @default(true) @map("consent_data_processing")
 
   // Relations
@@ -366,7 +369,11 @@ model Complaint {
 
   // Relations
   condominium      Condominium              @relation(fields: [condominiumId], references: [id], onDelete: Cascade)
-  resident         Resident                 @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  // Resident deletion is BLOCKED when complaints reference it (Restrict).
+  // The service-layer guard in deleteResident() returns a friendly 409 first,
+  // but Restrict is a defense-in-depth invariant: no path can silently erase
+  // the complaints log by deleting a resident (raw SQL, accidental cascades, etc).
+  resident         Resident                 @relation(fields: [residentId], references: [id], onDelete: Restrict)
   sector           Sector?                  @relation(fields: [sectorId], references: [id], onDelete: SetNull)
   assignee         User?                    @relation("ComplaintAssignee", fields: [assigneeId], references: [id])
   escalationTarget User?                    @relation("ComplaintEscalationTarget", fields: [escalationTargetId], references: [id])
@@ -404,6 +411,11 @@ model ComplaintStatusHistory {
   complaintId Int             @map("complaint_id")
   fromStatus  ComplaintStatus @map("from_status")
   toStatus    ComplaintStatus @map("to_status")
+  // NOTE: not a FK — accepts the sentinel value "system" for cron/automation
+  // transitions. Migrating to a real FK requires (a) introducing a system
+  // user row OR (b) splitting into actorUserId? + actorType columns. Tracked
+  // in #13 (P0) — kept as plain String for now to avoid breaking the SLA
+  // cron and bulk auto-close paths.
   changedBy   String          @map("changed_by")
   notes       String?         @db.Text
   action      String          @default("STATUS_CHANGE")
@@ -560,6 +572,10 @@ model Message {
 
 model AuditLog {
   id        String   @id @default(cuid())
+  // NOTE: not a FK by design — audit trails MUST survive user deletion.
+  // Adding @relation with onDelete:SetNull is on the roadmap (#13) once a
+  // backfill pass scrubs orphaned ids; today some rows reference users
+  // that have already been hard-deleted in pre-RLS environments.
   userId    String   @map("user_id")
   action    String
   resource  String
@@ -761,6 +777,9 @@ enum ActivityType {
 model ActivityLog {
   id            String       @id @default(cuid())
   condominiumId String       @map("condominium_id")
+  // NOTE: not a FK by design (#13) — activity logs accept "system" /
+  // automation actor values and must survive user deletion. Backfill +
+  // schema split (actorUserId? FK + actorType) is the long-term plan.
   userId        String       @map("user_id")
   userName      String?      @map("user_name")
   type          ActivityType
