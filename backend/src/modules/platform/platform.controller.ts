@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../shared/db/prisma";
+import { getSSEConnectionCount } from "../../plugins/sse";
+import { getInvalidWebhookSecretCount } from "../billing/webhooks/abacatepay.webhook.controller";
 
 export async function getPlatformStatsHandler(
   _request: FastifyRequest,
@@ -46,5 +48,10 @@ export async function getPlatformStatsHandler(
     syndics: { total: totalSyndics },
     newThisMonth,
     trialsExpiringSoon,
+    // Operational metrics — visible only to SUPER_ADMIN by route guard.
+    runtime: {
+      sseConnections: getSSEConnectionCount(),
+      invalidWebhookSecretHits: getInvalidWebhookSecretCount(),
+    },
   });
 }
