@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { FastifyBaseLogger } from 'fastify';
+import { logger as globalLogger } from '../logger';
 
 /**
  * Interface para os parâmetros de envio de e-mail.
@@ -25,7 +26,7 @@ export async function sendEmail(
     if (logger) {
       logger.warn('BREVO_API_KEY não configurada. O e-mail não será enviado. Detalhes: ' + JSON.stringify(options.to));
     } else {
-      console.warn('BREVO_API_KEY não configurada. E-mail skipado.');
+      globalLogger.warn({ to: options.to }, 'BREVO_API_KEY não configurada. E-mail skipado.');
     }
     return;
   }
@@ -58,7 +59,10 @@ export async function sendEmail(
     if (logger) {
       logger.error(`Erro ao enviar e-mail via Brevo: ${error.response?.data?.message || error.message}`);
     } else {
-      console.error('Erro ao enviar e-mail via Brevo:', error.response?.data || error.message);
+      globalLogger.error(
+        { err: error.response?.data || error.message },
+        'Erro ao enviar e-mail via Brevo'
+      );
     }
     // Não disparamos throw error para não travar o fluxo principal (cadastros, etc).
   }

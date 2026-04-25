@@ -1,5 +1,6 @@
 import { PaymentBillStatus, PaymentBillType, PaymentMethod, type PrismaClient, type Subscription } from "@prisma/client";
 import { NotFoundError } from "../../../shared/errors";
+import { logger } from "../../../shared/logger";
 import { getPaymentProvider } from "../providers";
 import type { PaymentProvider } from "../providers";
 import { computeCycleAmount } from "../lib/compute-cycle-amount";
@@ -112,7 +113,7 @@ export async function createPixBillForCurrentCycle(
     });
   } catch (err) {
     await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
-      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+      logger.error({ billId: bill.id, err: rollbackErr }, "[bills.service] failed to rollback bill after provider error");
     });
     throw err;
   }
@@ -179,7 +180,7 @@ export async function createCardBillForCurrentCycle(
     });
   } catch (err) {
     await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
-      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+      logger.error({ billId: bill.id, err: rollbackErr }, "[bills.service] failed to rollback bill after provider error");
     });
     throw err;
   }
@@ -244,7 +245,7 @@ export async function createManualBill(
     });
   } catch (err) {
     await repo.deleteById(prisma, bill.id).catch((rollbackErr) => {
-      console.error("[bills.service] failed to rollback bill after provider error", { billId: bill.id, rollbackErr });
+      logger.error({ billId: bill.id, err: rollbackErr }, "[bills.service] failed to rollback bill after provider error");
     });
     throw err;
   }
