@@ -21,6 +21,7 @@ import { config } from "../../config/env";
 import { normalizeCondominiumSlug } from "../../shared/utils/condominium-slug";
 import { buildAccessTokenPayload } from "./auth-jwt-payload";
 import { registerResidentWithInvite } from "./register-invite.service";
+import { issueSseTicket } from "./sse-ticket";
 import { userToApi } from "./user-response";
 import { getEffectivePermissionsForCondominiums } from "../../auth/effective-permissions";
 import { normalizePhoneForStorage } from "../residents/residents.service";
@@ -489,6 +490,31 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({ error: "Invalid or expired refresh token" });
     }
   });
+
+  /**
+   * Issues a short-lived (60s) SSE ticket so the frontend can authenticate
+   * the EventSource stream without putting the long-lived access token in
+   * the URL (which leaks via server logs, Referer headers, browser history).
+   * The frontend exchanges this ticket for a stream by passing it as
+   * `?ticket=` to /sse — the SSE plugin then upgrades it to a userId.
+   */
+  fastify.post(
+    "/sse-ticket",
+    {
+      onRequest: [fastify.authenticate],
+      config: {
+        rateLimit: {
+          max: 30,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request, reply) => {
+      const userId = (request.user as AuthUser).id;
+      const ticket = issueSseTicket(fastify.jwt, userId);
+      return reply.send({ ticket, expiresIn: 60 });
+    }
+  );
 
   fastify.post("/logout", async (_request, reply) => {
     return reply.send({ message: "Logged out successfully" });
