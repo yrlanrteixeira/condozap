@@ -6,6 +6,18 @@ import { getPaymentProvider } from "../providers";
 
 const CYCLE_DAYS = 30;
 
+// In-memory counter for invalid-secret webhook hits. Surfaced via
+// /api/platform/stats so operators can spot scanning attempts. Reset on
+// process restart — alerting/durable counters live in the log pipeline.
+let invalidSecretCounter = 0;
+export function getInvalidWebhookSecretCount(): number {
+  return invalidSecretCounter;
+}
+// Test-only helper: keep counter independence between integration tests.
+export function __resetInvalidWebhookSecretCount(): void {
+  invalidSecretCounter = 0;
+}
+
 function safeSecretEqual(provided: string, expected: string): boolean {
   if (provided.length !== expected.length) return false;
   try {
@@ -77,6 +89,18 @@ export async function handleAbacatePayWebhook(
   // Path-secret check — if wrong, we still return 200 (no info leak).
   // Constant-time comparison defends against timing attacks.
   if (!expected || !safeSecretEqual(secret, expected)) {
+    // Log at WARN so operators can spot scanning / leaked-secret rotations
+    // in the regular log stream. The audit row already records the event,
+    // but a structured warn line is what triggers most alerting pipelines.
+    invalidSecretCounter += 1;
+    request.log.warn(
+      {
+        ip: request.ip,
+        path: request.url,
+        totalInvalidSecretHits: invalidSecretCounter,
+      },
+      "abacatepay_webhook_invalid_secret"
+    );
     await markProcessed("invalid_secret");
     return reply.code(200).send({ ok: true });
   }
